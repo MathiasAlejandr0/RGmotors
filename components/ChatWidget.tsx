@@ -23,9 +23,43 @@ export default function ChatWidget() {
   ]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Sesión anónima para atribuir las señales capturadas a una conversación.
+  const sessionIdRef = useRef<string>("");
+  const [askContact, setAskContact] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
+  const [contact, setContact] = useState("");
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 999999, behavior: "smooth" });
   }, [msgs, open]);
+
+  useEffect(() => {
+    try {
+      let sid = localStorage.getItem("rg_sid");
+      if (!sid) {
+        sid = "s" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem("rg_sid", sid);
+      }
+      sessionIdRef.current = sid;
+    } catch {
+      sessionIdRef.current = "s" + Date.now().toString(36);
+    }
+  }, []);
+
+  /** Registra señales del cliente de forma discreta (sin fricción). */
+  const track = (payload: Record<string, unknown>) => {
+    if (!sessionIdRef.current) return;
+    try {
+      fetch("/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({ sessionId: sessionIdRef.current, ...payload }),
+      }).catch(() => {});
+    } catch {
+      /* noop */
+    }
+  };
 
   const answer = (q: string) => {
     const query = q.toLowerCase();
@@ -63,12 +97,57 @@ export default function ChatWidget() {
     };
   };
 
+  /** Infiere señales del negocio a partir del mensaje (captura discreta). */
+  const detectSignals = (q: string) => {
+    const query = q.toLowerCase();
+    let bodyType: string | undefined;
+    if (query.includes("suv")) bodyType = "SUV";
+    else if (query.includes("camioneta") || query.includes("4x4") || query.includes("pickup"))
+      bodyType = "Camioneta";
+    else if (query.includes("sedán") || query.includes("sedan")) bodyType = "Sedán";
+    else if (query.includes("hatch")) bodyType = "Hatchback";
+
+    const financing = /(cr[eé]dito|financi|cuota|\bpie\b)/.test(query);
+    const bm = query.match(/(\d+)\s*m/);
+    const budget = bm ? Number(bm[1]) * 1_000_000 : undefined;
+
+    const kw = [
+      "suv", "camioneta", "4x4", "sedán", "diésel", "diesel", "automático",
+      "automatico", "económico", "economico", "ciudad", "crédito", "credito",
+      "financiamiento", "reserva", "prueba", "familia", "trabajo",
+    ];
+    const intents = kw.filter((k) => query.includes(k));
+    return { bodyType, financing, budget, intents };
+  };
+
   const send = (text: string) => {
     const q = text.trim();
     if (!q) return;
     setInput("");
     setMsgs((m) => [...m, { role: "user", text: q }]);
-    setTimeout(() => setMsgs((m) => [...m, answer(q)]), 450);
+
+    const a = answer(q);
+    const sig = detectSignals(q);
+    track({ ...sig, models: a.cars ?? [], messages: 1 });
+
+    setTimeout(() => setMsgs((m) => [...m, a]), 450);
+    // Tras mostrar recomendaciones, ofrece (una vez) enviar por WhatsApp.
+    if (a.cars && a.cars.length > 0 && !contactSent) {
+      setTimeout(() => setAskContact(true), 900);
+    }
+  };
+
+  const sendContact = () => {
+    const c = contact.trim();
+    if (!c) return;
+    track({ contact: c });
+    setContactSent(true);
+    setAskContact(false);
+    setContact("");
+    setMsgs((m) => [
+      ...m,
+      { role: "ai", text: "¡Genial! Un ejecutivo te contactará con estas opciones. 🙌" },
+    ]);
   };
 
   return (
@@ -140,6 +219,35 @@ export default function ChatWidget() {
           </div>
 
           <div className="border-t border-white/10 p-3">
+            {askContact && !contactSent && (
+              <div className="mb-2 rounded-xl border border-brand-500/30 bg-brand-500/5 p-2.5">
+                <p className="mb-1.5 text-xs text-white/70">
+                  📲 ¿Te enviamos estas opciones por WhatsApp? (opcional)
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    value={contact}
+                    onChange={(e) => setContact(e.target.value)}
+                    placeholder="Tu número o correo"
+                    className="flex-1 rounded-lg border border-white/10 bg-ink-900 px-2.5 py-1.5 text-xs outline-none focus:border-brand-500"
+                    onKeyDown={(e) => e.key === "Enter" && sendContact()}
+                  />
+                  <button
+                    onClick={sendContact}
+                    className="rounded-lg bg-brand-500 px-3 text-xs font-medium text-white transition hover:bg-brand-400"
+                  >
+                    Enviar
+                  </button>
+                  <button
+                    onClick={() => setAskContact(false)}
+                    aria-label="Cerrar"
+                    className="rounded-lg px-2 text-xs text-white/40 hover:text-white"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="mb-2 flex flex-wrap gap-1.5">
               {SUGGESTIONS.map((s) => (
                 <button

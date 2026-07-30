@@ -3,11 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import SpinUploader from "@/components/admin/SpinUploader";
+import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import { vehicles, formatCLP } from "@/lib/vehicles";
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "▦" },
+  { id: "analitica", label: "Analítica", icon: "📊" },
   { id: "vehiculos", label: "Vehículos", icon: "🚗" },
+  { id: "spin360", label: "360° / Videos", icon: "🔄" },
   { id: "reservas", label: "Reservas", icon: "★" },
   { id: "creditos", label: "Créditos", icon: "💳" },
   { id: "clientes", label: "Clientes", icon: "👥" },
@@ -51,8 +55,20 @@ export default function AdminPage() {
         <main className="flex-1 p-6">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold">Dashboard</h1>
-              <p className="text-sm text-white/50">Resumen general de RG Motors</p>
+              <h1 className="text-2xl font-bold">
+                {active === "spin360"
+                  ? "360° / Videos"
+                  : active === "analitica"
+                    ? "Analítica de negocio"
+                    : "Dashboard"}
+              </h1>
+              <p className="text-sm text-white/50">
+                {active === "spin360"
+                  ? "Genera giros 360° de los autos subiendo un video"
+                  : active === "analitica"
+                    ? "Inteligencia de datos para vender más"
+                    : "Resumen general de RG Motors"}
+              </p>
             </div>
             <div className="flex items-center gap-2 rounded-full border border-white/10 bg-ink-800 px-3 py-1.5 text-sm">
               <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-500/20 text-brand-300">A</span>
@@ -60,6 +76,10 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {active === "spin360" && <SpinUploader />}
+          {active === "analitica" && <AnalyticsDashboard />}
+          {active !== "spin360" && active !== "analitica" && (
+          <>
           {/* Stat cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Kpi icon="🚗" value="452" label="Vehículos publicados" trend="+8%" />
@@ -141,6 +161,8 @@ export default function AdminPage() {
               </table>
             </div>
           </div>
+          </>
+          )}
         </main>
       </div>
     </div>

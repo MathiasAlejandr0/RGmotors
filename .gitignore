@@ -27,6 +27,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# leads capturados por el chatbot (datos locales de runtime)
+/data/
+
 # editor
 .vscode/*
 !.vscode/extensions.json

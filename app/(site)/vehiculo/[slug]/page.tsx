@@ -42,6 +42,7 @@ export default async function VehiclePage({
           <VehicleViewer
             image={v.image}
             name={`${v.brand} ${v.model}`}
+            slug={v.slug}
             spinFrames={spinFramesOf(v)}
           />
 

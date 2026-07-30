@@ -8,16 +8,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "demo:frames": "node scripts/generate-demo-frames.mjs"
+    "demo:frames": "node scripts/generate-demo-frames.mjs",
+    "spin:video": "node scripts/video-to-spin.mjs"
   },
   "dependencies": {
+    "@imgly/background-removal-node": "^1.4.5",
+    "@napi-rs/canvas": "^1.0.3",
+    "@react-pdf/renderer": "^4.5.1",
     "next": "^16.2.12",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "three": "^0.185.1"
   },
   "devDependencies": {
-    "@napi-rs/canvas": "^1.0.3",
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

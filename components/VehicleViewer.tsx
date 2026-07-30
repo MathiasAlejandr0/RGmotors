@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Showroom3D from "./Showroom3D";
 import InteriorTour from "./InteriorTour";
 import PhotoSpin360 from "./PhotoSpin360";
@@ -29,16 +29,43 @@ const INSPECTION = [
 export default function VehicleViewer({
   image,
   name,
+  slug,
   spinFrames = [],
 }: {
   image: string;
   name: string;
+  slug?: string;
   spinFrames?: string[];
 }) {
   const [tab, setTab] = useState<Tab>("fotos");
-  const hasSpin = spinFrames.length > 0;
+  // Frames que se muestran: inicia con los del build y se actualiza si el
+  // admin subió un giro nuevo (manifest.json generado por /api/spin).
+  const [frames, setFrames] = useState<string[]>(spinFrames);
+  const hasSpin = frames.length > 0;
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    fetch(`/cars/spin/${slug}/manifest.json`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => {
+        if (cancelled || !m || !m.count) return;
+        setFrames(
+          Array.from(
+            { length: m.count },
+            (_, i) => `/cars/spin/${slug}/${String(i + 1).padStart(3, "0")}.jpg`
+          )
+        );
+        setExteriorMode("fotos");
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
   const [exteriorMode, setExteriorMode] = useState<ExteriorMode>(
-    hasSpin ? "fotos" : "3d"
+    spinFrames.length > 0 ? "fotos" : "3d"
   );
 
   return (
@@ -50,7 +77,7 @@ export default function VehicleViewer({
         )}
         {tab === "exterior" &&
           (hasSpin && exteriorMode === "fotos" ? (
-            <PhotoSpin360 frames={spinFrames} className="h-full w-full" />
+            <PhotoSpin360 frames={frames} className="h-full w-full" />
           ) : (
             <Showroom3D className="h-full w-full" />
           ))}

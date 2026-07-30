@@ -10,6 +10,7 @@ import {
   formatCLP,
 } from "@/lib/vehicles";
 import VehicleCard from "@/components/VehicleCard";
+import CatalogPdfButton from "@/components/CatalogPdfButton";
 
 const MAX_PRICE = Math.max(...vehicles.map((v) => v.price));
 
@@ -70,6 +71,18 @@ export default function CatalogPage() {
     }
     return result;
   }, [brands, types, fuels, trans, maxPrice, minYear, query, sort]);
+
+  const filterSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (brands.length) parts.push(brands.join(", "));
+    if (types.length) parts.push(types.join(", "));
+    if (fuels.length) parts.push(fuels.join(", "));
+    if (trans.length) parts.push(trans.join(", "));
+    if (maxPrice < MAX_PRICE) parts.push(`hasta ${formatCLP(maxPrice)}`);
+    if (minYear > 2019) parts.push(`${minYear}+`);
+    if (query) parts.push(`"${query}"`);
+    return parts.length ? parts.join(" · ") : "Catálogo completo";
+  }, [brands, types, fuels, trans, maxPrice, minYear, query]);
 
   const clearAll = () => {
     setBrands([]);
@@ -144,9 +157,12 @@ export default function CatalogPage() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Catálogo</h1>
-        <p className="text-white/50">Encuentra tu próximo auto entre nuestra selección.</p>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Catálogo</h1>
+          <p className="text-white/50">Encuentra tu próximo auto entre nuestra selección.</p>
+        </div>
+        <CatalogPdfButton vehicles={filtered} filterSummary={filterSummary} />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
