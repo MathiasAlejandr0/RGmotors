@@ -1,9 +1,10 @@
 /**
- * Documento PDF del catálogo de RG Motors con la misma identidad visual de la
- * web (oscuro premium, azul de marca, logo y fichas de autos).
+ * Catálogo PDF de RG Motors:
+ *  1) Portada de la empresa
+ *  2) Una página por vehículo: fotos + especificaciones
+ *  3) Siguiente vehículo en la página siguiente, y así sucesivamente
  *
- * Se carga de forma DINÁMICA desde el botón de descarga, para que
- * @react-pdf/renderer no engorde el bundle principal del sitio.
+ * Se carga de forma dinámica desde CatalogPdfButton.
  */
 import {
   Document,
@@ -14,7 +15,13 @@ import {
   StyleSheet,
   pdf,
 } from "@react-pdf/renderer";
-import { estimateMonthly, formatCLP, type Vehicle } from "@/lib/vehicles";
+import {
+  estimateMonthly,
+  formatCLP,
+  specsOf,
+  spinFramesOf,
+  type Vehicle,
+} from "@/lib/vehicles";
 
 const C = {
   bg: "#090909",
@@ -31,23 +38,22 @@ const C = {
 };
 
 const s = StyleSheet.create({
-  page: {
-    backgroundColor: C.bg,
-    color: C.white,
-    paddingTop: 28,
-    paddingBottom: 44,
-    paddingHorizontal: 26,
-    fontSize: 9,
-  },
-
-  // Portada
+  // ---- Portada empresa ----
   cover: { backgroundColor: C.bg, color: C.white, padding: 0 },
-  coverBar: {
+  coverTopBar: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: 6,
+    height: 8,
+    backgroundColor: C.brand,
+  },
+  coverBottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 8,
     backgroundColor: C.brand,
   },
   coverInner: {
@@ -56,44 +62,70 @@ const s = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 48,
   },
-  logo: { width: 190, marginBottom: 26 },
+  coverLogo: { width: 220, marginBottom: 28 },
+  coverEyebrow: {
+    fontSize: 10,
+    color: C.brandGlow,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    marginBottom: 10,
+  },
   coverTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 700,
-    letterSpacing: 0.6,
-    marginBottom: 8,
     color: C.white,
+    marginBottom: 10,
+    textAlign: "center",
   },
   coverSub: {
     fontSize: 11,
     color: C.muted,
     textAlign: "center",
-    marginBottom: 22,
     maxWidth: 380,
-    lineHeight: 1.45,
+    lineHeight: 1.5,
+    marginBottom: 28,
   },
-  coverMetaRow: { flexDirection: "row", gap: 8, marginTop: 4, flexWrap: "wrap", justifyContent: "center" },
+  coverMetaRow: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
   coverChip: {
     borderWidth: 1,
     borderColor: C.border,
     backgroundColor: C.card,
     borderRadius: 14,
-    paddingVertical: 5,
-    paddingHorizontal: 11,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     fontSize: 9,
     color: C.soft,
   },
   coverFoot: {
     position: "absolute",
-    bottom: 36,
+    bottom: 40,
     left: 0,
     right: 0,
     textAlign: "center",
     color: C.muted,
     fontSize: 9,
   },
+  coverTrust: {
+    marginTop: 36,
+    flexDirection: "row",
+    gap: 18,
+    justifyContent: "center",
+  },
+  coverTrustItem: { fontSize: 8, color: C.soft },
 
-  // Cabecera de páginas de contenido
+  // ---- Página de vehículo ----
+  page: {
+    backgroundColor: C.bg,
+    color: C.white,
+    paddingTop: 22,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -103,79 +135,125 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: C.border,
   },
-  headerLogo: { width: 96 },
+  headerLogo: { width: 88 },
   headerRight: { fontSize: 8, color: C.muted },
 
-  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-  card: {
-    width: "48.5%",
+  brandLine: {
+    fontSize: 9,
+    color: C.brandGlow,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 3,
+  },
+  title: { fontSize: 22, fontWeight: 700, color: C.white, marginBottom: 2 },
+  version: { fontSize: 10, color: C.muted, marginBottom: 12 },
+
+  hero: {
+    width: "100%",
+    height: 250,
+    borderRadius: 12,
+    objectFit: "cover",
+    marginBottom: 8,
+    backgroundColor: C.panel,
+  },
+  thumbs: {
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 14,
+  },
+  thumb: {
+    flex: 1,
+    height: 72,
+    borderRadius: 8,
+    objectFit: "cover",
+    backgroundColor: C.panel,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+
+  body: { flexDirection: "row", gap: 12 },
+  left: { flex: 1.15 },
+  right: { flex: 0.85 },
+
+  sectionTitle: {
+    fontSize: 10,
+    fontWeight: 700,
+    color: C.white,
+    marginBottom: 8,
+    letterSpacing: 0.4,
+  },
+  specGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: C.card,
+  },
+  specCell: {
+    width: "50%",
+    paddingVertical: 7,
+    paddingHorizontal: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    borderRightWidth: 1,
+    borderRightColor: C.border,
+  },
+  specLabel: { fontSize: 7.5, color: C.muted, marginBottom: 2 },
+  specValue: { fontSize: 9, color: C.white, fontWeight: 700 },
+
+  priceBox: {
     backgroundColor: C.card,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: 12,
-    marginBottom: 12,
-    overflow: "hidden",
-  },
-  imgWrap: { position: "relative", width: "100%", height: 108, backgroundColor: C.panel },
-  img: { width: "100%", height: 108, objectFit: "cover" },
-  badge360: {
-    position: "absolute",
-    left: 8,
-    top: 8,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    color: C.white,
-    fontSize: 7,
     borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+  },
+  priceLabel: { fontSize: 8, color: C.muted, marginBottom: 3 },
+  price: { fontSize: 18, fontWeight: 700, color: C.brandGlow, marginBottom: 2 },
+  monthly: { fontSize: 9, color: C.soft, marginBottom: 8 },
+  badgeRow: { flexDirection: "row", gap: 5, flexWrap: "wrap" },
+  badge: {
+    backgroundColor: "rgba(0,108,255,0.15)",
+    color: C.brandGlow,
+    fontSize: 7.5,
+    borderRadius: 8,
     paddingVertical: 3,
     paddingHorizontal: 7,
   },
   badgeFeat: {
-    position: "absolute",
-    right: 8,
-    top: 8,
     backgroundColor: C.brand,
     color: C.white,
-    fontSize: 7,
+    fontSize: 7.5,
     fontWeight: 700,
-    borderRadius: 10,
+    borderRadius: 8,
     paddingVertical: 3,
     paddingHorizontal: 7,
   },
-  cardBody: { padding: 10 },
-  titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 2 },
-  name: { fontSize: 11, fontWeight: 700, color: C.white, maxWidth: "80%" },
-  year: { fontSize: 8, color: C.muted },
-  version: { fontSize: 8, color: C.muted, marginBottom: 6 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginBottom: 8 },
-  chip: {
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderRadius: 5,
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    fontSize: 7,
-    color: C.soft,
-  },
-  price: { fontSize: 13, fontWeight: 700, color: C.brandGlow, marginBottom: 1 },
-  monthly: { fontSize: 7.5, color: C.muted, marginBottom: 7 },
-  tag: { flexDirection: "row", alignItems: "center", gap: 3, marginBottom: 2 },
-  tagDot: { color: C.green, fontSize: 8 },
-  tagText: { color: C.soft, fontSize: 7.5 },
-  cta: {
-    marginTop: 6,
+
+  highlights: {
+    backgroundColor: C.card,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: 7,
-    paddingVertical: 5,
-    textAlign: "center",
-    fontSize: 8,
-    color: C.soft,
+    borderRadius: 10,
+    padding: 10,
   },
+  hlItem: {
+    flexDirection: "row",
+    gap: 5,
+    marginBottom: 5,
+    alignItems: "flex-start",
+  },
+  hlDot: { color: C.green, fontSize: 9 },
+  hlText: { color: C.soft, fontSize: 8, flex: 1, lineHeight: 1.35 },
 
   footer: {
     position: "absolute",
-    bottom: 18,
-    left: 26,
-    right: 26,
+    bottom: 16,
+    left: 24,
+    right: 24,
     flexDirection: "row",
     justifyContent: "space-between",
     borderTopWidth: 1,
@@ -193,44 +271,121 @@ type Meta = {
   origin?: string;
 };
 
-function Card({ v, origin }: { v: Vehicle; origin?: string }) {
-  const src = origin ? `${origin}${v.image}` : v.image;
+function abs(origin: string | undefined, path: string) {
+  return origin ? `${origin}${path}` : path;
+}
+
+/** Selecciona foto principal + hasta 3 ángulos adicionales del spin. */
+function photosOf(v: Vehicle): string[] {
+  const frames = spinFramesOf(v);
+  if (frames.length >= 4) {
+    const n = frames.length;
+    // Frente, 3/4, perfil, trasera (aprox.)
+    return [
+      v.image,
+      frames[Math.floor(n * 0.25)],
+      frames[Math.floor(n * 0.5)],
+      frames[Math.floor(n * 0.75)],
+    ];
+  }
+  return [v.image];
+}
+
+function VehiclePage({
+  v,
+  meta,
+  index,
+  total,
+  logo,
+}: {
+  v: Vehicle;
+  meta: Meta;
+  index: number;
+  total: number;
+  logo: string;
+}) {
+  const photos = photosOf(v);
+  const hero = abs(meta.origin, photos[0]);
+  const thumbs = photos.slice(1, 4).map((p) => abs(meta.origin, p));
+  const specs = specsOf(v);
   const monthly = estimateMonthly(v.price);
+
   return (
-    <View style={s.card} wrap={false}>
-      <View style={s.imgWrap}>
+    <Page size="A4" style={s.page}>
+      <View style={s.header}>
         {/* eslint-disable-next-line jsx-a11y/alt-text */}
-        <Image style={s.img} src={src} />
-        <Text style={s.badge360}>360° disponible</Text>
-        {v.featured ? <Text style={s.badgeFeat}>Destacado</Text> : null}
-      </View>
-      <View style={s.cardBody}>
-        <View style={s.titleRow}>
-          <Text style={s.name}>
-            {v.brand} {v.model}
-          </Text>
-          <Text style={s.year}>{v.year}</Text>
-        </View>
-        <Text style={s.version}>
-          {v.version} · {v.location}
+        <Image style={s.headerLogo} src={logo} />
+        <Text style={s.headerRight}>
+          Vehículo {index + 1} de {total} · {meta.generatedAt}
         </Text>
-        <View style={s.chips}>
-          <Text style={s.chip}>{v.km.toLocaleString("es-CL")} km</Text>
-          <Text style={s.chip}>{v.fuel}</Text>
-          <Text style={s.chip}>{v.transmission}</Text>
-          <Text style={s.chip}>{v.bodyType}</Text>
-        </View>
-        <Text style={s.price}>{formatCLP(v.price)}</Text>
-        <Text style={s.monthly}>o {formatCLP(monthly)}/mes</Text>
-        {v.highlights.slice(0, 2).map((h) => (
-          <View key={h} style={s.tag}>
-            <Text style={s.tagDot}>✓</Text>
-            <Text style={s.tagText}>{h}</Text>
-          </View>
-        ))}
-        <Text style={s.cta}>Ver detalle en rgmotors.cl</Text>
       </View>
-    </View>
+
+      <Text style={s.brandLine}>{v.brand}</Text>
+      <Text style={s.title}>
+        {v.model} {v.year}
+      </Text>
+      <Text style={s.version}>
+        {v.version} · {v.location}
+      </Text>
+
+      {/* eslint-disable-next-line jsx-a11y/alt-text */}
+      <Image style={s.hero} src={hero} />
+
+      {thumbs.length > 0 ? (
+        <View style={s.thumbs}>
+          {thumbs.map((src, i) => (
+            // eslint-disable-next-line jsx-a11y/alt-text
+            <Image key={i} style={s.thumb} src={src} />
+          ))}
+        </View>
+      ) : null}
+
+      <View style={s.body}>
+        <View style={s.left}>
+          <Text style={s.sectionTitle}>Ficha técnica</Text>
+          <View style={s.specGrid}>
+            {specs.map((sp) => (
+              <View key={sp.label} style={s.specCell}>
+                <Text style={s.specLabel}>{sp.label}</Text>
+                <Text style={s.specValue}>{sp.value}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={s.right}>
+          <View style={s.priceBox}>
+            <Text style={s.priceLabel}>Precio</Text>
+            <Text style={s.price}>{formatCLP(v.price)}</Text>
+            <Text style={s.monthly}>o {formatCLP(monthly)}/mes (pie 20% · 48 cuotas)</Text>
+            <View style={s.badgeRow}>
+              {v.spin ? <Text style={s.badge}>Tour 360°</Text> : null}
+              {v.featured ? <Text style={s.badgeFeat}>Destacado</Text> : null}
+              <Text style={s.badge}>Garantía 6 meses</Text>
+            </View>
+          </View>
+
+          <Text style={s.sectionTitle}>Destacados</Text>
+          <View style={s.highlights}>
+            {v.highlights.map((h) => (
+              <View key={h} style={s.hlItem}>
+                <Text style={s.hlDot}>✓</Text>
+                <Text style={s.hlText}>{h}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      <View style={s.footer}>
+        <Text>RG Motors — autos usados certificados · www.rgmotors.cl</Text>
+        <Text
+          render={({ pageNumber, totalPages }) =>
+            `Página ${pageNumber} de ${totalPages}`
+          }
+        />
+      </View>
+    </Page>
   );
 }
 
@@ -241,51 +396,51 @@ export function CatalogPdfDoc({
   vehicles: Vehicle[];
   meta: Meta;
 }) {
-  const logo = meta.origin ? `${meta.origin}/logo.png` : "/logo.png";
+  const logo = abs(meta.origin, "/logo.png");
+
   return (
     <Document title="Catálogo RG Motors" author="RG Motors">
+      {/* 1. Portada de la empresa */}
       <Page size="A4" style={s.cover}>
-        <View style={s.coverBar} />
+        <View style={s.coverTopBar} />
         <View style={s.coverInner}>
           {/* eslint-disable-next-line jsx-a11y/alt-text */}
-          <Image style={s.logo} src={logo} />
+          <Image style={s.coverLogo} src={logo} />
+          <Text style={s.coverEyebrow}>RG Motors</Text>
           <Text style={s.coverTitle}>Catálogo de vehículos</Text>
           <Text style={s.coverSub}>
-            Autos usados certificados con inspección de 150 puntos, garantía y
-            financiamiento en línea. Misma selección y estética del sitio web
-            de RG Motors.
+            Autos usados certificados con inspección de 150 puntos, historial
+            verificado, garantía y financiamiento en línea. Cada página siguiente
+            presenta un vehículo con sus fotos y especificaciones.
           </Text>
           <View style={s.coverMetaRow}>
             <Text style={s.coverChip}>{meta.count} vehículos</Text>
             <Text style={s.coverChip}>{meta.filterSummary}</Text>
             <Text style={s.coverChip}>{meta.generatedAt}</Text>
           </View>
+          <View style={s.coverTrust}>
+            <Text style={s.coverTrustItem}>✓ Inspección 150 puntos</Text>
+            <Text style={s.coverTrustItem}>✓ Garantía 6 meses</Text>
+            <Text style={s.coverTrustItem}>✓ Crédito en línea</Text>
+          </View>
         </View>
-        <Text style={s.coverFoot}>RG Motors · Santiago, Chile · www.rgmotors.cl</Text>
+        <Text style={s.coverFoot}>
+          RG Motors · Santiago, Chile · www.rgmotors.cl
+        </Text>
+        <View style={s.coverBottomBar} />
       </Page>
 
-      <Page size="A4" style={s.page}>
-        <View style={s.header} fixed>
-          {/* eslint-disable-next-line jsx-a11y/alt-text */}
-          <Image style={s.headerLogo} src={logo} />
-          <Text style={s.headerRight}>Catálogo · {meta.generatedAt}</Text>
-        </View>
-
-        <View style={s.grid}>
-          {vehicles.map((v) => (
-            <Card key={v.slug} v={v} origin={meta.origin} />
-          ))}
-        </View>
-
-        <View style={s.footer} fixed>
-          <Text>RG Motors — autos usados certificados</Text>
-          <Text
-            render={({ pageNumber, totalPages }) =>
-              `Página ${pageNumber} de ${totalPages}`
-            }
-          />
-        </View>
-      </Page>
+      {/* 2. Una página por vehículo */}
+      {vehicles.map((v, i) => (
+        <VehiclePage
+          key={v.slug}
+          v={v}
+          meta={meta}
+          index={i}
+          total={vehicles.length}
+          logo={logo}
+        />
+      ))}
     </Document>
   );
 }
