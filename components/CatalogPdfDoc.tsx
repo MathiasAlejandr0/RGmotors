@@ -19,7 +19,6 @@ import {
   estimateMonthly,
   formatCLP,
   specsOf,
-  spinFramesOf,
   type Vehicle,
 } from "@/lib/vehicles";
 
@@ -150,25 +149,11 @@ const s = StyleSheet.create({
 
   hero: {
     width: "100%",
-    height: 250,
+    height: 280,
     borderRadius: 12,
     objectFit: "cover",
-    marginBottom: 8,
-    backgroundColor: C.panel,
-  },
-  thumbs: {
-    flexDirection: "row",
-    gap: 6,
     marginBottom: 14,
-  },
-  thumb: {
-    flex: 1,
-    height: 72,
-    borderRadius: 8,
-    objectFit: "cover",
     backgroundColor: C.panel,
-    borderWidth: 1,
-    borderColor: C.border,
   },
 
   body: { flexDirection: "row", gap: 12 },
@@ -275,22 +260,6 @@ function abs(origin: string | undefined, path: string) {
   return origin ? `${origin}${path}` : path;
 }
 
-/** Selecciona foto principal + hasta 3 ángulos adicionales del spin. */
-function photosOf(v: Vehicle): string[] {
-  const frames = spinFramesOf(v);
-  if (frames.length >= 4) {
-    const n = frames.length;
-    // Frente, 3/4, perfil, trasera (aprox.)
-    return [
-      v.image,
-      frames[Math.floor(n * 0.25)],
-      frames[Math.floor(n * 0.5)],
-      frames[Math.floor(n * 0.75)],
-    ];
-  }
-  return [v.image];
-}
-
 function VehiclePage({
   v,
   meta,
@@ -304,9 +273,8 @@ function VehiclePage({
   total: number;
   logo: string;
 }) {
-  const photos = photosOf(v);
-  const hero = abs(meta.origin, photos[0]);
-  const thumbs = photos.slice(1, 4).map((p) => abs(meta.origin, p));
+  // El 360° no funciona en PDF (es interactivo en la web). Solo foto de catálogo.
+  const hero = abs(meta.origin, v.image);
   const specs = specsOf(v);
   const monthly = estimateMonthly(v.price);
 
@@ -331,15 +299,6 @@ function VehiclePage({
       {/* eslint-disable-next-line jsx-a11y/alt-text */}
       <Image style={s.hero} src={hero} />
 
-      {thumbs.length > 0 ? (
-        <View style={s.thumbs}>
-          {thumbs.map((src, i) => (
-            // eslint-disable-next-line jsx-a11y/alt-text
-            <Image key={i} style={s.thumb} src={src} />
-          ))}
-        </View>
-      ) : null}
-
       <View style={s.body}>
         <View style={s.left}>
           <Text style={s.sectionTitle}>Ficha técnica</Text>
@@ -359,7 +318,6 @@ function VehiclePage({
             <Text style={s.price}>{formatCLP(v.price)}</Text>
             <Text style={s.monthly}>o {formatCLP(monthly)}/mes (pie 20% · 48 cuotas)</Text>
             <View style={s.badgeRow}>
-              {v.spin ? <Text style={s.badge}>Tour 360°</Text> : null}
               {v.featured ? <Text style={s.badgeFeat}>Destacado</Text> : null}
               <Text style={s.badge}>Garantía 6 meses</Text>
             </View>
