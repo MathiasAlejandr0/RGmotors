@@ -5,6 +5,13 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import SpinUploader from "@/components/admin/SpinUploader";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
+import {
+  VehiclesSection,
+  ReservationsSection,
+  CreditsSection,
+  ClientsSection,
+  ConfigSection,
+} from "@/components/admin/AdminSections";
 import { vehicles, formatCLP } from "@/lib/vehicles";
 
 const NAV = [
@@ -56,18 +63,32 @@ export default function AdminPage() {
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">
-                {active === "spin360"
-                  ? "360° / Videos"
-                  : active === "analitica"
-                    ? "Analítica de negocio"
-                    : "Dashboard"}
+                {
+                  {
+                    dashboard: "Dashboard",
+                    analitica: "Analítica de negocio",
+                    vehiculos: "Vehículos",
+                    spin360: "360° / Videos",
+                    reservas: "Reservas",
+                    creditos: "Créditos",
+                    clientes: "Clientes",
+                    config: "Configuración",
+                  }[active]
+                }
               </h1>
               <p className="text-sm text-white/50">
-                {active === "spin360"
-                  ? "Genera giros 360° de los autos subiendo un video"
-                  : active === "analitica"
-                    ? "Inteligencia de datos para vender más"
-                    : "Resumen general de RG Motors"}
+                {
+                  {
+                    dashboard: "Resumen general de RG Motors",
+                    analitica: "Inteligencia de datos para vender más",
+                    vehiculos: "Inventario publicado en el catálogo",
+                    spin360: "Genera giros 360° de los autos subiendo un video",
+                    reservas: "Reservas con pago parcial",
+                    creditos: "Solicitudes y pre-aprobaciones",
+                    clientes: "Base de clientes y leads",
+                    config: "Datos de la empresa y preferencias",
+                  }[active]
+                }
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-full border border-white/10 bg-ink-800 px-3 py-1.5 text-sm">
@@ -78,7 +99,12 @@ export default function AdminPage() {
 
           {active === "spin360" && <SpinUploader />}
           {active === "analitica" && <AnalyticsDashboard />}
-          {active !== "spin360" && active !== "analitica" && (
+          {active === "vehiculos" && <VehiclesSection />}
+          {active === "reservas" && <ReservationsSection />}
+          {active === "creditos" && <CreditsSection />}
+          {active === "clientes" && <ClientsSection />}
+          {active === "config" && <ConfigSection />}
+          {active === "dashboard" && (
           <>
           {/* Stat cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -26,9 +26,11 @@ export default function TestDriveForm({ vehicle: v }: { vehicle: Vehicle }) {
   const [day, setDay] = useState<number | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [exec, setExec] = useState(EXECUTIVES[0]);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [done, setDone] = useState(false);
 
-  const canConfirm = day && time;
+  const canConfirm = !!(day && time && name.trim() && phone.trim());
 
   if (done) {
     return (
@@ -38,8 +40,9 @@ export default function TestDriveForm({ vehicle: v }: { vehicle: Vehicle }) {
         </div>
         <h2 className="mt-4 text-2xl font-bold text-emerald-300">¡Prueba agendada!</h2>
         <p className="mt-2 text-white/70">
-          Te esperamos el <b>{day}</b> de {monthName} a las <b>{time}</b> en
-          sucursal {branch} para probar el {v.brand} {v.model}.
+          {name ? `${name}, t` : "T"}e esperamos el <b>{day}</b> de {monthName} a las{" "}
+          <b>{time}</b> en sucursal {branch} para probar el {v.brand} {v.model}.
+          {phone ? ` Te confirmaremos al ${phone}.` : ""}
         </p>
         <Link
           href="/catalogo"
@@ -136,12 +139,33 @@ export default function TestDriveForm({ vehicle: v }: { vehicle: Vehicle }) {
           </select>
         </div>
 
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="text-sm text-white/60">Tu nombre</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nombre y apellido"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-ink-900 px-3 py-2.5 text-sm outline-none focus:border-brand-500"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-white/60">Teléfono</label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+56 9 ..."
+              className="mt-1 w-full rounded-lg border border-white/10 bg-ink-900 px-3 py-2.5 text-sm outline-none focus:border-brand-500"
+            />
+          </div>
+        </div>
+
         <button
           onClick={() => setDone(true)}
           disabled={!canConfirm}
           className="mt-6 w-full rounded-xl bg-brand-500 py-3 font-semibold text-white transition hover:bg-brand-400 disabled:opacity-50"
         >
-          {canConfirm ? "Confirmar prueba de manejo" : "Selecciona fecha y hora"}
+          {canConfirm ? "Confirmar prueba de manejo" : "Completa fecha, hora y contacto"}
         </button>
       </div>
     </div>

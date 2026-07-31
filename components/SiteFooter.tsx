@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Logo from "./Logo";
+import { COMPANY, whatsappLink } from "@/lib/company";
 
 export default function SiteFooter() {
   return (
@@ -26,23 +27,34 @@ export default function SiteFooter() {
           <h4 className="text-sm font-semibold text-white/80">Empresa</h4>
           <ul className="mt-3 space-y-2 text-sm text-white/50">
             <li><Link href="/contacto" className="hover:text-white">Contacto</Link></li>
-            <li><a href="#" className="hover:text-white">Vende tu auto</a></li>
-            <li><a href="#" className="hover:text-white">Sucursales</a></li>
+            <li><Link href="/admin" className="hover:text-white">Panel admin</Link></li>
+            <li>
+              <a
+                href={whatsappLink("Hola RG Motors, quiero información.")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white"
+              >
+                WhatsApp
+              </a>
+            </li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-sm font-semibold text-white/80">Contacto</h4>
           <ul className="mt-3 space-y-2 text-sm text-white/50">
-            <li>+56 9 1234 5678</li>
-            <li>contacto@rgmotors.cl</li>
-            <li>Av. Las Condes 1234, Santiago</li>
+            <li>{COMPANY.phoneDisplay}</li>
+            <li>{COMPANY.email}</li>
+            <li>{COMPANY.address}</li>
+            <li className="text-xs text-white/35">{COMPANY.hours}</li>
           </ul>
         </div>
       </div>
       <div className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-4 py-6 text-sm text-white/40">
-          © {new Date().getFullYear()} RG Motors · Todos los derechos reservados
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-6 text-sm text-white/40">
+          <span>© {new Date().getFullYear()} RG Motors · Todos los derechos reservados</span>
+          <span className="text-xs">Demo de presentación · Datos de contacto configurables</span>
         </div>
       </div>
     </footer>

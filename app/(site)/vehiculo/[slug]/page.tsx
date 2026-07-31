@@ -8,6 +8,7 @@ import {
   estimateMonthly,
   spinFramesOf,
 } from "@/lib/vehicles";
+import { whatsappLink } from "@/lib/company";
 import VehicleViewer from "@/components/VehicleViewer";
 import CuotaSimulator from "@/components/CuotaSimulator";
 
@@ -102,6 +103,16 @@ export default async function VehiclePage({
               >
                 Agendar prueba de manejo
               </Link>
+              <a
+                href={whatsappLink(
+                  `Hola RG Motors, me interesa el ${v.brand} ${v.model} ${v.year} (${v.version}) a ${formatCLP(v.price)}. ¿Me pueden dar más información?`
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-xl bg-[#25D366] py-3 text-center font-semibold text-white transition hover:brightness-110"
+              >
+                Consultar por WhatsApp
+              </a>
               <a
                 href="#simulador"
                 className="block rounded-xl border border-white/15 py-3 text-center font-medium text-white/90 transition hover:bg-white/5"

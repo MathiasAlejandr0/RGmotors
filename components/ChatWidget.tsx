@@ -280,6 +280,10 @@ export default function ChatWidget() {
                 ➤
               </button>
             </form>
+            <p className="mt-2 text-[10px] leading-snug text-white/30">
+              Al chatear, RG Motors puede usar tu consulta (tipo de auto, presupuesto)
+              para recomendarte mejor. El contacto solo se guarda si tú lo entregas.
+            </p>
           </div>
         </div>
       )}
