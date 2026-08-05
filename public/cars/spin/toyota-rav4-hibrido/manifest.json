@@ -2,8 +2,14 @@
   "slug": "toyota-rav4-hibrido",
   "count": 200,
   "platesCovered": true,
-  "method": "tight-manual-plate",
-  "frames": [
+  "method": "tour-only-tight-manual",
+  "front": [
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
     68,
     69,
     70,
@@ -28,7 +34,39 @@
     89,
     90,
     91,
-    92
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102
   ],
-  "updatedAt": "2026-08-05T22:58:23.876Z"
+  "rear": [
+    155,
+    156,
+    157,
+    158,
+    159,
+    160,
+    161,
+    162,
+    163,
+    164,
+    165,
+    166,
+    167,
+    168,
+    169,
+    170,
+    171,
+    172,
+    173
+  ],
+  "staticUntouched": true,
+  "updatedAt": "2026-08-05T23:06:41.567Z"
 }
