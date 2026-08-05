@@ -1,9 +1,9 @@
 /**
- * Tapa la patente en el paragolpes inferior.
- * Coordenadas verificadas con regla en frame 083: placa ~y 0.84–0.92.
+ * Tapa la patente SOLO en frames frontales donde se lee.
+ * Ángulos 3/4 / laterales se restauran limpios desde backup.
  */
 import { createCanvas, loadImage } from "@napi-rs/canvas";
-import { readFile, writeFile, access } from "node:fs/promises";
+import { readFile, writeFile, access, copyFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const SPIN = "public/cars/spin/toyota-rav4-hibrido";
@@ -35,19 +35,11 @@ async function paintFrom(srcPath, outPath, fx, fy, fw, fh) {
   await writeFile(outPath, await c.encode("jpeg", 88));
 }
 
-/**
- * Rangos [from, to, x, y, w, h] — y medido con regla sobre 083:
- * placa entre ~0.84 y ~0.92 (NO 0.55–0.75 parrilla/cromado).
- */
+/** Solo frontal: placa centrada y legible (verificado ~083). */
 const RANGES = [
-  [40, 55, 0.52, 0.84, 0.38, 0.11],
-  [56, 69, 0.45, 0.84, 0.38, 0.11],
-  [70, 77, 0.36, 0.83, 0.34, 0.11],
-  [78, 81, 0.36, 0.83, 0.32, 0.11],
-  [82, 86, 0.34, 0.83, 0.34, 0.11],
-  [87, 95, 0.28, 0.83, 0.36, 0.11],
-  [96, 110, 0.12, 0.83, 0.38, 0.12],
-  [111, 130, 0.06, 0.82, 0.38, 0.12],
+  [75, 79, 0.38, 0.83, 0.30, 0.11],
+  [80, 86, 0.34, 0.83, 0.34, 0.11],
+  [87, 92, 0.28, 0.83, 0.34, 0.11],
 ];
 
 const FINE = {
@@ -64,18 +56,28 @@ const EXTRAS = [
 ];
 
 async function main() {
-  let n = 0;
+  // 1) Restaurar TODO el spin desde backup (quita barras en ángulos sin patente)
+  let restored = 0;
+  for (let i = 1; i <= 200; i++) {
+    const id = String(i).padStart(3, "0");
+    const bak = join(BACKUP, `${id}.jpg`);
+    const out = join(SPIN, `${id}.jpg`);
+    if (!(await exists(bak))) continue;
+    await copyFile(bak, out);
+    restored += 1;
+  }
 
+  // 2) Tapar solo frontales
+  let covered = 0;
   for (const [from, to, x, y, w, h] of RANGES) {
     for (let i = from; i <= to; i++) {
       const id = String(i).padStart(3, "0");
       const out = join(SPIN, `${id}.jpg`);
       const bak = join(BACKUP, `${id}.jpg`);
-      if (!(await exists(bak)) && !(await exists(out))) continue;
-      const src = (await exists(bak)) ? bak : out;
+      if (!(await exists(bak))) continue;
       const [fx, fy, fw, fh] = FINE[i] || [x, y, w, h];
-      await paintFrom(src, out, fx, fy, fw, fh);
-      n += 1;
+      await paintFrom(bak, out, fx, fy, fw, fh);
+      covered += 1;
     }
   }
 
@@ -85,7 +87,6 @@ async function main() {
     const bak = join("tmp-plate-backup", "extras", name);
     const src = (await exists(bak)) ? bak : path;
     await paintFrom(src, path, x, y, w, h);
-    n += 1;
   }
 
   await writeFile(
@@ -95,7 +96,7 @@ async function main() {
         slug: "toyota-rav4-hibrido",
         count: 200,
         platesCovered: true,
-        plateBand: "0.83-0.94",
+        coverFrames: "075-092",
         updatedAt: new Date().toISOString(),
       },
       null,
@@ -103,7 +104,7 @@ async function main() {
     )
   );
 
-  console.log(`✓ ${n} frames — barra en y≈0.83–0.94 (paragolpes / placa)`);
+  console.log(`✓ restaurados ${restored}, tapados ${covered} frontales (075–092)`);
 }
 
 main().catch((e) => {
