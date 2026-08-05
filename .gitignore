@@ -34,6 +34,7 @@ next-env.d.ts
 /fotos y videos/
 /tmp-heic/
 /tmp-spin-raw/
+/tmp-plate-backup/
 /public/cars/spin/auto-real-rg/
 
 # editor
