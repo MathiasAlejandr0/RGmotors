@@ -39,12 +39,18 @@ export default function Home() {
           </div>
 
           <div className="animate-fade-up">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/cars/hero-suv.png"
-              alt="Vehículo destacado RG Motors"
-              className="w-full drop-shadow-2xl"
-            />
+            <Link href="/vehiculo/toyota-rav4-hibrido" className="group block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/cars/hero-rav4-real.jpg"
+                alt="Toyota RAV4 Hybrid — destacado RG Motors"
+                className="w-full rounded-2xl object-cover shadow-2xl ring-1 ring-white/10 transition duration-500 group-hover:scale-[1.02]"
+              />
+              <p className="mt-3 text-center text-sm text-white/50">
+                Toyota RAV4 Hybrid ·{" "}
+                <span className="text-brand-300">Tour 360° con fotos reales →</span>
+              </p>
+            </Link>
           </div>
         </div>
 

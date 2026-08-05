@@ -28,6 +28,33 @@ export type Vehicle = {
 
 export const vehicles: Vehicle[] = [
   {
+    slug: "toyota-rav4-hibrido",
+    brand: "Toyota",
+    model: "RAV4",
+    version: "2.5 Hybrid AWD",
+    year: 2023,
+    price: 21990000,
+    km: 28500,
+    fuel: "Híbrido",
+    transmission: "Automática",
+    bodyType: "SUV",
+    location: "Santiago, RM",
+    image: "/cars/toyota-rav4-hibrido.jpg",
+    engine: "2.5L Hybrid",
+    power: "218 HP",
+    traction: "AWD",
+    doors: 5,
+    owners: 1,
+    featured: true,
+    spin: { count: 200 },
+    highlights: [
+      "Tour 360° con video real del vehículo",
+      "Híbrido AWD — bajo consumo",
+      "Inspección de 150 puntos aprobada",
+      "Garantía RG Motors de 6 meses",
+    ],
+  },
+  {
     slug: "toyota-rav4-2022",
     brand: "Toyota",
     model: "RAV4",
@@ -45,8 +72,7 @@ export const vehicles: Vehicle[] = [
     traction: "4x2",
     doors: 5,
     owners: 1,
-    featured: true,
-    spin: { count: 36 },
+    featured: false,
     highlights: [
       "Mantenciones al día en concesionario oficial",
       "Inspección de 150 puntos aprobada",

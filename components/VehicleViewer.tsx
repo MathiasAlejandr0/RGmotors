@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Showroom3D from "./Showroom3D";
 import InteriorTour from "./InteriorTour";
 import PhotoSpin360 from "./PhotoSpin360";
 
 type Tab = "fotos" | "exterior" | "interior" | "informe";
-type ExteriorMode = "fotos" | "3d";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "fotos", label: "Fotos", icon: "🖼️" },
@@ -38,8 +36,6 @@ export default function VehicleViewer({
   spinFrames?: string[];
 }) {
   const [tab, setTab] = useState<Tab>("fotos");
-  // Frames que se muestran: inicia con los del build y se actualiza si el
-  // admin subió un giro nuevo (manifest.json generado por /api/spin).
   const [frames, setFrames] = useState<string[]>(spinFrames);
   const hasSpin = frames.length > 0;
 
@@ -50,23 +46,22 @@ export default function VehicleViewer({
       .then((r) => (r.ok ? r.json() : null))
       .then((m) => {
         if (cancelled || !m || !m.count) return;
+        const bust = m.updatedAt
+          ? `?v=${encodeURIComponent(m.updatedAt)}`
+          : `?v=${Date.now()}`;
         setFrames(
           Array.from(
             { length: m.count },
-            (_, i) => `/cars/spin/${slug}/${String(i + 1).padStart(3, "0")}.jpg`
+            (_, i) =>
+              `/cars/spin/${slug}/${String(i + 1).padStart(3, "0")}.jpg${bust}`
           )
         );
-        setExteriorMode("fotos");
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [slug]);
-
-  const [exteriorMode, setExteriorMode] = useState<ExteriorMode>(
-    spinFrames.length > 0 ? "fotos" : "3d"
-  );
 
   return (
     <div>
@@ -76,10 +71,20 @@ export default function VehicleViewer({
           <img src={image} alt={name} className="h-full w-full object-cover" />
         )}
         {tab === "exterior" &&
-          (hasSpin && exteriorMode === "fotos" ? (
+          (hasSpin ? (
             <PhotoSpin360 frames={frames} className="h-full w-full" />
           ) : (
-            <Showroom3D className="h-full w-full" />
+            <div className="relative flex h-full w-full items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image}
+                alt={name}
+                className="h-full w-full object-cover opacity-40"
+              />
+              <p className="absolute text-sm text-white/70">
+                Tour 360° no disponible para este vehículo
+              </p>
+            </div>
           ))}
         {tab === "interior" && <InteriorTour className="h-full w-full" />}
         {tab === "informe" && (
@@ -107,35 +112,6 @@ export default function VehicleViewer({
         )}
       </div>
 
-      {/* Selector Fotos reales / Modelo 3D (solo si hay fotos 360°) */}
-      {tab === "exterior" && hasSpin && (
-        <div className="mt-3 flex justify-center">
-          <div className="flex gap-1 rounded-full border border-white/10 bg-ink-800/60 p-1">
-            <button
-              onClick={() => setExteriorMode("fotos")}
-              className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
-                exteriorMode === "fotos"
-                  ? "bg-brand-500 text-white"
-                  : "text-white/60 hover:text-white"
-              }`}
-            >
-              📷 Fotos 360°
-            </button>
-            <button
-              onClick={() => setExteriorMode("3d")}
-              className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
-                exteriorMode === "3d"
-                  ? "bg-brand-500 text-white"
-                  : "text-white/60 hover:text-white"
-              }`}
-            >
-              🔄 Modelo 3D
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Tabs / thumbnails */}
       <div className="mt-3 grid grid-cols-4 gap-2">
         {TABS.map((t) => (
           <button
@@ -154,9 +130,9 @@ export default function VehicleViewer({
       </div>
       <p className="mt-2 text-xs text-white/40">
         {tab === "exterior"
-          ? hasSpin && exteriorMode === "fotos"
-            ? "Giro 360° con fotos reales del vehículo: arrastra para girar."
-            : "Modelo 3D interactivo: arrastra para girar y cambia el color."
+          ? hasSpin
+            ? "Tour 360° con video real: arrastra a tu ritmo para ver cada detalle."
+            : "Este vehículo aún no tiene tour 360°."
           : tab === "interior"
             ? "Explora el interior y toca los puntos destacados."
             : tab === "informe"

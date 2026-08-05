@@ -30,6 +30,12 @@ next-env.d.ts
 # leads capturados por el chatbot (datos locales de runtime)
 /data/
 
+# material crudo de captura (video/fotos originales, muy pesados)
+/fotos y videos/
+/tmp-heic/
+/tmp-spin-raw/
+/public/cars/spin/auto-real-rg/
+
 # editor
 .vscode/*
 !.vscode/extensions.json

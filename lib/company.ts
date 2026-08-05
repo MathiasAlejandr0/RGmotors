@@ -9,7 +9,7 @@ export const COMPANY = {
   /** Solo dígitos, formato internacional sin + */
   whatsapp: "56987654321",
   email: "contacto@rgmotors.cl",
-  address: "Av. Apoquindo 4775, Las Condes, Santiago",
+  address: "puerto montt",
   hours: "Lun a Vie 9:00–19:00 · Sáb 10:00–14:00",
   website: "www.rgmotors.cl",
 };
