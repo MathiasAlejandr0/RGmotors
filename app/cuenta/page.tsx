@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import { asset } from "@/lib/asset";
 import { vehicles, formatCLP, estimateMonthly } from "@/lib/vehicles";
 
 const SECTIONS = [
@@ -153,7 +154,7 @@ export default function CuentaPage() {
                     className="overflow-hidden rounded-2xl border border-white/10 bg-ink-800/60 transition hover:border-brand-500/50"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={v.image} alt={v.model} className="aspect-video w-full object-cover" />
+                    <img src={asset(v.image)} alt={v.model} className="aspect-video w-full object-cover" />
                     <div className="p-3">
                       <p className="font-medium">{v.brand} {v.model}</p>
                       <p className="text-sm text-brand-300">{formatCLP(v.price)}</p>
@@ -219,7 +220,7 @@ function ReservaRow({ slug }: { slug: string }) {
   return (
     <div className="flex items-center gap-3 rounded-xl bg-ink-900 p-3">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={v.image} alt={v.model} className="h-14 w-20 rounded-lg object-cover" />
+      <img src={asset(v.image)} alt={v.model} className="h-14 w-20 rounded-lg object-cover" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{v.brand} {v.model}</p>
         <p className="text-xs text-white/50">Reserva pagada · {formatCLP(200000)}</p>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { asset } from "@/lib/asset";
 import { Vehicle, formatCLP, estimateMonthly } from "@/lib/vehicles";
 
 export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
@@ -10,7 +11,7 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
       <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-b from-ink-700 to-ink-900">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={v.image}
+          src={asset(v.image)}
           alt={`${v.brand} ${v.model}`}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />

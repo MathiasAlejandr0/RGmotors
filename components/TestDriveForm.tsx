@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { asset } from "@/lib/asset";
 import { Vehicle, formatCLP } from "@/lib/vehicles";
 
 const BRANCHES = ["Las Condes", "Providencia", "Maipú", "La Florida"];
@@ -59,7 +60,7 @@ export default function TestDriveForm({ vehicle: v }: { vehicle: Vehicle }) {
       {/* Vehicle summary */}
       <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={v.image} alt={v.model} className="w-full rounded-xl object-cover" />
+        <img src={asset(v.image)} alt={v.model} className="w-full rounded-xl object-cover" />
         <p className="mt-4 font-semibold">{v.brand} {v.model}</p>
         <p className="text-sm text-white/50">{v.version} · {v.year}</p>
         <p className="mt-2 text-2xl font-bold text-brand-300">{formatCLP(v.price)}</p>

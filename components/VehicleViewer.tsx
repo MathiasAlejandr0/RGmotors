@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { asset } from "@/lib/asset";
 import InteriorTour from "./InteriorTour";
 import PhotoSpin360 from "./PhotoSpin360";
 
@@ -42,7 +43,7 @@ export default function VehicleViewer({
   useEffect(() => {
     if (!slug) return;
     let cancelled = false;
-    fetch(`/cars/spin/${slug}/manifest.json`, { cache: "no-store" })
+    fetch(asset(`/cars/spin/${slug}/manifest.json`), { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((m) => {
         if (cancelled || !m || !m.count) return;
@@ -53,7 +54,9 @@ export default function VehicleViewer({
           Array.from(
             { length: m.count },
             (_, i) =>
-              `/cars/spin/${slug}/${String(i + 1).padStart(3, "0")}.jpg${bust}`
+              asset(
+                `/cars/spin/${slug}/${String(i + 1).padStart(3, "0")}.jpg`
+              ) + bust
           )
         );
       })

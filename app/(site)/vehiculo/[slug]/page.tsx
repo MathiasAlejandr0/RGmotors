@@ -8,6 +8,7 @@ import {
   estimateMonthly,
   spinFramesOf,
 } from "@/lib/vehicles";
+import { asset } from "@/lib/asset";
 import { whatsappLink } from "@/lib/company";
 import VehicleViewer from "@/components/VehicleViewer";
 import CuotaSimulator from "@/components/CuotaSimulator";
@@ -41,7 +42,7 @@ export default async function VehiclePage({
         {/* Left: viewer + specs */}
         <div>
           <VehicleViewer
-            image={v.image}
+            image={asset(v.image)}
             name={`${v.brand} ${v.model}`}
             slug={v.slug}
             spinFrames={spinFramesOf(v)}
@@ -148,7 +149,7 @@ export default async function VehiclePage({
                 className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-ink-800/60 p-3 transition hover:border-brand-500/50"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={x.image} alt={x.model} className="h-16 w-24 rounded-lg object-cover" />
+                <img src={asset(x.image)} alt={x.model} className="h-16 w-24 rounded-lg object-cover" />
                 <div>
                   <p className="font-medium">{x.brand} {x.model}</p>
                   <p className="text-sm text-brand-300">{formatCLP(x.price)}</p>

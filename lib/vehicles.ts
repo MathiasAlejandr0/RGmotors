@@ -1,3 +1,5 @@
+import { asset } from "@/lib/asset";
+
 export type Vehicle = {
   slug: string;
   brand: string;
@@ -309,7 +311,8 @@ export function spinFramesOf(v: Vehicle): string[] {
   const ext = v.spin.ext ?? "jpg";
   return Array.from(
     { length: v.spin.count },
-    (_, i) => `/cars/spin/${v.slug}/${String(i + 1).padStart(3, "0")}.${ext}`
+    (_, i) =>
+      asset(`/cars/spin/${v.slug}/${String(i + 1).padStart(3, "0")}.${ext}`)
   );
 }
 

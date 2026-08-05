@@ -15,6 +15,7 @@ import {
   StyleSheet,
   pdf,
 } from "@react-pdf/renderer";
+import { asset } from "@/lib/asset";
 import {
   estimateMonthly,
   formatCLP,
@@ -257,7 +258,8 @@ type Meta = {
 };
 
 function abs(origin: string | undefined, path: string) {
-  return origin ? `${origin}${path}` : path;
+  const resolved = asset(path);
+  return origin ? `${origin}${resolved}` : resolved;
 }
 
 function VehiclePage({

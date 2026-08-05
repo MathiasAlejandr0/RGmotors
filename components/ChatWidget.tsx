@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
+import { asset } from "@/lib/asset";
 import { vehicles, formatCLP } from "@/lib/vehicles";
 
 type Msg = { role: "user" | "ai"; text: string; cars?: string[] };
@@ -197,7 +198,7 @@ export default function ChatWidget() {
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={v.image}
+                            src={asset(v.image)}
                             alt={v.model}
                             className="h-12 w-16 rounded-lg object-cover"
                           />

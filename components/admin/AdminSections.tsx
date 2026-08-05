@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { asset } from "@/lib/asset";
 import { vehicles, formatCLP, estimateMonthly } from "@/lib/vehicles";
 import { COMPANY } from "@/lib/company";
 
@@ -77,7 +78,7 @@ export function VehiclesSection() {
                   <td className="py-3">
                     <div className="flex items-center gap-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={v.image} alt={v.model} className="h-10 w-14 rounded-lg object-cover" />
+                      <img src={asset(v.image)} alt={v.model} className="h-10 w-14 rounded-lg object-cover" />
                       <div>
                         <p className="font-medium">
                           {v.brand} {v.model}

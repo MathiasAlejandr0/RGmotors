@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { asset } from "@/lib/asset";
 import { vehicles, formatCLP } from "@/lib/vehicles";
 import VehicleCard from "@/components/VehicleCard";
 
@@ -42,7 +43,7 @@ export default function Home() {
             <Link href="/vehiculo/toyota-rav4-hibrido" className="group block">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/cars/hero-rav4-real.jpg"
+                src={asset("/cars/hero-rav4-real.jpg")}
                 alt="Toyota RAV4 Hybrid — destacado RG Motors"
                 className="w-full rounded-2xl object-cover shadow-2xl ring-1 ring-white/10 transition duration-500 group-hover:scale-[1.02]"
               />

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
+import { asset } from "@/lib/asset";
 
 type Hotspot = {
   id: string;
@@ -35,8 +36,8 @@ const REAR: Hotspot[] = [
 ];
 
 const VIEWPOINTS: Viewpoint[] = [
-  { id: "conductor", label: "Conductor", image: "/cars/pano-front.png", lon: 0, hotspots: FRONT },
-  { id: "trasera", label: "Trasera", image: "/cars/pano-rear.png", lon: 0, hotspots: REAR },
+  { id: "conductor", label: "Conductor", image: asset("/cars/pano-front.png"), lon: 0, hotspots: FRONT },
+  { id: "trasera", label: "Trasera", image: asset("/cars/pano-rear.png"), lon: 0, hotspots: REAR },
 ];
 
 const D2R = Math.PI / 180;

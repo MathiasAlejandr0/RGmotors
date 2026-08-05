@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { asset } from "@/lib/asset";
 import { Vehicle, formatCLP } from "@/lib/vehicles";
 
 const RESERVE_AMOUNT = 200000;
@@ -57,7 +58,7 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
         <h2 className="text-lg font-semibold">Reserva este vehículo</h2>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={v.image}
+          src={asset(v.image)}
           alt={v.model}
           className="mt-4 w-full rounded-xl object-cover"
         />

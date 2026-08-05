@@ -12,6 +12,7 @@ import {
   ClientsSection,
   ConfigSection,
 } from "@/components/admin/AdminSections";
+import { asset } from "@/lib/asset";
 import { vehicles, formatCLP } from "@/lib/vehicles";
 
 const NAV = [
@@ -132,7 +133,7 @@ export default function AdminPage() {
                   <div key={v.slug} className="flex items-center gap-3">
                     <span className="text-sm text-white/30">{i + 1}</span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={v.image} alt={v.model} className="h-10 w-14 rounded-lg object-cover" />
+                    <img src={asset(v.image)} alt={v.model} className="h-10 w-14 rounded-lg object-cover" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{v.brand} {v.model}</p>
                       <p className="text-xs text-white/40">{formatCLP(v.price)}</p>

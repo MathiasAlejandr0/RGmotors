@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { asset } from "@/lib/asset";
 import { vehicles, Vehicle, formatCLP } from "@/lib/vehicles";
 
 const ROWS: { label: string; get: (v: Vehicle) => string }[] = [
@@ -49,7 +50,7 @@ export default function ComparadorPage() {
                 <th key={v.slug} className="p-3 align-top">
                   <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={v.image} alt={v.model} className="h-24 w-full rounded-lg object-cover" />
+                    <img src={asset(v.image)} alt={v.model} className="h-24 w-full rounded-lg object-cover" />
                     <p className="mt-2 text-sm font-semibold">{v.brand} {v.model}</p>
                     <p className="text-xs text-white/50">{v.version}</p>
                     <button
