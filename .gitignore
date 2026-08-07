@@ -42,3 +42,20 @@ next-env.d.ts
 !.vscode/extensions.json
 .idea
 .vercel
+
+# tests
+/coverage/
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
+
+# dumps locales de depuración
+/tmp-*/
+/tmp-*.jpg
+/tmp-*.png
+/tmp-*.webp
+
+# bloqueos temporales de Microsoft Word
+**/~$*.docx
+**/~$*.doc
