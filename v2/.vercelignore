@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.git
+fotos y videos
+tmp-heic
+tmp-spin-raw
+data
+*.MOV
+*.mov
+*.mp4
+.env*
+README.md
+scripts

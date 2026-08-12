@@ -2,7 +2,7 @@
  * Build estático para GitHub Pages.
  * Las API routes no son compatibles con output:export → se apartan temporalmente.
  */
-import { rename, access, rm } from "node:fs/promises";
+import { rename, access, rm, cp } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,13 +21,22 @@ async function exists(p) {
   }
 }
 
+async function moveDir(src, dest) {
+  try {
+    await rename(src, dest);
+  } catch {
+    await cp(src, dest, { recursive: true });
+    await rm(src, { recursive: true, force: true });
+  }
+}
+
 async function main() {
   const hadApi = await exists(api);
   if (hadApi) {
     if (await exists(apiOff)) {
-      throw new Error("Ya existe app/_api_disabled; limpia a mano y reintenta.");
+      await rm(apiOff, { recursive: true, force: true });
     }
-    await rename(api, apiOff);
+    await moveDir(api, apiOff);
     console.log("→ API routes apartadas (app/_api_disabled)");
   }
 
@@ -54,11 +63,12 @@ async function main() {
     console.log("✓ Export estático listo en /out");
   } finally {
     if (hadApi && (await exists(apiOff))) {
-      await rename(apiOff, api);
+      await moveDir(apiOff, api);
       console.log("→ API routes restauradas");
     }
   }
 }
+
 
 main().catch((e) => {
   console.error(e);

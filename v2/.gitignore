@@ -1,0 +1,61 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# leads capturados por el chatbot (datos locales de runtime)
+/data/
+
+# material crudo de captura (video/fotos originales, muy pesados)
+/fotos y videos/
+/tmp-heic/
+/tmp-spin-raw/
+/tmp-plate-backup/
+/public/cars/spin/auto-real-rg/
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.vercel
+
+# tests
+/coverage/
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
+
+# dumps locales de depuración
+/tmp-*/
+/tmp-*.jpg
+/tmp-*.png
+/tmp-*.webp
+
+# bloqueos temporales de Microsoft Word
+**/~$*.docx
+**/~$*.doc
