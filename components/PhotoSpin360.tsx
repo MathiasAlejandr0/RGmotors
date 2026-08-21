@@ -147,22 +147,44 @@ export default function PhotoSpin360({
     return () => window.clearTimeout(t);
   }, [ready, showHint]);
 
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    setShowHint(false);
-    draggingRef.current = true;
-    setDragging(true);
-    dragAccRef.current = 0;
-    lastXRef.current = e.clientX;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  const velocityRef = useRef(0);
+  const lastTimeRef = useRef(0);
+  const animFrameRef = useRef<number | null>(null);
+
+  const stopInertia = useCallback(() => {
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
   }, []);
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      stopInertia();
+      setShowHint(false);
+      draggingRef.current = true;
+      setDragging(true);
+      dragAccRef.current = 0;
+      lastXRef.current = e.clientX;
+      lastTimeRef.current = performance.now();
+      velocityRef.current = 0;
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [stopInertia]
+  );
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (!draggingRef.current) return;
+      const now = performance.now();
+      const dt = Math.max(1, now - lastTimeRef.current);
       const dx = e.clientX - lastXRef.current;
       lastXRef.current = e.clientX;
+      lastTimeRef.current = now;
 
-      // ~1.4 anchos ≈ una vuelta: arrastre controlado, sin auto-giro
+      const instantVelocity = dx / dt;
+      velocityRef.current = velocityRef.current * 0.4 + instantVelocity * 0.6;
+
       const sens = Math.max(
         7,
         dragSensitivity ??
@@ -183,16 +205,50 @@ export default function PhotoSpin360({
     [dragSensitivity, setFrame, total]
   );
 
-  const endDrag = useCallback((e: React.PointerEvent) => {
-    draggingRef.current = false;
-    setDragging(false);
-    dragAccRef.current = 0;
-    try {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      /* noop */
-    }
-  }, []);
+  const endDrag = useCallback(
+    (e: React.PointerEvent) => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      setDragging(false);
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {
+        /* noop */
+      }
+
+      let v = velocityRef.current * 14;
+      const sens = Math.max(
+        7,
+        dragSensitivity ??
+          Math.round(((sizeRef.current.w || 640) * 1.4) / Math.max(1, total))
+      );
+
+      if (Math.abs(v) > 0.8) {
+        let acc = dragAccRef.current;
+        const stepInertia = () => {
+          if (Math.abs(v) < 0.15 || draggingRef.current) {
+            stopInertia();
+            return;
+          }
+          acc += v;
+          v *= 0.91; // Fricción de desaceleración suave
+
+          while (Math.abs(acc) >= sens) {
+            if (acc > 0) {
+              setFrame(indexRef.current - 1);
+              acc -= sens;
+            } else {
+              setFrame(indexRef.current + 1);
+              acc += sens;
+            }
+          }
+          animFrameRef.current = requestAnimationFrame(stepInertia);
+        };
+        animFrameRef.current = requestAnimationFrame(stepInertia);
+      }
+    },
+    [dragSensitivity, setFrame, stopInertia, total]
+  );
 
   const toggleFullscreen = useCallback(() => {
     const el = wrapRef.current;

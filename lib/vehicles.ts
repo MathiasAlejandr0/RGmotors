@@ -48,7 +48,7 @@ export const vehicles: Vehicle[] = [
     doors: 5,
     owners: 1,
     featured: true,
-    spin: { count: 200 },
+    spin: { count: 36 },
     highlights: [
       "Tour 360° con video real del vehículo",
       "Híbrido AWD — bajo consumo",

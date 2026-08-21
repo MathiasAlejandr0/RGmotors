@@ -59,3 +59,7 @@ next-env.d.ts
 # bloqueos temporales de Microsoft Word
 **/~$*.docx
 **/~$*.doc
+
+# omo session data
+.omo/
+
