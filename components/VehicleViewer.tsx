@@ -24,11 +24,15 @@ export default function VehicleViewer({
 }) {
   const [tab, setTab] = useState<Tab>("fotos");
   const [frames, setFrames] = useState<string[]>(spinFrames);
+  const [galleryImages, setGalleryImages] = useState<string[]>([image]);
+  const [selectedPhotoIdx, setSelectedPhotoIdx] = useState(0);
   const hasSpin = frames.length > 0;
 
   useEffect(() => {
     if (!slug) return;
     let cancelled = false;
+
+    // Cargar fotogramas 360 y galería de fotos
     fetch(asset(`/cars/spin/${slug}/manifest.json`), { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((m) => {
@@ -47,10 +51,24 @@ export default function VehicleViewer({
         );
       })
       .catch(() => {});
+
+    fetch(`/api/photos?slug=${encodeURIComponent(slug)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        if (data.gallery && data.gallery.length > 0) {
+          const urls = data.gallery.map((g: { url: string }) => g.url);
+          setGalleryImages([image, ...urls]);
+        }
+      })
+      .catch(() => {});
+
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, image]);
+
+  const currentPhoto = galleryImages[selectedPhotoIdx] || image;
 
   return (
     <div className="space-y-4">
@@ -77,8 +95,28 @@ export default function VehicleViewer({
 
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-b from-ink-900 to-ink-950 shadow-apple-card sm:aspect-[16/10]">
         {tab === "fotos" && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt={name} className="h-full w-full object-cover" />
+          <div className="relative h-full w-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={currentPhoto}
+              alt={name}
+              className="h-full w-full object-cover transition-opacity duration-300"
+            />
+            {galleryImages.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur-sm">
+                {galleryImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedPhotoIdx(idx)}
+                    className={`h-2.5 rounded-full transition-all ${
+                      selectedPhotoIdx === idx ? "w-6 bg-brand-400" : "w-2.5 bg-white/40 hover:bg-white/70"
+                    }`}
+                    aria-label={`Foto ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         )}
         {tab === "exterior" &&
           (hasSpin ? (

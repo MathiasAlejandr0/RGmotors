@@ -47,16 +47,30 @@ function Panel({
 }
 
 /** Inventario completo del catálogo (demo). */
-export function VehiclesSection() {
+export function VehiclesSection({
+  onManagePhotos,
+}: {
+  onManagePhotos?: (slug: string) => void;
+}) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-white/50">
           {vehicles.length} vehículos publicados · stock demo para presentación
         </p>
-        <button className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-400">
-          + Publicar vehículo
-        </button>
+        <div className="flex gap-2">
+          {onManagePhotos && (
+            <button
+              onClick={() => onManagePhotos(vehicles[0]?.slug || "")}
+              className="rounded-xl border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm font-semibold text-brand-300 transition hover:bg-brand-500/20"
+            >
+              📸 Subir / Gestionar Fotos
+            </button>
+          )}
+          <button className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-400">
+            + Publicar vehículo
+          </button>
+        </div>
       </div>
       <Panel title="Inventario">
         <div className="overflow-x-auto">
@@ -69,7 +83,7 @@ export function VehiclesSection() {
                 <th className="pb-2 font-medium">Precio</th>
                 <th className="pb-2 font-medium">360°</th>
                 <th className="pb-2 font-medium">Estado</th>
-                <th className="pb-2 font-medium" />
+                <th className="pb-2 font-medium text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -97,9 +111,20 @@ export function VehiclesSection() {
                     {v.featured ? <Badge>Destacado</Badge> : <Badge tone="emerald">Publicado</Badge>}
                   </td>
                   <td className="py-3 text-right">
-                    <Link href={`/vehiculo/${v.slug}`} className="text-xs text-brand-300 hover:underline">
-                      Ver ficha
-                    </Link>
+                    <div className="flex items-center justify-end gap-2">
+                      {onManagePhotos && (
+                        <button
+                          onClick={() => onManagePhotos(v.slug)}
+                          className="rounded-lg bg-ink-700 px-2.5 py-1 text-xs font-medium text-white/80 transition hover:bg-brand-500 hover:text-white"
+                          title="Subir fotos y giros 360"
+                        >
+                          📷 Fotos
+                        </button>
+                      )}
+                      <Link href={`/vehiculo/${v.slug}`} className="text-xs text-brand-300 hover:underline">
+                        Ver ficha
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

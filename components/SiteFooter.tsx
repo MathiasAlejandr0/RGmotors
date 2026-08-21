@@ -27,7 +27,6 @@ export default function SiteFooter() {
           <h4 className="text-xs font-bold uppercase tracking-wider text-white/70">Empresa</h4>
           <ul className="mt-4 space-y-2.5 text-xs text-white/50">
             <li><Link href="/contacto" className="hover:text-white transition-colors">Contacto y ubicación</Link></li>
-            <li><Link href="/admin" className="hover:text-white transition-colors">Panel administrativo</Link></li>
             <li>
               <a
                 href={whatsappLink("Hola RG Motors, quiero información.")}

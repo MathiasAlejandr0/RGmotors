@@ -15,11 +15,12 @@ const SUGGESTIONS = [
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
+  const [showTeaser, setShowTeaser] = useState(true);
   const [input, setInput] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: "ai",
-      text: "¡Hola! Soy RG AI 🤖 Cuéntame qué auto buscas (uso, presupuesto, tipo) y te recomiendo opciones de nuestro catálogo.",
+      text: "¡Hola! Soy Vendedor RG Motors 🤖 Cuéntame qué auto buscas (uso, presupuesto, tipo) y te recomiendo opciones de nuestro catálogo.",
     },
   ]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -33,6 +34,14 @@ export default function ChatWidget() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 999999, behavior: "smooth" });
   }, [msgs, open]);
+
+  // Mostrar el teaser flotante suavemente después de 1.2 segundos
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowTeaser(true);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     try {
@@ -153,26 +162,78 @@ export default function ChatWidget() {
 
   return (
     <>
+      {/* Teaser flotante elegante y no invasivo */}
+      {!open && showTeaser && (
+        <div
+          onClick={() => {
+            setOpen(true);
+            setShowTeaser(false);
+          }}
+          className="fixed bottom-6 right-24 z-50 hidden sm:flex max-w-[310px] cursor-pointer items-center gap-3 rounded-2xl border border-white/15 bg-ink-950/90 p-3 pr-3.5 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:scale-[1.02] hover:border-brand-500/50 active:scale-95 animate-fade-in group"
+        >
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-xs shadow-glow">
+            🤖
+            <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-ink-950 bg-emerald-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-xs font-bold text-white group-hover:text-brand-300 transition-colors">
+                Vendedor RG Motors
+              </span>
+              <span className="text-[9px] text-emerald-400">● En línea</span>
+            </div>
+            <p className="truncate text-[11px] text-white/70">
+              ¿Buscas auto? Haz clic para asesorarte ➔
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowTeaser(false);
+            }}
+            className="grid h-5 w-5 place-items-center rounded-full text-white/40 hover:bg-white/10 hover:text-white transition"
+            aria-label="Cerrar sugerencia"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Botón flotante de chat */}
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          setOpen((o) => !o);
+          if (!open) setShowTeaser(false);
+        }}
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-2xl text-white shadow-glow transition-all duration-300 hover:scale-105 active:scale-95 border border-white/20 backdrop-blur-xl"
-        aria-label="Chat con RG AI"
+        aria-label="Chat con Vendedor RG Motors"
       >
         {open ? "✕" : "💬"}
       </button>
 
+      {/* Ventana de chat desplegada */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-[540px] w-[min(92vw,390px)] flex-col overflow-hidden rounded-3xl border border-white/15 bg-ink-950/85 backdrop-blur-2xl shadow-modal animate-fade-up">
+        <div className="fixed bottom-24 right-6 z-50 flex h-[500px] max-h-[75vh] w-[min(92vw,375px)] flex-col overflow-hidden rounded-3xl border border-white/15 bg-ink-950/90 backdrop-blur-2xl shadow-2xl animate-fade-up">
           {/* Header style iMessage */}
-          <div className="flex items-center gap-3 border-b border-white/10 bg-white/[0.03] px-5 py-3.5 backdrop-blur-md">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-sm shadow-glow">
-              🤖
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-ink-950 bg-emerald-400" />
+          <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-3.5 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-sm shadow-glow">
+                🤖
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-ink-950 bg-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold tracking-tight text-white">Vendedor RG Motors</p>
+                <p className="text-[10px] text-emerald-400">● En línea para ayudarte</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-bold tracking-tight text-white">RG AI Assistant</p>
-              <p className="text-[10px] text-white/50">Asesor de vehículos en tiempo real</p>
-            </div>
+            <button
+              onClick={() => setOpen(false)}
+              className="grid h-7 w-7 place-items-center rounded-lg text-white/40 hover:bg-white/10 hover:text-white transition"
+              aria-label="Cerrar chat"
+            >
+              ✕
+            </button>
           </div>
 
           {/* Messages */}

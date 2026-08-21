@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import SpinUploader from "@/components/admin/SpinUploader";
+import PhotoManager from "@/components/admin/PhotoManager";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import {
   VehiclesSection,
@@ -19,6 +20,7 @@ const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "▦" },
   { id: "analitica", label: "Analítica", icon: "📊" },
   { id: "vehiculos", label: "Vehículos", icon: "🚗" },
+  { id: "fotos", label: "Fotos & Galería", icon: "📸" },
   { id: "spin360", label: "360° / Videos", icon: "🔄" },
   { id: "reservas", label: "Reservas", icon: "★" },
   { id: "creditos", label: "Créditos", icon: "💳" },
@@ -31,6 +33,12 @@ const MONTHS = ["E", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 export default function AdminPage() {
   const [active, setActive] = useState("dashboard");
+  const [photoSlug, setPhotoSlug] = useState<string>(vehicles[0]?.slug ?? "");
+
+  const handleOpenPhotoManager = (slug: string) => {
+    setPhotoSlug(slug);
+    setActive("fotos");
+  };
 
   return (
     <div className="min-h-screen bg-ink-950">
@@ -69,6 +77,7 @@ export default function AdminPage() {
                     dashboard: "Dashboard",
                     analitica: "Analítica de negocio",
                     vehiculos: "Vehículos",
+                    fotos: "Gestor de Fotos y Galería",
                     spin360: "360° / Videos",
                     reservas: "Reservas",
                     creditos: "Créditos",
@@ -83,6 +92,7 @@ export default function AdminPage() {
                     dashboard: "Resumen general de RG Motors",
                     analitica: "Inteligencia de datos para vender más",
                     vehiculos: "Inventario publicado en el catálogo",
+                    fotos: "Sube, organiza fotos y fotogramas 360° fácilmente",
                     spin360: "Genera giros 360° de los autos subiendo un video",
                     reservas: "Reservas con pago parcial",
                     creditos: "Solicitudes y pre-aprobaciones",
@@ -98,9 +108,10 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {active === "fotos" && <PhotoManager initialSlug={photoSlug} />}
           {active === "spin360" && <SpinUploader />}
           {active === "analitica" && <AnalyticsDashboard />}
-          {active === "vehiculos" && <VehiclesSection />}
+          {active === "vehiculos" && <VehiclesSection onManagePhotos={handleOpenPhotoManager} />}
           {active === "reservas" && <ReservationsSection />}
           {active === "creditos" && <CreditsSection />}
           {active === "clientes" && <ClientsSection />}

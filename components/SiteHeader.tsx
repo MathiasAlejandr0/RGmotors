@@ -54,12 +54,6 @@ export default function SiteHeader() {
 
         <div className="flex items-center gap-3">
           <Link
-            href="/cuenta"
-            className="apple-btn-secondary hidden rounded-full px-5 py-2.5 text-sm font-medium transition-all sm:block"
-          >
-            Iniciar sesión
-          </Link>
-          <Link
             href="/catalogo"
             className="apple-btn-primary hidden rounded-full px-6 py-2.5 text-sm font-bold tracking-wide text-white shadow-glow transition-all hover:scale-105 active:scale-95 sm:block"
           >
@@ -92,23 +86,15 @@ export default function SiteHeader() {
                 {item.label}
               </Link>
             ))}
-            <div className="mt-3 grid grid-cols-2 gap-2.5 pt-3 border-t border-white/10 sm:hidden">
-              <Link
-                href="/cuenta"
-                onClick={() => setOpen(false)}
-                className="apple-btn-secondary rounded-full py-3 text-center text-sm font-medium"
-              >
-                Iniciar sesión
-              </Link>
+            <div className="mt-3 pt-3 border-t border-white/10 sm:hidden">
               <Link
                 href="/catalogo"
                 onClick={() => setOpen(false)}
-                className="apple-btn-primary rounded-full py-3 text-center text-sm font-bold text-white shadow-glow"
+                className="apple-btn-primary block w-full rounded-full py-3 text-center text-sm font-bold text-white shadow-glow"
               >
-                Ver autos
+                Ver catálogo completo
               </Link>
             </div>
-
           </div>
         </nav>
       )}
