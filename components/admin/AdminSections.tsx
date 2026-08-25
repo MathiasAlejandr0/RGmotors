@@ -8,6 +8,9 @@ import VehicleEditorModal from "./VehicleEditorModal";
 import { Reservation } from "@/lib/server/reservationsStore";
 import { CreditApplication } from "@/lib/server/creditsStore";
 import { SystemSettings } from "@/lib/server/settingsStore";
+import { TradeInRequest } from "@/lib/server/tradeInStore";
+import { CarRequest } from "@/lib/server/carRequestsStore";
+import { PriceAlert } from "@/lib/server/priceAlertsStore";
 
 const STATUS_BADGES = {
   Disponible: "bg-emerald-400/15 text-emerald-300 border-emerald-500/30",
@@ -996,3 +999,541 @@ export function ConfigSection() {
     </form>
   );
 }
+
+/**
+ * SECCIÓN 6: LEAD SCORING INTELIGENTE (SEMÁFORO DE COMPRA)
+ */
+export function LeadScoringSection() {
+  const [credits, setCredits] = useState<CreditApplication[]>([]);
+  const [tradeIns, setTradeIns] = useState<TradeInRequest[]>([]);
+  const [carRequests, setCarRequests] = useState<CarRequest[]>([]);
+  const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
+  const [filterScore, setFilterScore] = useState<"all" | "hot" | "warm" | "cold">("all");
+
+  useEffect(() => {
+    fetch("/api/credits").then((r) => r.ok ? r.json() : { applications: [] }).then((d) => setCredits(d.applications || []));
+    fetch("/api/trade-in").then((r) => r.ok ? r.json() : { requests: [] }).then((d) => setTradeIns(d.requests || []));
+    fetch("/api/car-requests").then((r) => r.ok ? r.json() : { requests: [] }).then((d) => setCarRequests(d.requests || []));
+    fetch("/api/price-alerts").then((r) => r.ok ? r.json() : { alerts: [] }).then((d) => setPriceAlerts(d.alerts || []));
+  }, []);
+
+  // Consolidar todos los leads con scoring unificado
+  const allLeads = [
+    ...credits.map((c) => ({
+      id: c.id,
+      name: c.clientName,
+      phone: c.phone,
+      type: "Pre-aprobación Crédito (RUT)",
+      detail: c.rut ? `RUT: ${c.rut} · Renta: ${formatCLP(c.income || 0)}` : `Pie ${c.downPct}%`,
+      score: c.score || 95,
+      date: c.date,
+      hotText: "🔥 ¡Cupo pre-aprobado! Contactar prioritario",
+    })),
+    ...tradeIns.map((t) => ({
+      id: t.id,
+      name: t.clientName,
+      phone: t.phone,
+      type: "Entrega Auto en Parte de Pago",
+      detail: `${t.brand} ${t.model} (${t.year}) → Compra: ${t.targetVehicleSlug || "Catálogo"}`,
+      score: t.score || 90,
+      date: t.date,
+      hotText: "💎 Quiere entregar auto usado + comprar nuevo",
+    })),
+    ...carRequests.map((r) => ({
+      id: r.id,
+      name: r.clientName,
+      phone: r.phone,
+      type: "Auto a Pedido / Personal Shopper",
+      detail: `Busca: ${r.brand} ${r.model} (Hasta ${formatCLP(r.maxBudget)})`,
+      score: r.score || 85,
+      date: r.date,
+      hotText: "🎯 Comprador con presupuesto definido",
+    })),
+    ...priceAlerts.map((a) => ({
+      id: a.id,
+      name: a.clientName,
+      phone: a.phone,
+      type: "Alerta de Rebaja de Precio",
+      detail: `${a.vehicleName} (Obj: ${formatCLP(a.targetPrice || a.currentPrice)})`,
+      score: a.score || 80,
+      date: a.date,
+      hotText: "⚡ Esperando oferta comercial",
+    })),
+  ].sort((a, b) => b.score - a.score || new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const filteredLeads = allLeads.filter((l) => {
+    if (filterScore === "hot") return l.score >= 90;
+    if (filterScore === "warm") return l.score >= 70 && l.score < 90;
+    if (filterScore === "cold") return l.score < 70;
+    return true;
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Banner Regla de los 15 minutos */}
+      <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-ink-900 to-black p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">⏱️</span>
+          <div>
+            <h3 className="text-sm font-bold text-white">Regla de Oro Comercial: Respuesta en menos de 15 min</h3>
+            <p className="text-xs text-white/60">
+              Un cliente calificado contactado durante los primeros 15 minutos tiene un <b>400% más de tasa de cierre</b>.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setFilterScore("all")}
+            className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${
+              filterScore === "all" ? "bg-brand-500 text-white" : "bg-ink-950 text-white/60"
+            }`}
+          >
+            Todos ({allLeads.length})
+          </button>
+          <button
+            onClick={() => setFilterScore("hot")}
+            className={`rounded-xl px-3 py-1.5 text-xs font-bold ${
+              filterScore === "hot" ? "bg-emerald-500 text-white" : "bg-ink-950 text-emerald-400"
+            }`}
+          >
+            🔥 Calientes ({allLeads.filter((l) => l.score >= 90).length})
+          </button>
+          <button
+            onClick={() => setFilterScore("warm")}
+            className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${
+              filterScore === "warm" ? "bg-amber-500 text-white" : "bg-ink-950 text-amber-400"
+            }`}
+          >
+            🟡 Tibios ({allLeads.filter((l) => l.score >= 70 && l.score < 90).length})
+          </button>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {filteredLeads.map((lead) => {
+          const cleanPhone = lead.phone.replace(/[^0-9]/g, "");
+          const waMsg = `Hola ${lead.name}, te contactamos de RG Motors respecto a tu solicitud de ${lead.type.toLowerCase()}. Vimos que tienes alta compatibilidad y queremos asesorarte personalmente.`;
+          const waUrl = `https://wa.me/${cleanPhone.startsWith("56") ? cleanPhone : `56${cleanPhone}`}?text=${encodeURIComponent(waMsg)}`;
+
+          const isHot = lead.score >= 90;
+          const isWarm = lead.score >= 70 && lead.score < 90;
+
+          return (
+            <div
+              key={lead.id}
+              className={`rounded-2xl border p-4 backdrop-blur-md space-y-3 ${
+                isHot
+                  ? "border-emerald-500/40 bg-emerald-500/10 shadow-glow"
+                  : isWarm
+                  ? "border-amber-500/30 bg-amber-500/5"
+                  : "border-white/10 bg-ink-900/60"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                  isHot ? "bg-emerald-400/20 text-emerald-300" : "bg-amber-400/20 text-amber-300"
+                }`}>
+                  {isHot ? "🟢 Score " : "🟡 Score "} {lead.score}/100
+                </span>
+                <span className="text-[10px] text-white/40">
+                  {new Date(lead.date).toLocaleDateString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-white text-sm">{lead.name}</h4>
+                <p className="text-xs text-brand-300 font-semibold mt-0.5">{lead.type}</p>
+                <p className="text-[11px] text-white/60 mt-1">{lead.detail}</p>
+              </div>
+
+              <div className="rounded-xl bg-ink-950 p-2.5 text-[11px] text-white/80 font-medium border border-white/5">
+                {lead.hotText}
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="apple-btn-primary flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-white"
+                >
+                  <span>💬</span> WhatsApp
+                </a>
+                <a
+                  href={`tel:${lead.phone}`}
+                  className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10"
+                >
+                  📞 Llamar
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * SECCIÓN 7: MINERÍA DE TASACIONES & PARTE DE PAGO
+ */
+export function TradeInsSection() {
+  const [requests, setRequests] = useState<TradeInRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchTradeIns = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/trade-in");
+      if (res.ok) {
+        const data = await res.json();
+        setRequests(data.requests || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTradeIns();
+  }, [fetchTradeIns]);
+
+  const handleUpdateStatus = async (id: string, status: TradeInRequest["status"]) => {
+    try {
+      await fetch(`/api/trade-in/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      fetchTradeIns();
+    } catch {}
+  };
+
+  return (
+    <Panel
+      title="Minería de Tasaciones & Retomas"
+      action={
+        <span className="text-xs text-brand-300 font-semibold">
+          {requests.length} tasaciones recibidas
+        </span>
+      }
+    >
+      <p className="text-xs text-white/55 mb-4">
+        Oportunidades de doble negocio: compra de autos usados a valor retoma + venta de vehículos del catálogo.
+      </p>
+
+      {isLoading ? (
+        <div className="py-12 text-center text-xs text-white/40">Cargando tasaciones…</div>
+      ) : requests.length === 0 ? (
+        <div className="py-12 text-center text-xs text-white/40">No hay tasaciones registradas aún.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-xs">
+            <thead className="text-left text-white/40 border-b border-white/10 pb-2">
+              <tr>
+                <th className="pb-2">Cliente & Contacto</th>
+                <th className="pb-2">Auto Actual a Retoma</th>
+                <th className="pb-2">Auto que Desea Comprar</th>
+                <th className="pb-2">Tasación Sugerida</th>
+                <th className="pb-2">Estado</th>
+                <th className="pb-2 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {requests.map((r) => {
+                const cleanPhone = r.phone.replace(/[^0-9]/g, "");
+                const waMsg = `Hola ${r.clientName}, te contactamos de RG Motors respecto a la tasación de tu ${r.brand} ${r.model} (${r.year}) para la compra de tu próximo auto. Tenemos una propuesta lista.`;
+                const waUrl = `https://wa.me/${cleanPhone.startsWith("56") ? cleanPhone : `56${cleanPhone}`}?text=${encodeURIComponent(waMsg)}`;
+
+                return (
+                  <tr key={r.id} className="hover:bg-white/[0.02]">
+                    <td className="py-3">
+                      <p className="font-bold text-white">{r.clientName}</p>
+                      <p className="text-white/50">{r.phone}</p>
+                    </td>
+                    <td className="py-3">
+                      <p className="font-semibold text-brand-300">{r.brand} {r.model} ({r.year})</p>
+                      <p className="text-white/50">{r.km.toLocaleString("es-CL")} km</p>
+                    </td>
+                    <td className="py-3 font-medium text-white">
+                      {r.targetVehicleSlug || "Sin auto asignado"}
+                    </td>
+                    <td className="py-3 font-extrabold text-emerald-400">
+                      {r.estimatedAppraisal ? formatCLP(r.estimatedAppraisal) : "Por evaluar"}
+                    </td>
+                    <td className="py-3">
+                      <select
+                        value={r.status}
+                        onChange={(e) => handleUpdateStatus(r.id, e.target.value as any)}
+                        className="rounded-xl border border-white/15 bg-ink-950 px-2.5 py-1 text-xs text-white outline-none cursor-pointer"
+                      >
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Contactado">Contactado</option>
+                        <option value="Tasado">Tasado</option>
+                        <option value="Cerrado">Cerrado</option>
+                        <option value="Descartado">Descartado</option>
+                      </select>
+                    </td>
+                    <td className="py-3 text-right">
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="apple-btn-primary inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-glow"
+                      >
+                        <span>💬</span> WhatsApp
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+/**
+ * SECCIÓN 8: AUTOS A PEDIDO / PERSONAL SHOPPER
+ */
+export function CarRequestsSection() {
+  const [requests, setRequests] = useState<CarRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchRequests = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/car-requests");
+      if (res.ok) {
+        const data = await res.json();
+        setRequests(data.requests || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  const handleUpdateStatus = async (id: string, status: CarRequest["status"]) => {
+    try {
+      await fetch(`/api/car-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      fetchRequests();
+    } catch {}
+  };
+
+  return (
+    <Panel
+      title="Autos a Pedido / Personal Shopper"
+      action={
+        <span className="text-xs text-brand-300 font-semibold">
+          {requests.length} clientes buscando auto
+        </span>
+      }
+    >
+      <p className="text-xs text-white/55 mb-4">
+        Lista de clientes que buscan modelos específicos que no encontraron en stock. Notifícalos apenas ingrese inventario afín.
+      </p>
+
+      {isLoading ? (
+        <div className="py-12 text-center text-xs text-white/40">Cargando solicitudes…</div>
+      ) : requests.length === 0 ? (
+        <div className="py-12 text-center text-xs text-white/40">No hay búsquedas activas.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-xs">
+            <thead className="text-left text-white/40 border-b border-white/10 pb-2">
+              <tr>
+                <th className="pb-2">Cliente</th>
+                <th className="pb-2">Auto Deseado</th>
+                <th className="pb-2">Presupuesto Máx.</th>
+                <th className="pb-2">Detalles / Preferencias</th>
+                <th className="pb-2">Estado</th>
+                <th className="pb-2 text-right">Notificar</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {requests.map((r) => {
+                const cleanPhone = r.phone.replace(/[^0-9]/g, "");
+                const waMsg = `Hola ${r.clientName}, de RG Motors te avisamos que acaba de ingresar una opción para tu búsqueda de ${r.brand} ${r.model}. ¿Podemos enviarte fotos y ficha técnica?`;
+                const waUrl = `https://wa.me/${cleanPhone.startsWith("56") ? cleanPhone : `56${cleanPhone}`}?text=${encodeURIComponent(waMsg)}`;
+
+                return (
+                  <tr key={r.id} className="hover:bg-white/[0.02]">
+                    <td className="py-3">
+                      <p className="font-bold text-white">{r.clientName}</p>
+                      <p className="text-white/50">{r.phone}</p>
+                    </td>
+                    <td className="py-3">
+                      <p className="font-semibold text-brand-300">{r.brand} {r.model}</p>
+                      <p className="text-white/50">{r.minYear ? `Año ${r.minYear}+` : "Cualquier año"}</p>
+                    </td>
+                    <td className="py-3 font-extrabold text-white">
+                      {formatCLP(r.maxBudget)}
+                    </td>
+                    <td className="py-3 text-white/70 max-w-xs truncate">
+                      {r.notes || `${r.fuel || "Combustible libre"} · ${r.transmission || "Transmisión libre"}`}
+                    </td>
+                    <td className="py-3">
+                      <select
+                        value={r.status}
+                        onChange={(e) => handleUpdateStatus(r.id, e.target.value as any)}
+                        className="rounded-xl border border-white/15 bg-ink-950 px-2.5 py-1 text-xs text-white outline-none cursor-pointer"
+                      >
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="En búsqueda">En búsqueda</option>
+                        <option value="Encontrado">Encontrado</option>
+                        <option value="Contactado">Contactado</option>
+                        <option value="Descartado">Descartado</option>
+                      </select>
+                    </td>
+                    <td className="py-3 text-right">
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="apple-btn-primary inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-glow"
+                      >
+                        <span>💬</span> Notificar
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+/**
+ * SECCIÓN 9: ALERTAS DE REBAJA DE PRECIO
+ */
+export function PriceAlertsSection() {
+  const [alerts, setAlerts] = useState<PriceAlert[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchAlerts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/price-alerts");
+      if (res.ok) {
+        const data = await res.json();
+        setAlerts(data.alerts || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
+
+  const handleUpdateStatus = async (id: string, status: PriceAlert["status"]) => {
+    try {
+      await fetch(`/api/price-alerts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      fetchAlerts();
+    } catch {}
+  };
+
+  return (
+    <Panel
+      title="Alertas de Rebaja de Precio & Ofertas"
+      action={
+        <span className="text-xs text-amber-300 font-semibold">
+          {alerts.length} alertas activas
+        </span>
+      }
+    >
+      <p className="text-xs text-white/55 mb-4">
+        Clientes en lista de espera para descuentos específicos. Úsalos para cerrar ventas rápidas antes de fin de mes.
+      </p>
+
+      {isLoading ? (
+        <div className="py-12 text-center text-xs text-white/40">Cargando alertas…</div>
+      ) : alerts.length === 0 ? (
+        <div className="py-12 text-center text-xs text-white/40">No hay alertas registradas.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-xs">
+            <thead className="text-left text-white/40 border-b border-white/10 pb-2">
+              <tr>
+                <th className="pb-2">Cliente</th>
+                <th className="pb-2">Vehículo de Interés</th>
+                <th className="pb-2">Precio Actual</th>
+                <th className="pb-2">Precio Objetivo</th>
+                <th className="pb-2">Estado</th>
+                <th className="pb-2 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {alerts.map((a) => {
+                const cleanPhone = a.phone.replace(/[^0-9]/g, "");
+                const waMsg = `Hola ${a.clientName}, tenemos novedades sobre el ${a.vehicleName} que tienes en seguimiento en RG Motors. ¿Podemos coordinar una oferta especial hoy?`;
+                const waUrl = `https://wa.me/${cleanPhone.startsWith("56") ? cleanPhone : `56${cleanPhone}`}?text=${encodeURIComponent(waMsg)}`;
+
+                return (
+                  <tr key={a.id} className="hover:bg-white/[0.02]">
+                    <td className="py-3">
+                      <p className="font-bold text-white">{a.clientName}</p>
+                      <p className="text-white/50">{a.phone}</p>
+                    </td>
+                    <td className="py-3 font-semibold text-white">{a.vehicleName}</td>
+                    <td className="py-3 font-bold text-white/70">{formatCLP(a.currentPrice)}</td>
+                    <td className="py-3 font-extrabold text-amber-400">
+                      {a.targetPrice ? formatCLP(a.targetPrice) : "Cualquier rebaja"}
+                    </td>
+                    <td className="py-3">
+                      <select
+                        value={a.status}
+                        onChange={(e) => handleUpdateStatus(a.id, e.target.value as any)}
+                        className="rounded-xl border border-white/15 bg-ink-950 px-2.5 py-1 text-xs text-white outline-none cursor-pointer"
+                      >
+                        <option value="Activa">Activa</option>
+                        <option value="Notificada">Notificada</option>
+                        <option value="Comprado">Comprado</option>
+                        <option value="Cancelada">Cancelada</option>
+                      </select>
+                    </td>
+                    <td className="py-3 text-right">
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="apple-btn-primary inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-glow"
+                      >
+                        <span>💬</span> Enviar Oferta
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+

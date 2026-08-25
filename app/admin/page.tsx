@@ -13,18 +13,26 @@ import {
   CreditsSection,
   ClientsSection,
   ConfigSection,
+  LeadScoringSection,
+  TradeInsSection,
+  CarRequestsSection,
+  PriceAlertsSection,
 } from "@/components/admin/AdminSections";
 import { asset } from "@/lib/asset";
 import { Vehicle, formatCLP } from "@/lib/vehicles";
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "▦" },
-  { id: "analitica", label: "Analítica", icon: "📊" },
+  { id: "leadscoring", label: "🔥 Lead Scoring", icon: "🔥" },
+  { id: "tasaciones", label: "💎 Tasaciones / Retomas", icon: "💎" },
+  { id: "pedidos", label: "🎯 Autos a Pedido", icon: "🎯" },
+  { id: "alertas", label: "🔔 Alertas de Precio", icon: "🔔" },
   { id: "vehiculos", label: "Vehículos", icon: "🚗" },
-  { id: "fotos", label: "Fotos & Galería", icon: "📸" },
-  { id: "spin360", label: "360° / Videos", icon: "🔄" },
   { id: "reservas", label: "Reservas", icon: "★" },
   { id: "creditos", label: "Créditos", icon: "💳" },
+  { id: "fotos", label: "Fotos & Galería", icon: "📸" },
+  { id: "spin360", label: "360° / Videos", icon: "🔄" },
+  { id: "analitica", label: "Analítica", icon: "📊" },
   { id: "clientes", label: "Clientes", icon: "👥" },
   { id: "config", label: "Configuración", icon: "⚙" },
 ];
@@ -74,13 +82,13 @@ export default function AdminPage() {
       <div className="min-h-screen bg-ink-950 text-white">
         <div className="flex">
           {/* Sidebar */}
-          <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-white/10 bg-ink-800/40 p-4 lg:flex flex-col justify-between">
+          <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-white/10 bg-ink-800/40 p-4 lg:flex flex-col justify-between overflow-y-auto">
             <div>
               <Link href="/" className="block px-2 py-2">
                 <Logo size={32} tagline={false} />
               </Link>
               <p className="mt-2 px-2 text-[10px] font-bold uppercase tracking-wider text-brand-400">
-                Panel Administrador
+                Panel Administrador RG
               </p>
               <nav className="mt-4 space-y-1">
                 {NAV.map((n) => (
@@ -99,7 +107,7 @@ export default function AdminPage() {
               </nav>
             </div>
 
-            <div className="space-y-2 border-t border-white/10 pt-4">
+            <div className="space-y-2 border-t border-white/10 pt-4 mt-4">
               <Link
                 href="/"
                 className="flex items-center gap-2 px-3 py-2 text-xs text-white/40 hover:text-white transition"
@@ -116,13 +124,17 @@ export default function AdminPage() {
           </aside>
 
           {/* Main */}
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 overflow-y-auto max-w-7xl">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-white">
                   {
                     {
                       dashboard: "Dashboard Principal",
+                      leadscoring: "Lead Scoring Inteligente",
+                      tasaciones: "Minería de Tasaciones & Retomas",
+                      pedidos: "Autos a Pedido / Personal Shopper",
+                      alertas: "Alertas de Baja de Precio",
                       analitica: "Analítica de Negocio & Ventas",
                       vehiculos: "Gestión de Inventario",
                       fotos: "Gestor de Fotos y Galería",
@@ -138,12 +150,16 @@ export default function AdminPage() {
                   {
                     {
                       dashboard: "Resumen integral de ventas, inventario y reservas activas",
+                      leadscoring: "Semáforo comercial de prospectos clasificados por temperatura de compra",
+                      tasaciones: "Clientes que entregan su auto actual en parte de pago (Oportunidad de doble margen)",
+                      pedidos: "Compradores en lista de espera para modelos no encontrados en stock",
+                      alertas: "Prospectos esperando rebaja u ofertas para cerrar compra rápida",
                       analitica: "Inteligencia de datos y señales de compra inferidas",
                       vehiculos: "Crea, edita y organiza los vehículos del catálogo",
                       fotos: "Sube y organiza fotos y fotogramas 360° por arrastre",
                       spin360: "Genera giros 360° con recorte de fondo automático",
                       reservas: "Control de abonos y contacto directo por WhatsApp",
-                      creditos: "Evaluaciones y pre-aprobaciones de crédito",
+                      creditos: "Evaluaciones y pre-aprobaciones con RUT en 60 segundos",
                       clientes: "Leads capturados desde la web y chatbot",
                       config: "Datos de contacto, teléfonos, horarios y parámetros de cálculo",
                     }[active]
@@ -178,6 +194,10 @@ export default function AdminPage() {
               ))}
             </div>
 
+            {active === "leadscoring" && <LeadScoringSection />}
+            {active === "tasaciones" && <TradeInsSection />}
+            {active === "pedidos" && <CarRequestsSection />}
+            {active === "alertas" && <PriceAlertsSection />}
             {active === "fotos" && <PhotoManager initialSlug={photoSlug || vehiclesList[0]?.slug} />}
             {active === "spin360" && <SpinUploader />}
             {active === "analitica" && <AnalyticsDashboard />}
@@ -197,7 +217,7 @@ export default function AdminPage() {
                     label="Vehículos en catálogo"
                     trend="+2 nuevos"
                   />
-                  <Kpi icon="👁" value="12.480" label="Visitas este mes" trend="+23%" />
+                  <Kpi icon="🔥" value="95%" label="Calidad de Leads" trend="Top Scoring" />
                   <Kpi
                     icon="★"
                     value={String(reservationsList.length || 4)}

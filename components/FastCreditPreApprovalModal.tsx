@@ -1,0 +1,346 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import { formatCLP, vehicles as staticVehicles, Vehicle } from "@/lib/vehicles";
+import { formatRut, validateRut, evaluateCreditCapacity } from "@/lib/rut";
+import { asset } from "@/lib/asset";
+
+type Props = {
+  isOpen: boolean;
+  onClose: () => void;
+  targetVehicle?: Vehicle;
+};
+
+const EMPLOYMENT_TYPES = [
+  "Trabajador Dependiente (Contrato indefinido)",
+  "Trabajador Dependiente (Contrato a plazo)",
+  "Independiente / Honorarios",
+  "Empresario / Dueño de Empresa",
+  "Jubilado / Pensionado",
+];
+
+export default function FastCreditPreApprovalModal({
+  isOpen,
+  onClose,
+  targetVehicle,
+}: Props) {
+  const [step, setStep] = useState<1 | 2>(1);
+  const [rut, setRut] = useState("");
+  const [rutError, setRutError] = useState("");
+  const [income, setIncome] = useState(1200000); // Renta líquida por defecto $1.2M
+  const [downPayment, setDownPayment] = useState(targetVehicle ? Math.round(targetVehicle.price * 0.2) : 2500000);
+  const [employmentType, setEmploymentType] = useState(EMPLOYMENT_TYPES[0]);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [result, setResult] = useState<{
+    maxFinanced: number;
+    totalPurchasingPower: number;
+    maxMonthlyQuota: number;
+    id: string;
+  } | null>(null);
+
+  const evaluation = useMemo(() => {
+    return evaluateCreditCapacity(income, downPayment, 48);
+  }, [income, downPayment]);
+
+  const matchingVehicles = useMemo(() => {
+    if (!evaluation) return [];
+    return staticVehicles
+      .filter((v) => v.price <= evaluation.totalPurchasingPower * 1.05)
+      .slice(0, 3);
+  }, [evaluation]);
+
+  if (!isOpen) return null;
+
+  const handleRutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatRut(e.target.value);
+    setRut(formatted);
+    if (formatted.length >= 8) {
+      if (!validateRut(formatted)) {
+        setRutError("RUT inválido (verifica el dígito verificador).");
+      } else {
+        setRutError("");
+      }
+    } else {
+      setRutError("");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateRut(rut)) {
+      setRutError("Por favor ingresa un RUT válido.");
+      return;
+    }
+    if (!name.trim() || !phone.trim()) {
+      alert("Por favor completa tu nombre y teléfono.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch("/api/credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: name.trim(),
+          rut: rut.trim(),
+          phone: phone.trim(),
+          email: email.trim() || "sin-correo@rgmotors.cl",
+          vehicleSlug: targetVehicle?.slug || "general-preapproval",
+          downPct: Math.round((downPayment / (targetVehicle?.price || evaluation.totalPurchasingPower)) * 100),
+          downPayment,
+          term: 48,
+          monthlyEstimate: evaluation.maxMonthlyQuota,
+          income,
+          employmentType,
+          maxApprovedAmount: evaluation.totalPurchasingPower,
+          score: 95,
+          status: "Pre-aprobado",
+          notes: `Pre-aprobación en 60s con RUT: ${rut}. Situación: ${employmentType}. Renta: ${formatCLP(income)}. Pie: ${formatCLP(downPayment)}.`,
+        }),
+      });
+
+      const data = await res.json();
+      setResult({
+        maxFinanced: evaluation.maxFinanced,
+        totalPurchasingPower: evaluation.totalPurchasingPower,
+        maxMonthlyQuota: evaluation.maxMonthlyQuota,
+        id: data.credit?.id || `PRE-${Date.now().toString().slice(-4)}`,
+      });
+      setStep(2);
+    } catch {
+      setResult({
+        maxFinanced: evaluation.maxFinanced,
+        totalPurchasingPower: evaluation.totalPurchasingPower,
+        maxMonthlyQuota: evaluation.maxMonthlyQuota,
+        id: `PRE-${Date.now().toString().slice(-4)}`,
+      });
+      setStep(2);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const waCertMsg = `Hola RG Motors, acabo de obtener mi Certificado de Pre-Aprobación Online (${result?.id}).
+Mi RUT es ${rut} y mi cupo pre-aprobado es de ${formatCLP(result?.totalPurchasingPower || 0)}${
+    targetVehicle ? ` para comprar el ${targetVehicle.brand} ${targetVehicle.model}` : ""
+  }. Mi nombre es ${name}. ¿Con quién puedo coordinar la entrega?`;
+  const waCertUrl = `https://wa.me/56987654321?text=${encodeURIComponent(waCertMsg)}`;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-xl rounded-3xl border border-white/15 bg-ink-900 shadow-2xl p-6 md:p-8 animate-fade-up">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
+        >
+          ✕
+        </button>
+
+        {step === 1 ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="border-b border-white/10 pb-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] font-bold text-emerald-400">
+                ⚡ Evaluación crediticia instantánea en 60 seg
+              </span>
+              <h2 className="mt-2 text-xl font-bold text-white">Pre-aprueba tu Crédito Automotriz</h2>
+              <p className="text-xs text-white/55 mt-0.5">
+                Ingresa tu RUT y renta para calcular tu cupo de compra de inmediato sin afectar tu historial.
+              </p>
+            </div>
+
+            {targetVehicle && (
+              <div className="rounded-2xl border border-brand-500/30 bg-brand-500/10 p-3 text-xs text-white flex items-center justify-between">
+                <span>Vehículo seleccionado: <b>{targetVehicle.brand} {targetVehicle.model}</b></span>
+                <span className="font-extrabold text-brand-300">{formatCLP(targetVehicle.price)}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium text-white/70 mb-1">RUT *</label>
+                  <input
+                    type="text"
+                    value={rut}
+                    onChange={handleRutChange}
+                    placeholder="12.345.678-9"
+                    required
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-white outline-none bg-ink-950 ${
+                      rutError ? "border-red-500" : "border-white/15 focus:border-brand-500"
+                    }`}
+                  />
+                  {rutError && <p className="text-[10px] text-red-400 mt-1">{rutError}</p>}
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-white/70 mb-1">Situación Laboral</label>
+                  <select
+                    value={employmentType}
+                    onChange={(e) => setEmploymentType(e.target.value)}
+                    className="w-full rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-xs text-white outline-none focus:border-brand-500"
+                  >
+                    {EMPLOYMENT_TYPES.map((t) => (
+                      <option key={t} value={t} className="bg-ink-900">
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-white/70">Tu renta líquida mensual demostrable:</span>
+                  <span className="font-bold text-brand-300 text-sm">{formatCLP(income)}</span>
+                </div>
+                <input
+                  type="range"
+                  min={500000}
+                  max={4500000}
+                  step={50000}
+                  value={income}
+                  onChange={(e) => setIncome(Number(e.target.value))}
+                  className="apple-range w-full cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-white/70">Pie o ahorro inicial disponible:</span>
+                  <span className="font-bold text-brand-300 text-sm">{formatCLP(downPayment)}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={12000000}
+                  step={200000}
+                  value={downPayment}
+                  onChange={(e) => setDownPayment(Number(e.target.value))}
+                  className="apple-range w-full cursor-pointer"
+                />
+              </div>
+
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3.5 text-xs text-white">
+                <div className="flex items-center justify-between">
+                  <span className="text-emerald-300 font-semibold">Capacidad de compra estimada:</span>
+                  <span className="text-base font-extrabold text-emerald-400">
+                    {formatCLP(evaluation.totalPurchasingPower)}
+                  </span>
+                </div>
+                <p className="text-[10px] text-white/50 mt-1">
+                  Hasta {formatCLP(evaluation.maxFinanced)} financiado en 48 cuotas desde {formatCLP(evaluation.maxMonthlyQuota)}/mes.
+                </p>
+              </div>
+
+              <div className="border-t border-white/10 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Tu Nombre completo *"
+                  required
+                  className="rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-xs text-white outline-none focus:border-brand-500"
+                />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="WhatsApp (+56 9 ...) *"
+                  required
+                  className="rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-xs text-white outline-none focus:border-brand-500"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="apple-btn-primary w-full rounded-full py-3.5 text-xs font-bold text-white shadow-glow disabled:opacity-50"
+            >
+              {isSubmitting ? "Evaluando antecedentes…" : "Obtener Certificado de Pre-Aprobación Inmediato"}
+            </button>
+          </form>
+        ) : (
+          <div className="space-y-5 text-center py-2 animate-fade-up">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-3xl font-bold text-emerald-400 shadow-glow">
+              ✓
+            </div>
+
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+                Certificado Digital N° {result?.id}
+              </span>
+              <h2 className="text-2xl font-extrabold text-white mt-1">¡Crédito Pre-Aprobado!</h2>
+              <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                Felicitaciones <b>{name}</b> (RUT: {rut}), tu perfil califica para financiamiento automotriz en RG Motors.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 via-ink-950 to-black p-5 text-left space-y-3">
+              <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
+                <span className="text-xs text-white/70">Cupo Total de Compra:</span>
+                <span className="text-2xl font-extrabold text-emerald-400">{formatCLP(result?.totalPurchasingPower || 0)}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-white/60">
+                <div>
+                  <p className="text-[10px] text-white/40">Monto Financiable:</p>
+                  <p className="font-bold text-white">{formatCLP(result?.maxFinanced || 0)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-white/40">Cuota Máx. Estimada:</p>
+                  <p className="font-bold text-brand-300">{formatCLP(result?.maxMonthlyQuota || 0)}/mes</p>
+                </div>
+              </div>
+            </div>
+
+            {matchingVehicles.length > 0 && (
+              <div className="text-left space-y-2 pt-1">
+                <p className="text-xs font-bold text-white/70 uppercase tracking-wide">
+                  Autos que puedes comprar hoy con tu cupo:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {matchingVehicles.map((mv) => (
+                    <Link
+                      key={mv.slug}
+                      href={`/vehiculo/${mv.slug}`}
+                      onClick={onClose}
+                      className="group rounded-2xl border border-white/10 bg-white/[0.03] p-2.5 transition hover:border-brand-500/50 hover:bg-brand-500/10 block"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={asset(mv.image)} alt={mv.model} className="h-16 w-full object-cover rounded-xl mb-1.5" />
+                      <p className="text-[11px] font-bold text-white truncate">{mv.brand} {mv.model}</p>
+                      <p className="text-[10px] font-bold text-brand-300">{formatCLP(mv.price)}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+              <a
+                href={waCertUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="apple-btn-primary flex-1 inline-flex items-center justify-center gap-2 rounded-full py-3.5 text-xs font-bold text-white shadow-glow"
+              >
+                <span>💬</span> Validar con Ejecutivo por WhatsApp
+              </a>
+              <button
+                onClick={onClose}
+                className="apple-btn-secondary rounded-full px-6 py-3 text-xs font-semibold text-white/70 hover:text-white"
+              >
+                Cerrar y ver catálogo
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

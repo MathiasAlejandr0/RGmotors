@@ -3,13 +3,18 @@ import { readJson, writeJson } from "./db";
 export type CreditApplication = {
   id: string;
   clientName: string;
+  rut?: string;
   email: string;
   phone: string;
-  vehicleSlug: string;
+  vehicleSlug?: string;
   downPct: number;
+  downPayment?: number;
   term: number;
   monthlyEstimate: number;
   income?: number;
+  employmentType?: string;
+  maxApprovedAmount?: number;
+  score?: number; // Lead Score (0 - 100)
   status: "En evaluación" | "Pre-aprobado" | "Aprobado" | "Rechazado";
   date: string;
   notes?: string;
@@ -23,21 +28,32 @@ export async function getCreditApplications(): Promise<CreditApplication[]> {
   return list;
 }
 
-export async function addCreditApplication(data: Omit<CreditApplication, "id" | "date"> & { id?: string; date?: string }): Promise<CreditApplication> {
+export async function addCreditApplication(
+  data: Omit<CreditApplication, "id" | "date"> & { id?: string; date?: string }
+): Promise<CreditApplication> {
   const list = await getCreditApplications();
   const id = data.id || `CRED-${Math.floor(100 + Math.random() * 900)}`;
   const date = data.date || new Date().toISOString();
+  
+  // Calculate lead score if not specified (e.g. RUT + Income provided gives high score)
+  const score = data.score ?? (data.rut && data.income ? 95 : 75);
+
   const credit: CreditApplication = {
     ...data,
     id,
     date,
+    score,
   };
   list.unshift(credit);
   await writeJson(FILENAME, list);
   return credit;
 }
 
-export async function updateCreditStatus(id: string, status: CreditApplication["status"], notes?: string): Promise<CreditApplication | null> {
+export async function updateCreditStatus(
+  id: string,
+  status: CreditApplication["status"],
+  notes?: string
+): Promise<CreditApplication | null> {
   const list = await getCreditApplications();
   const target = list.find((c) => c.id === id);
   if (!target) return null;

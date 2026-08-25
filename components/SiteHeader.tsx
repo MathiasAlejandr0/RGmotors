@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Logo from "./Logo";
 import TradeInModal from "./TradeInModal";
+import FastCreditPreApprovalModal from "./FastCreditPreApprovalModal";
+import CarRequestModal from "./CarRequestModal";
 
 const NAV = [
   { href: "/", label: "Inicio" },
@@ -18,6 +20,8 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tradeInOpen, setTradeInOpen] = useState(false);
+  const [preApprovalOpen, setPreApprovalOpen] = useState(false);
+  const [carRequestOpen, setCarRequestOpen] = useState(false);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -42,7 +46,7 @@ export default function SiteHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-full px-4 py-1.5 text-xs font-medium tracking-tight transition-all duration-200 ${
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-medium tracking-tight transition-all duration-200 ${
                     active
                       ? "bg-white/15 text-white shadow-sm"
                       : "text-white/60 hover:bg-white/10 hover:text-white"
@@ -53,10 +57,22 @@ export default function SiteHeader() {
               );
             })}
             <button
+              onClick={() => setPreApprovalOpen(true)}
+              className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition shadow-glow flex items-center gap-1"
+            >
+              <span>⚡</span> Pre-aprobar RUT
+            </button>
+            <button
               onClick={() => setTradeInOpen(true)}
-              className="rounded-full px-3.5 py-1.5 text-xs font-semibold text-brand-300 hover:bg-brand-500/10 transition"
+              className="rounded-full px-3 py-1.5 text-xs font-semibold text-brand-300 hover:bg-brand-500/10 transition"
             >
               🔄 Tasación
+            </button>
+            <button
+              onClick={() => setCarRequestOpen(true)}
+              className="rounded-full px-3 py-1.5 text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white transition"
+            >
+              🔍 Pedir auto
             </button>
           </nav>
 
@@ -97,11 +113,29 @@ export default function SiteHeader() {
               <button
                 onClick={() => {
                   setOpen(false);
+                  setPreApprovalOpen(true);
+                }}
+                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 text-left my-1"
+              >
+                <span>⚡</span> Pre-aprobar crédito en 60s con RUT
+              </button>
+              <button
+                onClick={() => {
+                  setOpen(false);
                   setTradeInOpen(true);
                 }}
-                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-brand-300 hover:bg-brand-500/10 transition text-left"
+                className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-brand-300 hover:bg-brand-500/10 transition text-left"
               >
                 <span>🔄</span> Entrega tu auto en parte de pago (Tasación)
+              </button>
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  setCarRequestOpen(true);
+                }}
+                className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/5 transition text-left"
+              >
+                <span>🔍</span> ¿No encontraste tu auto? Te lo buscamos
               </button>
               <div className="mt-3 pt-3 border-t border-white/10 sm:hidden">
                 <Link
@@ -118,6 +152,8 @@ export default function SiteHeader() {
       </header>
 
       <TradeInModal isOpen={tradeInOpen} onClose={() => setTradeInOpen(false)} />
+      <FastCreditPreApprovalModal isOpen={preApprovalOpen} onClose={() => setPreApprovalOpen(false)} />
+      <CarRequestModal isOpen={carRequestOpen} onClose={() => setCarRequestOpen(false)} />
     </>
   );
 }

@@ -14,6 +14,8 @@ import {
 import VehicleCard from "@/components/VehicleCard";
 import CatalogPdfButton from "@/components/CatalogPdfButton";
 import QuickCategoryFilter, { CategoryPill } from "@/components/QuickCategoryFilter";
+import FastCreditPreApprovalModal from "@/components/FastCreditPreApprovalModal";
+import CarRequestModal from "@/components/CarRequestModal";
 
 const MAX_PRICE = 30000000;
 
@@ -42,6 +44,10 @@ function CatalogContent() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("relevancia");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Modals
+  const [isPreApprovalOpen, setIsPreApprovalOpen] = useState(false);
+  const [isCarRequestOpen, setIsCarRequestOpen] = useState(false);
 
   // Load from API on mount
   useEffect(() => {
@@ -287,6 +293,35 @@ function CatalogContent() {
         <CatalogPdfButton vehicles={filtered} filterSummary={filterSummary} />
       </div>
 
+      {/* High-Impact Conversion Banner */}
+      <div className="mb-8 rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 via-ink-950 to-brand-500/10 p-5 backdrop-blur-xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-glow">
+        <div className="flex items-center gap-3.5">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-500/20 text-2xl text-emerald-400">
+            ⚡
+          </span>
+          <div>
+            <h2 className="text-sm font-bold text-white">¿Quieres saber qué autos puedes comprar hoy?</h2>
+            <p className="text-xs text-white/60 mt-0.5">
+              Calcula tu cupo pre-aprobado en 60 segundos con tu RUT o pide el modelo exacto que buscas.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2.5 shrink-0 w-full md:w-auto">
+          <button
+            onClick={() => setIsPreApprovalOpen(true)}
+            className="apple-btn-primary flex-1 md:flex-none rounded-full px-5 py-2.5 text-xs font-bold text-white shadow-glow"
+          >
+            Pre-aprobar crédito en 60s
+          </button>
+          <button
+            onClick={() => setIsCarRequestOpen(true)}
+            className="apple-btn-secondary flex-1 md:flex-none rounded-full px-4 py-2.5 text-xs font-semibold text-white/80 hover:text-white"
+          >
+            🔍 Pedir auto a medida
+          </button>
+        </div>
+      </div>
+
       <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
         {/* Sidebar filters (desktop) */}
         <aside className="hidden lg:block">
@@ -364,21 +399,42 @@ function CatalogContent() {
               ))}
             </div>
           ) : (
-            <div className="apple-glass-card rounded-3xl p-14 text-center text-white/50">
-              <p className="text-base font-semibold text-white">No encontramos vehículos</p>
-              <p className="mt-1 text-xs text-white/50 max-w-sm mx-auto">
-                No hay coincidencias con los filtros aplicados. Prueba ampliando el rango de precio o año.
+            <div className="apple-glass-card rounded-3xl p-10 text-center text-white/50 space-y-4">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-500/15 text-2xl text-brand-300">
+                🔍
+              </div>
+              <h2 className="text-base font-bold text-white">¿No encuentras el auto exacto que buscas?</h2>
+              <p className="text-xs text-white/60 max-w-md mx-auto">
+                No te preocupes. Con nuestro servicio de <b>Personal Shopper Automotriz</b>, buscamos, revisamos y certificamos el modelo que quieres en menos de 48 horas.
               </p>
-              <button
-                onClick={clearAll}
-                className="apple-btn-primary mt-5 rounded-full px-6 py-2.5 text-xs font-semibold text-white"
-              >
-                Restablecer filtros
-              </button>
+              <div className="flex flex-wrap justify-center gap-3 pt-2">
+                <button
+                  onClick={() => setIsCarRequestOpen(true)}
+                  className="apple-btn-primary rounded-full px-6 py-2.5 text-xs font-bold text-white shadow-glow"
+                >
+                  Buscar auto por mí
+                </button>
+                <button
+                  onClick={clearAll}
+                  className="apple-btn-secondary rounded-full px-6 py-2.5 text-xs font-semibold text-white/70"
+                >
+                  Restablecer filtros
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      <FastCreditPreApprovalModal
+        isOpen={isPreApprovalOpen}
+        onClose={() => setIsPreApprovalOpen(false)}
+      />
+
+      <CarRequestModal
+        isOpen={isCarRequestOpen}
+        onClose={() => setIsCarRequestOpen(false)}
+      />
     </main>
   );
 }
