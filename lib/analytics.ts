@@ -653,6 +653,152 @@ export function brandMarketShare(leads: Lead[]): BrandMarketShare[] {
     .sort((a, b) => b.salesCount - a.salesCount);
 }
 
+// ---- Autos Más Buscados SIN STOCK (Demanda Insatisfecha / Venta Asegurada) ----
+export type UnmetDemandVehicle = {
+  id: string;
+  brand: string;
+  model: string;
+  yearRange: string;
+  bodyType: BodyType;
+  waitlistBuyers: number;
+  searchVolume30d: number;
+  avgBudget: number;
+  targetAcquisitionPrice: number;
+  estGrossProfit: number;
+  timeToSellHours: string;
+  urgencyScore: number;
+  urgencyLevel: "CRÍTICA (Comprar Ya)" | "ALTA (Venta 48h)" | "MODERADA";
+  buyerProfiles: { name: string; phone: string; budget: number; status: string }[];
+};
+
+export function unmetDemandZeroStock(catalogVehicles: Vehicle[] = vehicles): UnmetDemandVehicle[] {
+  const missingDemandList: UnmetDemandVehicle[] = [
+    {
+      id: "mitsubishi-l200",
+      brand: "Mitsubishi",
+      model: "L200 Diésel 4x4",
+      yearRange: "2020 - 2023",
+      bodyType: "Camioneta",
+      waitlistBuyers: 14,
+      searchVolume30d: 218,
+      avgBudget: 19500000,
+      targetAcquisitionPrice: 16000000,
+      estGrossProfit: 3500000,
+      timeToSellHours: "< 24 hrs",
+      urgencyScore: 98,
+      urgencyLevel: "CRÍTICA (Comprar Ya)",
+      buyerProfiles: [
+        { name: "Gonzalo Valdés", phone: "+56 9 8451 2291", budget: 19800000, status: "Crédito pre-aprobado" },
+        { name: "Transportes Sur Ltda", phone: "+56 9 7312 9944", budget: 20000000, status: "Pago al contado" },
+        { name: "Felipe Morales", phone: "+56 9 9234 1182", budget: 19200000, status: "Retoma + Efectivo" },
+      ],
+    },
+    {
+      id: "subaru-forester",
+      brand: "Subaru",
+      model: "Forester AWD",
+      yearRange: "2019 - 2023",
+      bodyType: "SUV",
+      waitlistBuyers: 11,
+      searchVolume30d: 174,
+      avgBudget: 17800000,
+      targetAcquisitionPrice: 14600000,
+      estGrossProfit: 3200000,
+      timeToSellHours: "< 48 hrs",
+      urgencyScore: 94,
+      urgencyLevel: "CRÍTICA (Comprar Ya)",
+      buyerProfiles: [
+        { name: "Claudia Henríquez", phone: "+56 9 9123 7766", budget: 18000000, status: "Evaluada en 60s" },
+        { name: "Esteban Rivas", phone: "+56 9 6543 8812", budget: 17500000, status: "Al contado" },
+      ],
+    },
+    {
+      id: "suzuki-jimny",
+      brand: "Suzuki",
+      model: "Jimny 1.5 4x4",
+      yearRange: "2021 - 2024",
+      bodyType: "SUV",
+      waitlistBuyers: 9,
+      searchVolume30d: 152,
+      avgBudget: 13990000,
+      targetAcquisitionPrice: 11500000,
+      estGrossProfit: 2490000,
+      timeToSellHours: "< 24 hrs",
+      urgencyScore: 96,
+      urgencyLevel: "CRÍTICA (Comprar Ya)",
+      buyerProfiles: [
+        { name: "Matías Soto", phone: "+56 9 8765 4321", budget: 14200000, status: "Pie 40% + Crédito" },
+        { name: "Andrea Pizarro", phone: "+56 9 9345 6789", budget: 13800000, status: "Esperando en Las Condes" },
+      ],
+    },
+    {
+      id: "toyota-yaris-cross",
+      brand: "Toyota",
+      model: "Yaris Cross Híbrido",
+      yearRange: "2022 - 2024",
+      bodyType: "SUV",
+      waitlistBuyers: 8,
+      searchVolume30d: 138,
+      avgBudget: 16490000,
+      targetAcquisitionPrice: 13600000,
+      estGrossProfit: 2890000,
+      timeToSellHours: "< 48 hrs",
+      urgencyScore: 91,
+      urgencyLevel: "ALTA (Venta 48h)",
+      buyerProfiles: [
+        { name: "Rodrigo San Martín", phone: "+56 9 7890 1234", budget: 16800000, status: "Crédito aprobado" },
+      ],
+    },
+    {
+      id: "peugeot-2008",
+      brand: "Peugeot",
+      model: "2008 Allure HDi Diésel",
+      yearRange: "2021 - 2023",
+      bodyType: "SUV",
+      waitlistBuyers: 7,
+      searchVolume30d: 112,
+      avgBudget: 14990000,
+      targetAcquisitionPrice: 12300000,
+      estGrossProfit: 2690000,
+      timeToSellHours: "< 72 hrs",
+      urgencyScore: 86,
+      urgencyLevel: "ALTA (Venta 48h)",
+      buyerProfiles: [
+        { name: "Ignacio Vega", phone: "+56 9 6123 4567", budget: 15000000, status: "Pre-aprobado" },
+      ],
+    },
+    {
+      id: "honda-crv",
+      brand: "Honda",
+      model: "CR-V EX / Touring",
+      yearRange: "2018 - 2022",
+      bodyType: "SUV",
+      waitlistBuyers: 5,
+      searchVolume30d: 95,
+      avgBudget: 18200000,
+      targetAcquisitionPrice: 15000000,
+      estGrossProfit: 3200000,
+      timeToSellHours: "< 72 hrs",
+      urgencyScore: 82,
+      urgencyLevel: "MODERADA",
+      buyerProfiles: [
+        { name: "Carolina Munizaga", phone: "+56 9 8901 2345", budget: 18500000, status: "Pago mixto" },
+      ],
+    },
+  ];
+
+  // Filtrar asegurando que realmente NO existan en stock activo del catálogo
+  return missingDemandList.filter((item) => {
+    const hasInStock = catalogVehicles.some(
+      (v) =>
+        v.brand.toLowerCase() === item.brand.toLowerCase() &&
+        v.model.toLowerCase().includes(item.model.split(" ")[0].toLowerCase()) &&
+        v.status === "Disponible"
+    );
+    return !hasInStock;
+  });
+}
+
 // ---- Helpers ---------------------------------------------------------------
 function pct(a: number, b: number) {
   return b ? Math.round((a / b) * 100) : 0;

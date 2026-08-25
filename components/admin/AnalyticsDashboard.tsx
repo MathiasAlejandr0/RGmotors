@@ -15,6 +15,8 @@ import {
   recommendations,
   topSellingModelsAndProcurement,
   brandMarketShare,
+  unmetDemandZeroStock,
+  UnmetDemandVehicle,
   scoreBand,
   formatCLPShort,
 } from "@/lib/analytics";
@@ -52,9 +54,12 @@ export default function AnalyticsDashboard() {
   const recs = useMemo(() => recommendations(leads), [leads]);
   const procurement = useMemo(() => topSellingModelsAndProcurement(leads), [leads]);
   const brandsShare = useMemo(() => brandMarketShare(leads), [leads]);
+  const missingDemand = useMemo(() => unmetDemandZeroStock(), []);
 
+  const [procurementView, setProcurementView] = useState<"zero_stock" | "bestsellers">("zero_stock");
   const [procurementFilter, setProcurementFilter] = useState<string>("all");
   const [procurementCategory, setProcurementCategory] = useState<string>("all");
+  const [selectedWaitlist, setSelectedWaitlist] = useState<UnmetDemandVehicle | null>(null);
 
   const filteredProcurement = useMemo(() => {
     return procurement.filter((p) => {
@@ -68,6 +73,13 @@ export default function AnalyticsDashboard() {
       return matchCat && matchFilter;
     });
   }, [procurement, procurementCategory, procurementFilter]);
+
+  const filteredMissingDemand = useMemo(() => {
+    return missingDemand.filter((m) => {
+      const matchCat = procurementCategory === "all" || m.bodyType === procurementCategory;
+      return matchCat;
+    });
+  }, [missingDemand, procurementCategory]);
 
   const [captured, setCaptured] = useState<CapturedLead[]>([]);
   useEffect(() => {
@@ -138,45 +150,76 @@ export default function AnalyticsDashboard() {
         </Card>
       </div>
 
-      {/* MÓDULO ESTRATÉGICO: COMPRA INTELIGENTE DE INVENTARIO & RANKING DE MODELOS MÁS VENDIDOS */}
+      {/* MÓDULO ESTRATÉGICO: COMPRA INTELIGENTE DE INVENTARIO & RADAR DE DEMANDA */}
       <div className="space-y-4 rounded-3xl border border-brand-500/30 bg-ink-900/90 p-5 shadow-2xl backdrop-blur-xl">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
               <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-500/20 text-sm">
                 🛒
               </span>
               <h2 className="text-lg font-bold text-white tracking-tight">
-                Módulo de Compra Inteligente & Ranking de Modelos
+                Módulo de Compra Inteligente & Asistente de Adquisiciones
               </h2>
               <span className="rounded-full bg-brand-500/20 px-2.5 py-0.5 text-[10px] font-bold text-brand-300 border border-brand-500/30">
                 EXCLUSIVO DIRECCIÓN
               </span>
             </div>
             <p className="text-xs text-white/60 mt-1">
-              Guía de abastecimiento predictivo basada en velocidad de rotación real, volumen histórico y clientes con compra pre-aprobada en lista de espera.
+              Inteligencia de compra predictiva: detecta qué autos comprar en retomas o subastas porque ya tienen clientes listos esperando.
             </p>
           </div>
 
           {/* Mini KPIs de compra */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="rounded-xl border border-white/10 bg-ink-800/80 px-3 py-1.5 text-center">
-              <p className="text-[10px] text-white/50">Modelo #1 Rotación</p>
-              <p className="text-xs font-bold text-brand-300">Toyota RAV4 (~7d)</p>
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-center">
+              <p className="text-[10px] text-red-300/80">Sin Stock (Comprar Ya)</p>
+              <p className="text-xs font-bold text-red-400">6 Modelos Críticos</p>
             </div>
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-center">
-              <p className="text-[10px] text-amber-300/80">Demanda en Espera</p>
-              <p className="text-xs font-bold text-amber-400">146 Clientes Activos</p>
+              <p className="text-[10px] text-amber-300/80">Compradores en Espera</p>
+              <p className="text-xs font-bold text-amber-400">58 Clientes Listos</p>
             </div>
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-center">
-              <p className="text-[10px] text-emerald-300/80">Margen Retoma Est.</p>
-              <p className="text-xs font-bold text-emerald-400">18% (~$3.1M/u)</p>
+              <p className="text-[10px] text-emerald-300/80">Tiempo Venta Estimado</p>
+              <p className="text-xs font-bold text-emerald-400">&lt; 24 a 48 hrs</p>
             </div>
           </div>
         </div>
 
-        {/* Filtros de la tabla de compra */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-y border-white/10 py-3">
+        {/* Selector de Pestaña Principal (Sin Stock vs Ranking Más Vendidos) */}
+        <div className="flex flex-wrap items-center gap-2 border-y border-white/10 py-3">
+          <button
+            onClick={() => setProcurementView("zero_stock")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shadow-sm ${
+              procurementView === "zero_stock"
+                ? "bg-red-500 text-white shadow-red-500/20"
+                : "bg-ink-800 text-white/70 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <span>🚨</span> Autos Más Buscados SIN STOCK (Comprar Ya)
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">
+              58 compradores esperando
+            </span>
+          </button>
+
+          <button
+            onClick={() => setProcurementView("bestsellers")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shadow-sm ${
+              procurementView === "bestsellers"
+                ? "bg-brand-500 text-white shadow-brand-500/20"
+                : "bg-ink-800 text-white/70 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <span>🏆</span> Ranking de Modelos Más Vendidos (Histórico)
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">
+              Top 10 rotación
+            </span>
+          </button>
+        </div>
+
+        {/* Filtros de Categoría */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-xs font-medium text-white/50 mr-1">Carrocería:</span>
             {["all", "SUV", "Camioneta", "Hatchback", "Sedán"].map((cat) => (
@@ -194,115 +237,197 @@ export default function AnalyticsDashboard() {
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-medium text-white/50 mr-1">Semáforo de Compra:</span>
-            {[
-              { id: "all", label: "Todos" },
-              { id: "urgent", label: "🔥 Comprar Urgente" },
-              { id: "high", label: "⚡ Alta Rotación" },
-              { id: "optimal", label: "✅ Stock Óptimo" },
-              { id: "pause", label: "⏸️ Pausar" },
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setProcurementFilter(f.id)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-                  procurementFilter === f.id
-                    ? "bg-brand-500 text-white shadow-sm"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+          {procurementView === "bestsellers" && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-medium text-white/50 mr-1">Semáforo:</span>
+              {[
+                { id: "all", label: "Todos" },
+                { id: "urgent", label: "🔥 Comprar Urgente" },
+                { id: "high", label: "⚡ Alta Rotación" },
+                { id: "optimal", label: "✅ Stock Óptimo" },
+                { id: "pause", label: "⏸️ Pausar" },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setProcurementFilter(f.id)}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                    procurementFilter === f.id
+                      ? "bg-brand-500 text-white shadow-sm"
+                      : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Tabla de Ranking y Oportunidades de Compra */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[880px] text-sm">
-            <thead className="text-left text-white/40 border-b border-white/10">
-              <tr>
-                <th className="pb-2.5 font-medium">Rank & Modelo</th>
-                <th className="pb-2.5 font-medium">Ventas (6m)</th>
-                <th className="pb-2.5 font-medium">Demanda / Espera</th>
-                <th className="pb-2.5 font-medium">Stock Actual</th>
-                <th className="pb-2.5 font-medium">Rotación</th>
-                <th className="pb-2.5 font-medium">Venta / Compra Sugerida</th>
-                <th className="pb-2.5 font-medium">Semáforo de Compra</th>
-                <th className="pb-2.5 font-medium text-right">Margen Bruto Est.</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {filteredProcurement.map((item) => (
-                <tr key={`${item.brand}-${item.model}`} className="hover:bg-white/[0.02] transition">
-                  <td className="py-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
-                        item.rank <= 3 ? "bg-amber-400 text-ink-950 shadow-sm" : "bg-white/10 text-white/70"
-                      }`}>
-                        {item.rank}
-                      </span>
-                      <div>
+        {/* VISTA 1: AUTOS MÁS BUSCADOS SIN STOCK (VENTA INMEDIATA) */}
+        {procurementView === "zero_stock" && (
+          <div className="space-y-3">
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200">
+              ⚡ <strong>Demanda Inmediata Garantizada:</strong> Estos modelos registran el mayor volumen de búsquedas sin resultados en el catálogo y clientes activos con dinero en mano o crédito aprobado esperando en lista de espera. Si compras una unidad hoy, se vende prácticamente en <strong>24 a 48 horas</strong> a los compradores registrados.
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[880px] text-sm">
+                <thead className="text-left text-white/40 border-b border-white/10">
+                  <tr>
+                    <th className="pb-2.5 font-medium">Modelo Buscado & Rango</th>
+                    <th className="pb-2.5 font-medium">Compradores en Espera</th>
+                    <th className="pb-2.5 font-medium">Búsquedas sin Stock (30d)</th>
+                    <th className="pb-2.5 font-medium">Presupuesto Prom.</th>
+                    <th className="pb-2.5 font-medium">Precio Máx. Compra</th>
+                    <th className="pb-2.5 font-medium">Tiempo de Venta</th>
+                    <th className="pb-2.5 font-medium">Urgencia</th>
+                    <th className="pb-2.5 font-medium text-right">Compradores</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredMissingDemand.map((item) => (
+                    <tr key={item.id} className="hover:bg-white/[0.02] transition">
+                      <td className="py-3">
                         <p className="font-bold text-white flex items-center gap-1.5">
                           {item.brand} {item.model}
-                          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-normal text-white/60">
-                            {item.bodyType}
+                          <span className="rounded bg-red-500/20 border border-red-500/30 px-1.5 py-0.5 text-[10px] font-bold text-red-300">
+                            0 en stock
                           </span>
                         </p>
-                        <p className="text-[11px] text-white/40 max-w-[280px] truncate" title={item.recommendationReason}>
-                          {item.recommendationReason}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <span className="font-bold text-white">{item.salesCount}</span>
-                    <span className="text-xs text-white/40 ml-1">unidades</span>
-                  </td>
-                  <td className="py-3">
-                    <span className="font-bold text-amber-400">🔥 {item.activeLeads}</span>
-                    <span className="text-xs text-white/40 ml-1">en espera</span>
-                  </td>
-                  <td className="py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                        item.currentStock === 0
-                          ? "bg-red-500/20 text-red-300 border border-red-500/30"
-                          : item.currentStock <= 2
-                            ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                            : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                      }`}
-                    >
-                      {item.currentStock === 0 ? "0 u (Sin stock)" : `${item.currentStock} u`}
-                    </span>
-                  </td>
-                  <td className="py-3">
-                    <p className="font-semibold text-white">~{item.avgDaysToSell} días</p>
-                    <p className="text-[10px] text-white/40">{item.turnoverSpeed}</p>
-                  </td>
-                  <td className="py-3 text-xs">
-                    <p className="text-white/80 font-medium">Venta: {formatCLP(item.avgRetailPrice)}</p>
-                    <p className="text-emerald-400 font-bold">Máx compra: {formatCLP(item.targetBuyPrice)}</p>
-                  </td>
-                  <td className="py-3">
-                    <span
-                      className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold text-white shadow-sm"
-                      style={{ background: `${item.badgeColor}33`, borderColor: item.badgeColor, borderWidth: 1 }}
-                    >
-                      <span>{item.recommendation === "Comprar Urgente" ? "🔥" : item.recommendation === "Alta Rotación" ? "⚡" : item.recommendation === "Stock Óptimo" ? "✅" : "⏸️"}</span>
-                      {item.recommendation}
-                    </span>
-                  </td>
-                  <td className="py-3 text-right">
-                    <p className="font-bold text-emerald-400">+{formatCLPShort(item.estGrossMargin)}</p>
-                    <p className="text-[10px] text-white/50">{item.estMarginPct}% margen</p>
-                  </td>
+                        <p className="text-[11px] text-white/50">{item.yearRange} · {item.bodyType}</p>
+                      </td>
+                      <td className="py-3">
+                        <span className="font-bold text-amber-400">🔥 {item.waitlistBuyers} clientes</span>
+                        <p className="text-[10px] text-white/40">con pre-aprobación</p>
+                      </td>
+                      <td className="py-3">
+                        <span className="font-semibold text-white">{item.searchVolume30d}</span>
+                        <span className="text-xs text-white/40 ml-1">consultas web</span>
+                      </td>
+                      <td className="py-3 font-bold text-white/90">
+                        {formatCLP(item.avgBudget)}
+                      </td>
+                      <td className="py-3 text-xs">
+                        <p className="text-emerald-400 font-bold">{formatCLP(item.targetAcquisitionPrice)}</p>
+                        <p className="text-emerald-300/60 font-semibold">Margen: +{formatCLPShort(item.estGrossProfit)}</p>
+                      </td>
+                      <td className="py-3">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-xs font-bold text-emerald-300">
+                          ⚡ {item.timeToSellHours}
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        <span className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold text-white shadow-sm ${
+                          item.urgencyScore >= 90
+                            ? "bg-red-500/30 border border-red-500 text-red-200"
+                            : "bg-amber-500/30 border border-amber-500 text-amber-200"
+                        }`}>
+                          {item.urgencyLevel}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right">
+                        <button
+                          onClick={() => setSelectedWaitlist(item)}
+                          className="apple-btn-primary inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-glow hover:scale-105 transition"
+                        >
+                          <span>👥</span> Ver {item.waitlistBuyers} Compradores
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* VISTA 2: RANKING DE MODELOS MÁS VENDIDOS (HISTÓRICO) */}
+        {procurementView === "bestsellers" && (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[880px] text-sm">
+              <thead className="text-left text-white/40 border-b border-white/10">
+                <tr>
+                  <th className="pb-2.5 font-medium">Rank & Modelo</th>
+                  <th className="pb-2.5 font-medium">Ventas (6m)</th>
+                  <th className="pb-2.5 font-medium">Demanda / Espera</th>
+                  <th className="pb-2.5 font-medium">Stock Actual</th>
+                  <th className="pb-2.5 font-medium">Rotación</th>
+                  <th className="pb-2.5 font-medium">Venta / Compra Sugerida</th>
+                  <th className="pb-2.5 font-medium">Semáforo de Compra</th>
+                  <th className="pb-2.5 font-medium text-right">Margen Bruto Est.</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filteredProcurement.map((item) => (
+                  <tr key={`${item.brand}-${item.model}`} className="hover:bg-white/[0.02] transition">
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
+                          item.rank <= 3 ? "bg-amber-400 text-ink-950 shadow-sm" : "bg-white/10 text-white/70"
+                        }`}>
+                          {item.rank}
+                        </span>
+                        <div>
+                          <p className="font-bold text-white flex items-center gap-1.5">
+                            {item.brand} {item.model}
+                            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-normal text-white/60">
+                              {item.bodyType}
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-white/40 max-w-[280px] truncate" title={item.recommendationReason}>
+                            {item.recommendationReason}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <span className="font-bold text-white">{item.salesCount}</span>
+                      <span className="text-xs text-white/40 ml-1">unidades</span>
+                    </td>
+                    <td className="py-3">
+                      <span className="font-bold text-amber-400">🔥 {item.activeLeads}</span>
+                      <span className="text-xs text-white/40 ml-1">en espera</span>
+                    </td>
+                    <td className="py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                          item.currentStock === 0
+                            ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                            : item.currentStock <= 2
+                              ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                              : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                        }`}
+                      >
+                        {item.currentStock === 0 ? "0 u (Sin stock)" : `${item.currentStock} u`}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <p className="font-semibold text-white">~{item.avgDaysToSell} días</p>
+                      <p className="text-[10px] text-white/40">{item.turnoverSpeed}</p>
+                    </td>
+                    <td className="py-3 text-xs">
+                      <p className="text-white/80 font-medium">Venta: {formatCLP(item.avgRetailPrice)}</p>
+                      <p className="text-emerald-400 font-bold">Máx compra: {formatCLP(item.targetBuyPrice)}</p>
+                    </td>
+                    <td className="py-3">
+                      <span
+                        className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold text-white shadow-sm"
+                        style={{ background: `${item.badgeColor}33`, borderColor: item.badgeColor, borderWidth: 1 }}
+                      >
+                        <span>{item.recommendation === "Comprar Urgente" ? "🔥" : item.recommendation === "Alta Rotación" ? "⚡" : item.recommendation === "Stock Óptimo" ? "✅" : "⏸️"}</span>
+                        {item.recommendation}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right">
+                      <p className="font-bold text-emerald-400">+{formatCLPShort(item.estGrossMargin)}</p>
+                      <p className="text-[10px] text-white/50">{item.estMarginPct}% margen</p>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Gráfico de Market Share por Marca & Reglas de Oro */}
         <div className="grid gap-4 lg:grid-cols-2 pt-2 border-t border-white/10">
@@ -343,7 +468,7 @@ export default function AnalyticsDashboard() {
               <ul className="space-y-2 text-xs text-white/70">
                 <li className="flex items-start gap-2">
                   <span className="text-amber-400 font-bold">1.</span>
-                  <span><strong>Compra contra Demanda Previa:</strong> Prioriza retomas y compras de <em>Toyota RAV4, Hilux y Mazda CX-5</em>. Cuentan con más de 20 clientes en lista de espera y rotación menor a 11 días.</span>
+                  <span><strong>Compra contra Demanda Previa:</strong> Prioriza retomas y compras de <em>Mitsubishi L200, Subaru Forester y Suzuki Jimny</em>. Tienen más de 10 clientes listos para comprar en menos de 48 horas.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-400 font-bold">2.</span>
@@ -351,7 +476,7 @@ export default function AnalyticsDashboard() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-brand-300 font-bold">3.</span>
-                  <span><strong>Velocidad antes que Margen Marginal:</strong> Un auto que rota en 7-10 días permite reinvertir el capital 3 veces más rápido en el año, triplicando la rentabilidad global.</span>
+                  <span><strong>Velocidad antes que Margen Marginal:</strong> Un auto que rota en 24-48 horas permite reinvertir el capital de inmediato sin pagar costo financiero de piso.</span>
                 </li>
               </ul>
             </div>
@@ -363,6 +488,96 @@ export default function AnalyticsDashboard() {
           </div>
         </div>
       </div>
+
+      {/* MODAL / DRAWER DE COMPRADORES EN LISTA DE ESPERA */}
+      {selectedWaitlist && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="relative w-full max-w-2xl rounded-3xl border border-brand-500/30 bg-ink-900 p-6 shadow-2xl">
+            <button
+              onClick={() => setSelectedWaitlist(null)}
+              className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-red-500/20 text-xl">
+                🔥
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-white">
+                  Compradores en Lista de Espera: {selectedWaitlist.brand} {selectedWaitlist.model}
+                </h3>
+                <p className="text-xs text-white/60">
+                  {selectedWaitlist.waitlistBuyers} clientes esperando este modelo · Presupuesto prom: {formatCLP(selectedWaitlist.avgBudget)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
+                💰 <strong>Precio máximo recomendado de compra / retoma:</strong> {formatCLP(selectedWaitlist.targetAcquisitionPrice)} (Margen estimado: +{formatCLPShort(selectedWaitlist.estGrossProfit)})
+              </div>
+
+              <div className="overflow-x-auto rounded-2xl border border-white/10 bg-ink-950/60 p-2">
+                <table className="w-full text-xs">
+                  <thead className="border-b border-white/10 text-left text-white/40">
+                    <tr>
+                      <th className="p-2 font-medium">Cliente</th>
+                      <th className="p-2 font-medium">Estado / Forma de Pago</th>
+                      <th className="p-2 font-medium">Presupuesto</th>
+                      <th className="p-2 font-medium text-right">Contacto WhatsApp</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {selectedWaitlist.buyerProfiles.map((buyer, idx) => {
+                      const cleanPhone = buyer.phone.replace(/[^0-9]/g, "");
+                      const waMsg = `Hola ${buyer.name}, te contactamos de RG Motors. Nos acaba de ingresar una oportunidad de ${selectedWaitlist.brand} ${selectedWaitlist.model} (${selectedWaitlist.yearRange}) que coincide con tu presupuesto de ${formatCLP(buyer.budget)}. ¿Te gustaría que te reservemos prioridad para verlo antes de publicarlo en la web?`;
+                      const waUrl = `https://wa.me/${cleanPhone.startsWith("56") ? cleanPhone : `56${cleanPhone}`}?text=${encodeURIComponent(waMsg)}`;
+
+                      return (
+                        <tr key={idx} className="hover:bg-white/[0.02]">
+                          <td className="p-2 font-semibold text-white">
+                            {buyer.name}
+                            <p className="text-[10px] text-white/40 font-normal">{buyer.phone}</p>
+                          </td>
+                          <td className="p-2">
+                            <span className="rounded-full bg-amber-400/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                              {buyer.status}
+                            </span>
+                          </td>
+                          <td className="p-2 font-bold text-brand-300">
+                            {formatCLP(buyer.budget)}
+                          </td>
+                          <td className="p-2 text-right">
+                            <a
+                              href={waUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 rounded-xl bg-[#25D366]/20 border border-[#25D366]/40 px-2.5 py-1 text-[11px] font-bold text-[#25D366] hover:bg-[#25D366] hover:text-white transition"
+                            >
+                              <span>💬</span> Pre-vender
+                            </a>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-end">
+              <button
+                onClick={() => setSelectedWaitlist(null)}
+                className="rounded-xl bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/20"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Canales + Recomendaciones */}
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
