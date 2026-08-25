@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import {
   getVehicle,
   vehicles,
@@ -8,15 +9,36 @@ import {
   estimateMonthly,
   spinFramesOf,
 } from "@/lib/vehicles";
+import { getVehicles, getVehicleBySlug } from "@/lib/server/vehiclesStore";
 import { asset } from "@/lib/asset";
-import { whatsappLink } from "@/lib/company";
 import VehicleViewer from "@/components/VehicleViewer";
 import CuotaSimulator from "@/components/CuotaSimulator";
-
 import VehicleHealthCard from "@/components/VehicleHealthCard";
+import VehicleActionButtons from "@/components/VehicleActionButtons";
 
-export function generateStaticParams() {
-  return vehicles.map((v) => ({ slug: v.slug }));
+export async function generateStaticParams() {
+  const list = await getVehicles().catch(() => vehicles);
+  return list.map((v) => ({ slug: v.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const v = (await getVehicleBySlug(slug)) || getVehicle(slug);
+  if (!v) return { title: "Vehículo no encontrado | RG Motors" };
+
+  return {
+    title: `${v.brand} ${v.model} ${v.year} — ${formatCLP(v.price)} | RG Motors`,
+    description: `${v.brand} ${v.model} ${v.version} año ${v.year} con ${v.km.toLocaleString("es-CL")} km. Inspección de 150 puntos y garantía RG Motors. Tour 360° disponible.`,
+    openGraph: {
+      title: `${v.brand} ${v.model} ${v.year} | RG Motors`,
+      description: `Precio: ${formatCLP(v.price)} · ${v.km.toLocaleString("es-CL")} km · ${v.fuel} · ${v.transmission}`,
+      images: [asset(v.image)],
+    },
+  };
 }
 
 export default async function VehiclePage({
@@ -25,9 +47,10 @@ export default async function VehiclePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const v = getVehicle(slug);
+  const v = (await getVehicleBySlug(slug)) || getVehicle(slug);
   if (!v) notFound();
 
+  const allVehicles = await getVehicles().catch(() => vehicles);
   const monthly = estimateMonthly(v.price);
 
   return (
@@ -88,11 +111,21 @@ export default async function VehiclePage({
 
         {/* Right Column: Direct Actions & Financing Simulator */}
         <div className="space-y-6">
-          {/* Quick Action Card */}
+          {/* Quick Action Card with Trade-in, Reservation & WhatsApp */}
           <div className="apple-glass-card rounded-3xl p-6 space-y-5 border-brand-500/30 bg-gradient-to-br from-brand-500/10 via-ink-950 to-black shadow-glow">
             <div>
-              <span className="inline-block rounded-full border border-emerald-400/30 bg-emerald-400/15 px-3 py-1 text-[11px] font-bold text-emerald-400">
-                ✓ Disponible para entrega inmediata
+              <span className={`inline-block rounded-full border px-3 py-1 text-[11px] font-bold ${
+                v.status === "En reserva"
+                  ? "border-amber-400/30 bg-amber-400/15 text-amber-400"
+                  : v.status === "Vendido"
+                  ? "border-red-400/30 bg-red-400/15 text-red-400"
+                  : "border-emerald-400/30 bg-emerald-400/15 text-emerald-400"
+              }`}>
+                {v.status === "En reserva"
+                  ? "● En proceso de reserva"
+                  : v.status === "Vendido"
+                  ? "● Vehículo vendido"
+                  : "✓ Disponible para entrega inmediata"}
               </span>
               <h3 className="mt-3 text-lg font-bold text-white tracking-tight">Comprar o reservar vehículo</h3>
               <p className="mt-1 text-xs text-white/55">
@@ -100,30 +133,8 @@ export default async function VehiclePage({
               </p>
             </div>
 
-            <div className="space-y-3">
-              <Link
-                href={`/reserva/${v.slug}`}
-                className="apple-btn-primary block w-full rounded-full py-3.5 text-center text-xs font-bold text-white shadow-glow"
-              >
-                Reservar online ($200.000 abono)
-              </Link>
-              <Link
-                href={`/prueba-manejo/${v.slug}`}
-                className="apple-btn-secondary block w-full rounded-full py-3 text-center text-xs font-semibold text-white"
-              >
-                Agendar prueba de manejo sin costo
-              </Link>
-              <a
-                href={whatsappLink(
-                  `Hola RG Motors, me interesa el ${v.brand} ${v.model} ${v.year} a ${formatCLP(v.price)}. ¿Me pueden contactar?`
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full rounded-full bg-[#25D366]/90 hover:bg-[#25D366] py-3 text-center text-xs font-semibold text-white transition shadow-sm"
-              >
-                <span>💬</span> Contactar por WhatsApp
-              </a>
-            </div>
+            {/* Action Buttons Component */}
+            <VehicleActionButtons vehicle={v} />
 
             <div className="border-t border-white/10 pt-4 grid grid-cols-2 gap-2 text-center text-[11px] text-white/60">
               <p>🛡️ Garantía de 6 meses</p>
@@ -140,7 +151,7 @@ export default async function VehiclePage({
       <section className="mt-12 border-t border-white/[0.08] pt-8">
         <h2 className="mb-6 text-lg font-bold tracking-tight text-white">Vehículos similares disponibles</h2>
         <div className="grid gap-4 sm:grid-cols-3">
-          {vehicles
+          {allVehicles
             .filter((x) => x.slug !== v.slug && x.bodyType === v.bodyType)
             .slice(0, 3)
             .map((x) => (
@@ -152,7 +163,9 @@ export default async function VehiclePage({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={asset(x.image)} alt={x.model} className="h-16 w-24 rounded-2xl object-cover" />
                 <div>
-                  <p className="text-xs font-bold text-white group-hover:text-brand-300 transition-colors">{x.brand} {x.model}</p>
+                  <p className="text-xs font-bold text-white group-hover:text-brand-300 transition-colors">
+                    {x.brand} {x.model}
+                  </p>
                   <p className="text-xs font-semibold text-brand-300 mt-0.5">{formatCLP(x.price)}</p>
                 </div>
               </Link>
@@ -162,17 +175,3 @@ export default async function VehiclePage({
     </main>
   );
 }
-
-function Trust({ icon, title, text }: { icon: string; title: string; text: string }) {
-  return (
-    <div className="flex items-center gap-3.5 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 backdrop-blur-md">
-      <span className="text-xl">{icon}</span>
-      <div>
-        <p className="text-xs font-bold text-white">{title}</p>
-        <p className="text-[11px] text-white/50">{text}</p>
-      </div>
-    </div>
-  );
-}
-
-

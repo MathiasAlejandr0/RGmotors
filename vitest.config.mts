@@ -16,6 +16,8 @@ export default defineConfig({
       ".next/**",
       "out/**",
       "e2e/**",
+      "v1/**",
+      "v2/**",
       "playwright-report/**",
       "test-results/**",
     ],

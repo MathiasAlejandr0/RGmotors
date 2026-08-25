@@ -19,6 +19,7 @@ export type Vehicle = {
   doors: number;
   owners: number;
   featured: boolean;
+  status?: "Disponible" | "En reserva" | "Vendido" | "Borrador";
   highlights: string[];
   /**
    * Configuración del giro 360° con fotos reales.

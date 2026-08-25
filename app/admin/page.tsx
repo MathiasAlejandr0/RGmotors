@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import SpinUploader from "@/components/admin/SpinUploader";
 import PhotoManager from "@/components/admin/PhotoManager";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
+import AdminAuthGate from "@/components/admin/AdminAuthGate";
 import {
   VehiclesSection,
   ReservationsSection,
@@ -14,7 +15,7 @@ import {
   ConfigSection,
 } from "@/components/admin/AdminSections";
 import { asset } from "@/lib/asset";
-import { vehicles, formatCLP } from "@/lib/vehicles";
+import { Vehicle, formatCLP } from "@/lib/vehicles";
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "▦" },
@@ -33,189 +34,303 @@ const MONTHS = ["E", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 export default function AdminPage() {
   const [active, setActive] = useState("dashboard");
-  const [photoSlug, setPhotoSlug] = useState<string>(vehicles[0]?.slug ?? "");
+  const [vehiclesList, setVehiclesList] = useState<Vehicle[]>([]);
+  const [reservationsList, setReservationsList] = useState<any[]>([]);
+  const [photoSlug, setPhotoSlug] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/vehicles")
+      .then((r) => (r.ok ? r.json() : { vehicles: [] }))
+      .then((data) => {
+        setVehiclesList(data.vehicles || []);
+        if (data.vehicles && data.vehicles.length > 0 && !photoSlug) {
+          setPhotoSlug(data.vehicles[0].slug);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/reservations")
+      .then((r) => (r.ok ? r.json() : { reservations: [] }))
+      .then((data) => {
+        setReservationsList(data.reservations || []);
+      })
+      .catch(() => {});
+  }, [photoSlug]);
 
   const handleOpenPhotoManager = (slug: string) => {
     setPhotoSlug(slug);
     setActive("fotos");
   };
 
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem("rg_admin_auth");
+      window.location.reload();
+    } catch {}
+  };
+
   return (
-    <div className="min-h-screen bg-ink-950">
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-white/10 bg-ink-800/40 p-4 lg:block">
-          <Link href="/" className="block px-2 py-2">
-            <Logo size={32} tagline={false} />
-          </Link>
-          <p className="mt-2 px-2 text-xs uppercase tracking-wide text-white/30">Admin</p>
-          <nav className="mt-3 space-y-1">
-            {NAV.map((n) => (
-              <button
-                key={n.id}
-                onClick={() => setActive(n.id)}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                  active === n.id ? "bg-brand-500/15 text-white" : "text-white/55 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <span className="w-4 text-center">{n.icon}</span> {n.label}
-              </button>
-            ))}
-          </nav>
-          <Link href="/" className="mt-6 flex items-center gap-2 px-3 py-2 text-sm text-white/40 hover:text-white">
-            ← Volver al sitio
-          </Link>
-        </aside>
-
-        {/* Main */}
-        <main className="flex-1 p-6">
-          <div className="mb-6 flex items-center justify-between">
+    <AdminAuthGate>
+      <div className="min-h-screen bg-ink-950 text-white">
+        <div className="flex">
+          {/* Sidebar */}
+          <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-white/10 bg-ink-800/40 p-4 lg:flex flex-col justify-between">
             <div>
-              <h1 className="text-2xl font-bold">
-                {
-                  {
-                    dashboard: "Dashboard",
-                    analitica: "Analítica de negocio",
-                    vehiculos: "Vehículos",
-                    fotos: "Gestor de Fotos y Galería",
-                    spin360: "360° / Videos",
-                    reservas: "Reservas",
-                    creditos: "Créditos",
-                    clientes: "Clientes",
-                    config: "Configuración",
-                  }[active]
-                }
-              </h1>
-              <p className="text-sm text-white/50">
-                {
-                  {
-                    dashboard: "Resumen general de RG Motors",
-                    analitica: "Inteligencia de datos para vender más",
-                    vehiculos: "Inventario publicado en el catálogo",
-                    fotos: "Sube, organiza fotos y fotogramas 360° fácilmente",
-                    spin360: "Genera giros 360° de los autos subiendo un video",
-                    reservas: "Reservas con pago parcial",
-                    creditos: "Solicitudes y pre-aprobaciones",
-                    clientes: "Base de clientes y leads",
-                    config: "Datos de la empresa y preferencias",
-                  }[active]
-                }
+              <Link href="/" className="block px-2 py-2">
+                <Logo size={32} tagline={false} />
+              </Link>
+              <p className="mt-2 px-2 text-[10px] font-bold uppercase tracking-wider text-brand-400">
+                Panel Administrador
               </p>
-            </div>
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-ink-800 px-3 py-1.5 text-sm">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-500/20 text-brand-300">A</span>
-              Administrador
-            </div>
-          </div>
-
-          {active === "fotos" && <PhotoManager initialSlug={photoSlug} />}
-          {active === "spin360" && <SpinUploader />}
-          {active === "analitica" && <AnalyticsDashboard />}
-          {active === "vehiculos" && <VehiclesSection onManagePhotos={handleOpenPhotoManager} />}
-          {active === "reservas" && <ReservationsSection />}
-          {active === "creditos" && <CreditsSection />}
-          {active === "clientes" && <ClientsSection />}
-          {active === "config" && <ConfigSection />}
-          {active === "dashboard" && (
-          <>
-          {/* Stat cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Kpi icon="🚗" value="452" label="Vehículos publicados" trend="+8%" />
-            <Kpi icon="👁" value="12.480" label="Visitas este mes" trend="+23%" />
-            <Kpi icon="★" value="16" label="Reservas activas" trend="+4" />
-            <Kpi icon="💰" value="$248M" label="Ventas del mes" trend="+15%" />
-          </div>
-
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-            {/* Chart */}
-            <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold">Ventas del mes</h2>
-                <span className="text-sm text-emerald-400">+15% vs mes anterior</span>
-              </div>
-              <AreaChart data={SALES} labels={MONTHS} />
-            </div>
-
-            {/* Most viewed */}
-            <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-5">
-              <h2 className="mb-4 font-semibold">Vehículos más vistos</h2>
-              <div className="space-y-3">
-                {vehicles.slice(0, 5).map((v, i) => (
-                  <div key={v.slug} className="flex items-center gap-3">
-                    <span className="text-sm text-white/30">{i + 1}</span>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={asset(v.image)} alt={v.model} className="h-10 w-14 rounded-lg object-cover" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{v.brand} {v.model}</p>
-                      <p className="text-xs text-white/40">{formatCLP(v.price)}</p>
-                    </div>
-                    <span className="text-sm text-white/50">{(2400 - i * 320).toLocaleString("es-CL")}</span>
-                  </div>
+              <nav className="mt-4 space-y-1">
+                {NAV.map((n) => (
+                  <button
+                    key={n.id}
+                    onClick={() => setActive(n.id)}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                      active === n.id
+                        ? "bg-brand-500 text-white shadow-glow"
+                        : "text-white/55 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <span className="w-4 text-center text-sm">{n.icon}</span> {n.label}
+                  </button>
                 ))}
+              </nav>
+            </div>
+
+            <div className="space-y-2 border-t border-white/10 pt-4">
+              <Link
+                href="/"
+                className="flex items-center gap-2 px-3 py-2 text-xs text-white/40 hover:text-white transition"
+              >
+                ← Volver al sitio público
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-red-400/80 hover:text-red-300 transition"
+              >
+                ⏻ Cerrar sesión admin
+              </button>
+            </div>
+          </aside>
+
+          {/* Main */}
+          <main className="flex-1 p-6">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-white">
+                  {
+                    {
+                      dashboard: "Dashboard Principal",
+                      analitica: "Analítica de Negocio & Ventas",
+                      vehiculos: "Gestión de Inventario",
+                      fotos: "Gestor de Fotos y Galería",
+                      spin360: "Generador 360° desde Video (IA)",
+                      reservas: "CRM de Reservas Online",
+                      creditos: "Solicitudes de Financiamiento",
+                      clientes: "Base de Clientes & Leads",
+                      config: "Configuración del Negocio",
+                    }[active]
+                  }
+                </h1>
+                <p className="text-xs text-white/50 mt-0.5">
+                  {
+                    {
+                      dashboard: "Resumen integral de ventas, inventario y reservas activas",
+                      analitica: "Inteligencia de datos y señales de compra inferidas",
+                      vehiculos: "Crea, edita y organiza los vehículos del catálogo",
+                      fotos: "Sube y organiza fotos y fotogramas 360° por arrastre",
+                      spin360: "Genera giros 360° con recorte de fondo automático",
+                      reservas: "Control de abonos y contacto directo por WhatsApp",
+                      creditos: "Evaluaciones y pre-aprobaciones de crédito",
+                      clientes: "Leads capturados desde la web y chatbot",
+                      config: "Datos de contacto, teléfonos, horarios y parámetros de cálculo",
+                    }[active]
+                  }
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-ink-800 px-3.5 py-1.5 text-xs">
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-500/20 font-bold text-brand-300">
+                    A
+                  </span>
+                  <span className="text-white/80 font-medium">Administrador RG</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Recent reservations table */}
-          <div className="mt-6 rounded-2xl border border-white/10 bg-ink-800/60 p-5">
-            <h2 className="mb-4 font-semibold">Reservas recientes</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
-                <thead className="text-left text-white/40">
-                  <tr className="border-b border-white/10">
-                    <th className="pb-2">Cliente</th>
-                    <th className="pb-2">Vehículo</th>
-                    <th className="pb-2">Monto</th>
-                    <th className="pb-2">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { c: "Matías González", v: vehicles[0], s: "Pagada", color: "emerald" },
-                    { c: "Carla Muñoz", v: vehicles[3], s: "En proceso", color: "amber" },
-                    { c: "Pedro Rivas", v: vehicles[1], s: "Pagada", color: "emerald" },
-                    { c: "Ana Torres", v: vehicles[8], s: "Cancelada", color: "red" },
-                  ].map((r, i) => (
-                    <tr key={i} className="border-b border-white/5">
-                      <td className="py-3">{r.c}</td>
-                      <td className="py-3">{r.v.brand} {r.v.model}</td>
-                      <td className="py-3">{formatCLP(200000)}</td>
-                      <td className="py-3">
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs ${
-                            r.color === "emerald"
-                              ? "bg-emerald-400/15 text-emerald-300"
-                              : r.color === "amber"
-                                ? "bg-amber-400/15 text-amber-300"
-                                : "bg-red-400/15 text-red-300"
-                          }`}
-                        >
-                          {r.s}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Mobile Nav Tabs */}
+            <div className="mb-6 flex gap-1.5 overflow-x-auto pb-2 lg:hidden">
+              {NAV.map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => setActive(n.id)}
+                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold ${
+                    active === n.id
+                      ? "bg-brand-500 text-white"
+                      : "bg-ink-800/80 text-white/60 hover:text-white"
+                  }`}
+                >
+                  <span>{n.icon}</span> {n.label}
+                </button>
+              ))}
             </div>
-          </div>
-          </>
-          )}
-        </main>
+
+            {active === "fotos" && <PhotoManager initialSlug={photoSlug || vehiclesList[0]?.slug} />}
+            {active === "spin360" && <SpinUploader />}
+            {active === "analitica" && <AnalyticsDashboard />}
+            {active === "vehiculos" && <VehiclesSection onManagePhotos={handleOpenPhotoManager} />}
+            {active === "reservas" && <ReservationsSection />}
+            {active === "creditos" && <CreditsSection />}
+            {active === "clientes" && <ClientsSection />}
+            {active === "config" && <ConfigSection />}
+
+            {active === "dashboard" && (
+              <>
+                {/* Stat cards */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <Kpi
+                    icon="🚗"
+                    value={String(vehiclesList.length || 10)}
+                    label="Vehículos en catálogo"
+                    trend="+2 nuevos"
+                  />
+                  <Kpi icon="👁" value="12.480" label="Visitas este mes" trend="+23%" />
+                  <Kpi
+                    icon="★"
+                    value={String(reservationsList.length || 4)}
+                    label="Reservas registradas"
+                    trend={`${reservationsList.filter((r) => r.status === "Pagada").length || 3} pagadas`}
+                  />
+                  <Kpi icon="💰" value="$248M" label="Ventas estimadas" trend="+15%" />
+                </div>
+
+                <div className="mt-6 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+                  {/* Chart */}
+                  <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-5">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="font-semibold text-white">Ventas y reservas del mes</h2>
+                      <span className="text-xs text-emerald-400 font-medium">+15% vs mes anterior</span>
+                    </div>
+                    <AreaChart data={SALES} labels={MONTHS} />
+                  </div>
+
+                  {/* Most viewed */}
+                  <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-5">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="font-semibold text-white">Vehículos destacados</h2>
+                      <button
+                        onClick={() => setActive("vehiculos")}
+                        className="text-xs text-brand-400 hover:underline"
+                      >
+                        Ver todos →
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {vehiclesList.slice(0, 5).map((v, i) => (
+                        <div key={v.slug} className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-white/30">{i + 1}</span>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={asset(v.image)}
+                            alt={v.model}
+                            className="h-10 w-14 rounded-lg object-cover border border-white/10"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-bold text-white">
+                              {v.brand} {v.model}
+                            </p>
+                            <p className="text-[11px] text-brand-300 font-medium">{formatCLP(v.price)}</p>
+                          </div>
+                          <span className="text-xs text-white/50">{v.status || "Disponible"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent reservations table */}
+                <div className="mt-6 rounded-2xl border border-white/10 bg-ink-800/60 p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="font-semibold text-white">Últimas Reservas Online</h2>
+                    <button
+                      onClick={() => setActive("reservas")}
+                      className="text-xs text-brand-400 hover:underline"
+                    >
+                      Gestionar reservas →
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[560px] text-sm">
+                      <thead className="text-left text-white/40">
+                        <tr className="border-b border-white/10">
+                          <th className="pb-2">ID / Fecha</th>
+                          <th className="pb-2">Cliente</th>
+                          <th className="pb-2">Vehículo</th>
+                          <th className="pb-2">Monto Abono</th>
+                          <th className="pb-2">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reservationsList.slice(0, 5).map((r) => (
+                          <tr key={r.id} className="border-b border-white/5">
+                            <td className="py-3 text-xs text-white/50">
+                              {r.id} · {new Date(r.date).toLocaleDateString("es-CL")}
+                            </td>
+                            <td className="py-3 font-medium text-white">{r.clientName}</td>
+                            <td className="py-3 text-white/70">{r.vehicleSlug}</td>
+                            <td className="py-3 font-bold text-white">{formatCLP(r.amount)}</td>
+                            <td className="py-3">
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                                  r.status === "Pagada"
+                                    ? "bg-emerald-400/15 text-emerald-300"
+                                    : r.status === "En proceso"
+                                    ? "bg-amber-400/15 text-amber-300"
+                                    : "bg-red-400/15 text-red-300"
+                                }`}
+                              >
+                                {r.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+          </main>
+        </div>
       </div>
-    </div>
+    </AdminAuthGate>
   );
 }
 
-function Kpi({ icon, value, label, trend }: { icon: string; value: string; label: string; trend: string }) {
+function Kpi({
+  icon,
+  value,
+  label,
+  trend,
+}: {
+  icon: string;
+  value: string;
+  label: string;
+  trend: string;
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-5">
       <div className="flex items-center justify-between">
-        <span className="grid h-10 w-10 place-items-center rounded-lg bg-brand-500/15 text-brand-300">{icon}</span>
-        <span className="text-xs text-emerald-400">{trend}</span>
+        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-300 text-lg">
+          {icon}
+        </span>
+        <span className="text-xs text-emerald-400 font-medium">{trend}</span>
       </div>
-      <p className="mt-3 text-2xl font-bold">{value}</p>
-      <p className="text-sm text-white/50">{label}</p>
+      <p className="mt-3 text-2xl font-extrabold text-white">{value}</p>
+      <p className="text-xs text-white/50">{label}</p>
     </div>
   );
 }
@@ -244,7 +359,14 @@ function AreaChart({ data, labels }: { data: number[]; labels: string[] }) {
         <circle key={i} cx={p[0]} cy={p[1]} r="3" fill="#49A7FF" />
       ))}
       {labels.map((l, i) => (
-        <text key={i} x={pad + i * step} y={h + 14} fill="rgba(255,255,255,0.35)" fontSize="10" textAnchor="middle">
+        <text
+          key={i}
+          x={pad + i * step}
+          y={h + 14}
+          fill="rgba(255,255,255,0.35)"
+          fontSize="10"
+          textAnchor="middle"
+        >
           {l}
         </text>
       ))}

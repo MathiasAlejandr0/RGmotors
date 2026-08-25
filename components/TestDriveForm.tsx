@@ -33,6 +33,24 @@ export default function TestDriveForm({ vehicle: v }: { vehicle: Vehicle }) {
 
   const canConfirm = !!(day && time && name.trim() && phone.trim());
 
+  const handleConfirm = async () => {
+    setDone(true);
+    try {
+      await fetch("/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: `td_${Date.now()}`,
+          name,
+          contact: phone,
+          bodyType: v.bodyType,
+          models: [v.slug],
+          intents: ["prueba-manejo", `sucursal-${branch}`],
+        }),
+      });
+    } catch {}
+  };
+
   if (done) {
     return (
       <div className="apple-glass-card mx-auto max-w-lg rounded-3xl p-8 text-center border-emerald-500/30">
@@ -167,7 +185,7 @@ export default function TestDriveForm({ vehicle: v }: { vehicle: Vehicle }) {
         </div>
 
         <button
-          onClick={() => setDone(true)}
+          onClick={handleConfirm}
           disabled={!canConfirm}
           className="apple-btn-primary w-full rounded-full py-3.5 text-xs font-semibold text-white shadow-glow disabled:opacity-50 disabled:pointer-events-none"
         >

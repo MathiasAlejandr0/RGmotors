@@ -1,42 +1,97 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
-  vehicles,
+  vehicles as initialVehicles,
   BRANDS,
   BODY_TYPES,
   FUELS,
   TRANSMISSIONS,
   formatCLP,
+  Vehicle,
 } from "@/lib/vehicles";
 import VehicleCard from "@/components/VehicleCard";
 import CatalogPdfButton from "@/components/CatalogPdfButton";
 import QuickCategoryFilter, { CategoryPill } from "@/components/QuickCategoryFilter";
 
-const MAX_PRICE = Math.max(...vehicles.map((v) => v.price));
+const MAX_PRICE = 30000000;
 
 type Sort = "relevancia" | "precio-asc" | "precio-desc" | "km-asc" | "year-desc";
 
 export default function CatalogPage() {
+  return (
+    <Suspense fallback={<div className="p-12 text-center text-xs text-white/40">Cargando catálogo…</div>}>
+      <CatalogContent />
+    </Suspense>
+  );
+}
+
+function CatalogContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const [vehicleList, setVehicleList] = useState<Vehicle[]>(initialVehicles);
   const [activeCat, setActiveCat] = useState<CategoryPill>("todos");
   const [brands, setBrands] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
   const [fuels, setFuels] = useState<string[]>([]);
   const [trans, setTrans] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState(MAX_PRICE);
-  const [minYear, setMinYear] = useState(2019);
+  const [minYear, setMinYear] = useState(2018);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("relevancia");
   const [showFilters, setShowFilters] = useState(false);
 
+  // Load from API on mount
+  useEffect(() => {
+    fetch("/api/vehicles")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && data.vehicles) {
+          setVehicleList(data.vehicles);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Initialize filters from URL search params
+  useEffect(() => {
+    const brandParam = searchParams.get("marca");
+    if (brandParam) setBrands(brandParam.split(","));
+
+    const typeParam = searchParams.get("carroceria");
+    if (typeParam) setTypes(typeParam.split(","));
+
+    const fuelParam = searchParams.get("combustible");
+    if (fuelParam) setFuels(fuelParam.split(","));
+
+    const qParam = searchParams.get("q");
+    if (qParam) setQuery(qParam);
+
+    const sortParam = searchParams.get("sort") as Sort;
+    if (sortParam) setSort(sortParam);
+  }, [searchParams]);
+
+  // Sync state changes to URL
+  const updateUrlParams = (newBrands: string[], newTypes: string[], newFuels: string[], newQ: string) => {
+    const params = new URLSearchParams();
+    if (newBrands.length) params.set("marca", newBrands.join(","));
+    if (newTypes.length) params.set("carroceria", newTypes.join(","));
+    if (newFuels.length) params.set("combustible", newFuels.join(","));
+    if (newQ) params.set("q", newQ);
+    const queryString = params.toString();
+    router.replace(queryString ? `/catalogo?${queryString}` : "/catalogo", { scroll: false });
+  };
+
   const categoryCounts = useMemo(() => ({
-    todos: vehicles.length,
-    hibridos: vehicles.filter((v) => v.fuel === "Híbrido" || v.fuel === "Eléctrico").length,
-    suv: vehicles.filter((v) => v.bodyType === "SUV").length,
-    sedan: vehicles.filter((v) => v.bodyType === "Sedán").length,
-    camioneta: vehicles.filter((v) => v.bodyType === "Camioneta").length,
-    "bajo-km": vehicles.filter((v) => v.km <= 30000).length,
-  }), []);
+    todos: vehicleList.length,
+    hibridos: vehicleList.filter((v) => v.fuel === "Híbrido" || v.fuel === "Eléctrico").length,
+    suv: vehicleList.filter((v) => v.bodyType === "SUV").length,
+    sedan: vehicleList.filter((v) => v.bodyType === "Sedán").length,
+    camioneta: vehicleList.filter((v) => v.bodyType === "Camioneta").length,
+    "bajo-km": vehicleList.filter((v) => v.km <= 30000).length,
+  }), [vehicleList]);
 
   const handleSelectQuickCategory = (cat: CategoryPill) => {
     setActiveCat(cat);
@@ -44,37 +99,55 @@ export default function CatalogPage() {
       case "hibridos":
         setFuels(["Híbrido"]);
         setTypes([]);
+        updateUrlParams(brands, [], ["Híbrido"], query);
         break;
       case "suv":
         setTypes(["SUV"]);
         setFuels([]);
+        updateUrlParams(brands, ["SUV"], [], query);
         break;
       case "sedan":
         setTypes(["Sedán"]);
         setFuels([]);
+        updateUrlParams(brands, ["Sedán"], [], query);
         break;
       case "camioneta":
         setTypes(["Camioneta"]);
         setFuels([]);
+        updateUrlParams(brands, ["Camioneta"], [], query);
         break;
       default:
         setTypes([]);
         setFuels([]);
+        updateUrlParams(brands, [], [], query);
         break;
     }
   };
 
-  const toggle = (
-    value: string,
-    list: string[],
-    setter: (v: string[]) => void
-  ) => {
-    setActiveCat("todos");
-    setter(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
+  const toggleBrand = (b: string) => {
+    const updated = brands.includes(b) ? brands.filter((x) => x !== b) : [...brands, b];
+    setBrands(updated);
+    updateUrlParams(updated, types, fuels, query);
+  };
+
+  const toggleType = (t: string) => {
+    const updated = types.includes(t) ? types.filter((x) => x !== t) : [...types, t];
+    setTypes(updated);
+    updateUrlParams(brands, updated, fuels, query);
+  };
+
+  const toggleFuel = (f: string) => {
+    const updated = fuels.includes(f) ? fuels.filter((x) => x !== f) : [...fuels, f];
+    setFuels(updated);
+    updateUrlParams(brands, types, updated, query);
+  };
+
+  const toggleTrans = (t: string) => {
+    setTrans(trans.includes(t) ? trans.filter((x) => x !== t) : [...trans, t]);
   };
 
   const filtered = useMemo(() => {
-    let result = vehicles.filter((v) => {
+    let result = vehicleList.filter((v) => {
       if (activeCat === "bajo-km" && v.km > 30000) return false;
       if (brands.length && !brands.includes(v.brand)) return false;
       if (types.length && !types.includes(v.bodyType)) return false;
@@ -89,7 +162,6 @@ export default function CatalogPage() {
       }
       return true;
     });
-
 
     switch (sort) {
       case "precio-asc":
@@ -110,7 +182,7 @@ export default function CatalogPage() {
         );
     }
     return result;
-  }, [brands, types, fuels, trans, maxPrice, minYear, query, sort]);
+  }, [vehicleList, activeCat, brands, types, fuels, trans, maxPrice, minYear, query, sort]);
 
   const filterSummary = useMemo(() => {
     const parts: string[] = [];
@@ -119,7 +191,7 @@ export default function CatalogPage() {
     if (fuels.length) parts.push(fuels.join(", "));
     if (trans.length) parts.push(trans.join(", "));
     if (maxPrice < MAX_PRICE) parts.push(`hasta ${formatCLP(maxPrice)}`);
-    if (minYear > 2019) parts.push(`${minYear}+`);
+    if (minYear > 2018) parts.push(`${minYear}+`);
     if (query) parts.push(`"${query}"`);
     return parts.length ? parts.join(" · ") : "Catálogo completo";
   }, [brands, types, fuels, trans, maxPrice, minYear, query]);
@@ -130,21 +202,23 @@ export default function CatalogPage() {
     setFuels([]);
     setTrans([]);
     setMaxPrice(MAX_PRICE);
-    setMinYear(2019);
+    setMinYear(2018);
     setQuery("");
+    setActiveCat("todos");
+    router.replace("/catalogo", { scroll: false });
   };
 
   const Filters = (
     <div className="space-y-6">
       <FilterGroup title="Marca">
         {BRANDS.map((b) => (
-          <Check key={b} label={b} checked={brands.includes(b)} onChange={() => toggle(b, brands, setBrands)} />
+          <Check key={b} label={b} checked={brands.includes(b)} onChange={() => toggleBrand(b)} />
         ))}
       </FilterGroup>
 
       <FilterGroup title="Tipo de vehículo">
         {BODY_TYPES.map((t) => (
-          <Check key={t} label={t} checked={types.includes(t)} onChange={() => toggle(t, types, setTypes)} />
+          <Check key={t} label={t} checked={types.includes(t)} onChange={() => toggleType(t)} />
         ))}
       </FilterGroup>
 
@@ -167,7 +241,7 @@ export default function CatalogPage() {
         <input
           type="range"
           min={2015}
-          max={2023}
+          max={2024}
           step={1}
           value={minYear}
           onChange={(e) => setMinYear(Number(e.target.value))}
@@ -180,13 +254,13 @@ export default function CatalogPage() {
 
       <FilterGroup title="Combustible">
         {FUELS.map((f) => (
-          <Check key={f} label={f} checked={fuels.includes(f)} onChange={() => toggle(f, fuels, setFuels)} />
+          <Check key={f} label={f} checked={fuels.includes(f)} onChange={() => toggleFuel(f)} />
         ))}
       </FilterGroup>
 
       <FilterGroup title="Transmisión">
         {TRANSMISSIONS.map((t) => (
-          <Check key={t} label={t} checked={trans.includes(t)} onChange={() => toggle(t, trans, setTrans)} />
+          <Check key={t} label={t} checked={trans.includes(t)} onChange={() => toggleTrans(t)} />
         ))}
       </FilterGroup>
 
@@ -229,7 +303,6 @@ export default function CatalogPage() {
 
         {/* Results */}
         <div className="space-y-6">
-          {/* 3. Apple Store Style Quick Category Filter Bar */}
           <QuickCategoryFilter
             activeCategory={activeCat}
             onSelectCategory={handleSelectQuickCategory}
@@ -237,14 +310,16 @@ export default function CatalogPage() {
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-
             <div className="relative w-full sm:max-w-xs">
               <span className="absolute inset-y-0 left-3.5 flex items-center text-white/40 pointer-events-none">
                 🔍
               </span>
               <input
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  updateUrlParams(brands, types, fuels, e.target.value);
+                }}
                 placeholder="Buscar marca o modelo…"
                 className="w-full rounded-full border border-white/15 bg-white/[0.05] pl-10 pr-4 py-2.5 text-xs text-white placeholder-white/40 outline-none focus:border-brand-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-brand-500/20 transition"
               />
@@ -338,4 +413,3 @@ function Check({
     </label>
   );
 }
-

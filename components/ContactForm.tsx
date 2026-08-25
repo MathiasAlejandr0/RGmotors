@@ -42,9 +42,21 @@ export default function ContactForm() {
   return (
     <form
       className="apple-glass-card rounded-3xl p-7 space-y-5"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         setSent(true);
+        try {
+          await fetch("/api/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: `contact_${Date.now()}`,
+              name,
+              contact: phone || email,
+              intents: ["formulario-contacto", message.slice(0, 50)],
+            }),
+          });
+        } catch {}
       }}
     >
       <div className="grid gap-5 sm:grid-cols-2">

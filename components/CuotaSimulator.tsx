@@ -1,22 +1,32 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { formatCLP } from "@/lib/vehicles";
 
 type Props = {
   price: number;
 };
 
-const MONTHLY_RATE = 0.019; // tasa mensual referencial (~1.9%)
-
 export default function CuotaSimulator({ price }: Props) {
   const [downPct, setDownPct] = useState(20);
   const [term, setTerm] = useState(48);
+  const [rate, setRate] = useState(0.019);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.preferences?.monthlyInterestRate) {
+          setRate(data.preferences.monthlyInterestRate);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const { down, financed, monthly, total, cae } = useMemo(() => {
     const down = Math.round((price * downPct) / 100);
     const financed = price - down;
-    const i = MONTHLY_RATE;
+    const i = rate;
     // Cuota francesa
     const monthly =
       financed > 0
@@ -25,7 +35,7 @@ export default function CuotaSimulator({ price }: Props) {
     const total = monthly * term + down;
     const cae = (Math.pow(1 + i, 12) - 1) * 100; // aproximación anual
     return { down, financed, monthly, total, cae };
-  }, [price, downPct, term]);
+  }, [price, downPct, term, rate]);
 
   return (
     <div className="apple-glass-card rounded-3xl p-6">
