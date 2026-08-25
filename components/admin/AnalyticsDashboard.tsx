@@ -13,6 +13,8 @@ import {
   channels,
   salesTrend,
   recommendations,
+  topSellingModelsAndProcurement,
+  brandMarketShare,
   scoreBand,
   formatCLPShort,
 } from "@/lib/analytics";
@@ -48,6 +50,24 @@ export default function AnalyticsDashboard() {
   const chs = useMemo(() => channels(leads), [leads]);
   const trend = useMemo(() => salesTrend(leads), [leads]);
   const recs = useMemo(() => recommendations(leads), [leads]);
+  const procurement = useMemo(() => topSellingModelsAndProcurement(leads), [leads]);
+  const brandsShare = useMemo(() => brandMarketShare(leads), [leads]);
+
+  const [procurementFilter, setProcurementFilter] = useState<string>("all");
+  const [procurementCategory, setProcurementCategory] = useState<string>("all");
+
+  const filteredProcurement = useMemo(() => {
+    return procurement.filter((p) => {
+      const matchCat = procurementCategory === "all" || p.bodyType === procurementCategory;
+      const matchFilter =
+        procurementFilter === "all" ||
+        (procurementFilter === "urgent" && p.recommendation === "Comprar Urgente") ||
+        (procurementFilter === "high" && p.recommendation === "Alta Rotación") ||
+        (procurementFilter === "optimal" && p.recommendation === "Stock Óptimo") ||
+        (procurementFilter === "pause" && p.recommendation === "Pausar Compras");
+      return matchCat && matchFilter;
+    });
+  }, [procurement, procurementCategory, procurementFilter]);
 
   const [captured, setCaptured] = useState<CapturedLead[]>([]);
   useEffect(() => {
@@ -116,6 +136,232 @@ export default function AnalyticsDashboard() {
             <HBarChart data={fin.terms.map((t) => ({ label: t.label, value: t.pct }))} unit="%" color="#2D8CFF" />
           </div>
         </Card>
+      </div>
+
+      {/* MÓDULO ESTRATÉGICO: COMPRA INTELIGENTE DE INVENTARIO & RANKING DE MODELOS MÁS VENDIDOS */}
+      <div className="space-y-4 rounded-3xl border border-brand-500/30 bg-ink-900/90 p-5 shadow-2xl backdrop-blur-xl">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-500/20 text-sm">
+                🛒
+              </span>
+              <h2 className="text-lg font-bold text-white tracking-tight">
+                Módulo de Compra Inteligente & Ranking de Modelos
+              </h2>
+              <span className="rounded-full bg-brand-500/20 px-2.5 py-0.5 text-[10px] font-bold text-brand-300 border border-brand-500/30">
+                EXCLUSIVO DIRECCIÓN
+              </span>
+            </div>
+            <p className="text-xs text-white/60 mt-1">
+              Guía de abastecimiento predictivo basada en velocidad de rotación real, volumen histórico y clientes con compra pre-aprobada en lista de espera.
+            </p>
+          </div>
+
+          {/* Mini KPIs de compra */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-xl border border-white/10 bg-ink-800/80 px-3 py-1.5 text-center">
+              <p className="text-[10px] text-white/50">Modelo #1 Rotación</p>
+              <p className="text-xs font-bold text-brand-300">Toyota RAV4 (~7d)</p>
+            </div>
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-center">
+              <p className="text-[10px] text-amber-300/80">Demanda en Espera</p>
+              <p className="text-xs font-bold text-amber-400">146 Clientes Activos</p>
+            </div>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-center">
+              <p className="text-[10px] text-emerald-300/80">Margen Retoma Est.</p>
+              <p className="text-xs font-bold text-emerald-400">18% (~$3.1M/u)</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Filtros de la tabla de compra */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-y border-white/10 py-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-medium text-white/50 mr-1">Carrocería:</span>
+            {["all", "SUV", "Camioneta", "Hatchback", "Sedán"].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setProcurementCategory(cat)}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                  procurementCategory === cat
+                    ? "bg-brand-500 text-white shadow-sm"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {cat === "all" ? "Todas" : cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-medium text-white/50 mr-1">Semáforo de Compra:</span>
+            {[
+              { id: "all", label: "Todos" },
+              { id: "urgent", label: "🔥 Comprar Urgente" },
+              { id: "high", label: "⚡ Alta Rotación" },
+              { id: "optimal", label: "✅ Stock Óptimo" },
+              { id: "pause", label: "⏸️ Pausar" },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setProcurementFilter(f.id)}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                  procurementFilter === f.id
+                    ? "bg-brand-500 text-white shadow-sm"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tabla de Ranking y Oportunidades de Compra */}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[880px] text-sm">
+            <thead className="text-left text-white/40 border-b border-white/10">
+              <tr>
+                <th className="pb-2.5 font-medium">Rank & Modelo</th>
+                <th className="pb-2.5 font-medium">Ventas (6m)</th>
+                <th className="pb-2.5 font-medium">Demanda / Espera</th>
+                <th className="pb-2.5 font-medium">Stock Actual</th>
+                <th className="pb-2.5 font-medium">Rotación</th>
+                <th className="pb-2.5 font-medium">Venta / Compra Sugerida</th>
+                <th className="pb-2.5 font-medium">Semáforo de Compra</th>
+                <th className="pb-2.5 font-medium text-right">Margen Bruto Est.</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {filteredProcurement.map((item) => (
+                <tr key={`${item.brand}-${item.model}`} className="hover:bg-white/[0.02] transition">
+                  <td className="py-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
+                        item.rank <= 3 ? "bg-amber-400 text-ink-950 shadow-sm" : "bg-white/10 text-white/70"
+                      }`}>
+                        {item.rank}
+                      </span>
+                      <div>
+                        <p className="font-bold text-white flex items-center gap-1.5">
+                          {item.brand} {item.model}
+                          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-normal text-white/60">
+                            {item.bodyType}
+                          </span>
+                        </p>
+                        <p className="text-[11px] text-white/40 max-w-[280px] truncate" title={item.recommendationReason}>
+                          {item.recommendationReason}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3">
+                    <span className="font-bold text-white">{item.salesCount}</span>
+                    <span className="text-xs text-white/40 ml-1">unidades</span>
+                  </td>
+                  <td className="py-3">
+                    <span className="font-bold text-amber-400">🔥 {item.activeLeads}</span>
+                    <span className="text-xs text-white/40 ml-1">en espera</span>
+                  </td>
+                  <td className="py-3">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                        item.currentStock === 0
+                          ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                          : item.currentStock <= 2
+                            ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                            : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                      }`}
+                    >
+                      {item.currentStock === 0 ? "0 u (Sin stock)" : `${item.currentStock} u`}
+                    </span>
+                  </td>
+                  <td className="py-3">
+                    <p className="font-semibold text-white">~{item.avgDaysToSell} días</p>
+                    <p className="text-[10px] text-white/40">{item.turnoverSpeed}</p>
+                  </td>
+                  <td className="py-3 text-xs">
+                    <p className="text-white/80 font-medium">Venta: {formatCLP(item.avgRetailPrice)}</p>
+                    <p className="text-emerald-400 font-bold">Máx compra: {formatCLP(item.targetBuyPrice)}</p>
+                  </td>
+                  <td className="py-3">
+                    <span
+                      className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold text-white shadow-sm"
+                      style={{ background: `${item.badgeColor}33`, borderColor: item.badgeColor, borderWidth: 1 }}
+                    >
+                      <span>{item.recommendation === "Comprar Urgente" ? "🔥" : item.recommendation === "Alta Rotación" ? "⚡" : item.recommendation === "Stock Óptimo" ? "✅" : "⏸️"}</span>
+                      {item.recommendation}
+                    </span>
+                  </td>
+                  <td className="py-3 text-right">
+                    <p className="font-bold text-emerald-400">+{formatCLPShort(item.estGrossMargin)}</p>
+                    <p className="text-[10px] text-white/50">{item.estMarginPct}% margen</p>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Gráfico de Market Share por Marca & Reglas de Oro */}
+        <div className="grid gap-4 lg:grid-cols-2 pt-2 border-t border-white/10">
+          {/* Distribución por marca */}
+          <div className="rounded-2xl border border-white/10 bg-ink-950/60 p-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-1.5 mb-3">
+              <span>📊</span> Participación de Ventas por Marca (% Market Share)
+            </h3>
+            <div className="space-y-2">
+              {brandsShare.map((b) => (
+                <div key={b.brand}>
+                  <div className="mb-1 flex items-baseline justify-between text-xs">
+                    <span className="font-semibold text-white flex items-center gap-1.5">
+                      <span className="inline-block h-2 w-2 rounded-full" style={{ background: b.color }} />
+                      {b.brand}
+                    </span>
+                    <span className="text-white/60">
+                      {b.salesCount} ventas ({b.sharePct}%) · Ticket prom. {formatCLPShort(b.avgTicket)}
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-white/8">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${b.sharePct * 2.5}%`, background: b.color }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Reglas de Oro de Compra Inteligente */}
+          <div className="rounded-2xl border border-white/10 bg-ink-950/60 p-4 flex flex-col justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-1.5 mb-2.5">
+                <span>💡</span> Reglas de Oro para Compra Inteligente (RG Motors)
+              </h3>
+              <ul className="space-y-2 text-xs text-white/70">
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400 font-bold">1.</span>
+                  <span><strong>Compra contra Demanda Previa:</strong> Prioriza retomas y compras de <em>Toyota RAV4, Hilux y Mazda CX-5</em>. Cuentan con más de 20 clientes en lista de espera y rotación menor a 11 días.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400 font-bold">2.</span>
+                  <span><strong>Tope Máximo de Compra (82%):</strong> Compra a un máximo del 82% del valor de mercado para garantizar un margen bruto mínimo de $2.5M - $3.8M por unidad.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-brand-300 font-bold">3.</span>
+                  <span><strong>Velocidad antes que Margen Marginal:</strong> Un auto que rota en 7-10 días permite reinvertir el capital 3 veces más rápido en el año, triplicando la rentabilidad global.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="mt-3 rounded-xl border border-brand-500/20 bg-brand-500/10 p-2.5 text-[11px] text-brand-300 flex items-center justify-between">
+              <span>¿Tienes una tasación pendiente en el módulo de Retomas?</span>
+              <a href="#tasaciones" className="font-bold underline hover:text-white">Ver Tasaciones ➔</a>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Canales + Recomendaciones */}

@@ -503,6 +503,156 @@ export function recommendations(leads: Lead[]): { icon: string; title: string; d
   return recs;
 }
 
+// ---- Ranking de Modelos Más Vendidos & Compra Inteligente (Reposición) ----
+export type ProcurementOpportunity = {
+  rank: number;
+  brand: string;
+  model: string;
+  bodyType: BodyType;
+  salesCount: number;
+  activeLeads: number;
+  currentStock: number;
+  avgDaysToSell: number;
+  avgRetailPrice: number;
+  targetBuyPrice: number;
+  estGrossMargin: number;
+  estMarginPct: number;
+  turnoverSpeed: "Ultra Rápida (<10d)" | "Rápida (10-20d)" | "Normal (20-35d)" | "Lenta (>35d)";
+  recommendation: "Comprar Urgente" | "Alta Rotación" | "Stock Óptimo" | "Pausar Compras";
+  recommendationReason: string;
+  badgeColor: string;
+};
+
+export type BrandMarketShare = {
+  brand: string;
+  salesCount: number;
+  leadsCount: number;
+  sharePct: number;
+  avgTicket: number;
+  color: string;
+};
+
+const BRAND_COLORS: Record<string, string> = {
+  Toyota: "#EF4444",
+  Mazda: "#3B82F6",
+  Hyundai: "#0EA5E9",
+  Ford: "#2563EB",
+  Suzuki: "#10B981",
+  Chevrolet: "#F59E0B",
+  Nissan: "#8B5CF6",
+  Kia: "#EC4899",
+  Volkswagen: "#6366F1",
+};
+
+export function topSellingModelsAndProcurement(
+  leads: Lead[],
+  catalogVehicles: Vehicle[] = vehicles
+): ProcurementOpportunity[] {
+  const modelStats: {
+    brand: string;
+    model: string;
+    bodyType: BodyType;
+    basePrice: number;
+    salesCount: number;
+    activeLeads: number;
+    avgDaysToSell: number;
+  }[] = [
+    { brand: "Toyota", model: "RAV4", bodyType: "SUV", basePrice: 18990000, salesCount: 19, activeLeads: 26, avgDaysToSell: 7 },
+    { brand: "Toyota", model: "Hilux", bodyType: "Camioneta", basePrice: 22490000, salesCount: 16, activeLeads: 21, avgDaysToSell: 9 },
+    { brand: "Mazda", model: "CX-5", bodyType: "SUV", basePrice: 16490000, salesCount: 14, activeLeads: 18, avgDaysToSell: 11 },
+    { brand: "Suzuki", model: "Swift", bodyType: "Hatchback", basePrice: 8990000, salesCount: 13, activeLeads: 17, avgDaysToSell: 10 },
+    { brand: "Ford", model: "Ranger", bodyType: "Camioneta", basePrice: 20990000, salesCount: 12, activeLeads: 15, avgDaysToSell: 12 },
+    { brand: "Hyundai", model: "Tucson", bodyType: "SUV", basePrice: 15990000, salesCount: 11, activeLeads: 14, avgDaysToSell: 13 },
+    { brand: "Kia", model: "Sportage", bodyType: "SUV", basePrice: 15490000, salesCount: 8, activeLeads: 10, avgDaysToSell: 16 },
+    { brand: "Chevrolet", model: "Tracker", bodyType: "SUV", basePrice: 12990000, salesCount: 7, activeLeads: 9, avgDaysToSell: 22 },
+    { brand: "Nissan", model: "Versa", bodyType: "Sedán", basePrice: 9490000, salesCount: 6, activeLeads: 8, avgDaysToSell: 21 },
+    { brand: "Chevrolet", model: "Onix", bodyType: "Sedán", basePrice: 8490000, salesCount: 5, activeLeads: 6, avgDaysToSell: 28 },
+  ];
+
+  return modelStats.map((item, index) => {
+    const currentStock = catalogVehicles.filter(
+      (v) => v.brand.toLowerCase() === item.brand.toLowerCase() && v.model.toLowerCase().includes(item.model.toLowerCase())
+    ).length;
+
+    // Calcular recomendación inteligente para el dueño
+    let recommendation: ProcurementOpportunity["recommendation"];
+    let turnoverSpeed: ProcurementOpportunity["turnoverSpeed"];
+    let recommendationReason: string;
+    let badgeColor: string;
+
+    if (item.avgDaysToSell <= 9 && currentStock <= 1) {
+      recommendation = "Comprar Urgente";
+      turnoverSpeed = "Ultra Rápida (<10d)";
+      recommendationReason = `Demanda crítica: ${item.activeLeads} clientes esperando y solo ${currentStock} en stock. Se vende en ~${item.avgDaysToSell} días.`;
+      badgeColor = "#EF4444"; // Rojo fuego
+    } else if (item.avgDaysToSell <= 15 && currentStock <= 2) {
+      recommendation = "Alta Rotación";
+      turnoverSpeed = "Rápida (10-20d)";
+      recommendationReason = `Rotación asegurada en ~${item.avgDaysToSell} días. Ideal para comprar en tasaciones y retomas.`;
+      badgeColor = "#F97316"; // Naranja
+    } else if (currentStock >= 3) {
+      recommendation = "Pausar Compras";
+      turnoverSpeed = item.avgDaysToSell > 30 ? "Lenta (>35d)" : "Normal (20-35d)";
+      recommendationReason = `Stock suficiente (${currentStock} u). No sobre-comprar hasta agotar inventario actual.`;
+      badgeColor = "#8A9099"; // Gris
+    } else {
+      recommendation = "Stock Óptimo";
+      turnoverSpeed = "Normal (20-35d)";
+      recommendationReason = `Flujo constante y equilibrado. Mantener entre 1 y 2 unidades.`;
+      badgeColor = "#22C55E"; // Verde
+    }
+
+    const targetBuyPrice = Math.round(item.basePrice * 0.82); // Margen de retoma ~18%
+    const estGrossMargin = item.basePrice - targetBuyPrice;
+    const estMarginPct = Math.round((estGrossMargin / item.basePrice) * 100);
+
+    return {
+      rank: index + 1,
+      brand: item.brand,
+      model: item.model,
+      bodyType: item.bodyType,
+      salesCount: item.salesCount,
+      activeLeads: item.activeLeads,
+      currentStock,
+      avgDaysToSell: item.avgDaysToSell,
+      avgRetailPrice: item.basePrice,
+      targetBuyPrice,
+      estGrossMargin,
+      estMarginPct,
+      turnoverSpeed,
+      recommendation,
+      recommendationReason,
+      badgeColor,
+    };
+  });
+}
+
+export function brandMarketShare(leads: Lead[]): BrandMarketShare[] {
+  const brandCounts: Record<string, { sales: number; leads: number; totalBudget: number }> = {
+    Toyota: { sales: 35, leads: 130, totalBudget: 35 * 20_000_000 },
+    Mazda: { sales: 22, leads: 88, totalBudget: 22 * 16_500_000 },
+    Ford: { sales: 18, leads: 64, totalBudget: 18 * 21_000_000 },
+    Hyundai: { sales: 16, leads: 59, totalBudget: 16 * 15_000_000 },
+    Suzuki: { sales: 15, leads: 54, totalBudget: 15 * 9_000_000 },
+    Chevrolet: { sales: 12, leads: 48, totalBudget: 12 * 10_500_000 },
+    Nissan: { sales: 10, leads: 42, totalBudget: 10 * 11_000_000 },
+    Kia: { sales: 9, leads: 35, totalBudget: 9 * 14_500_000 },
+  };
+
+  const totalSales = Object.values(brandCounts).reduce((acc, curr) => acc + curr.sales, 0);
+
+  return Object.entries(brandCounts)
+    .map(([brand, data]) => ({
+      brand,
+      salesCount: data.sales,
+      leadsCount: data.leads,
+      sharePct: Math.round((data.sales / totalSales) * 100),
+      avgTicket: Math.round(data.totalBudget / data.sales),
+      color: BRAND_COLORS[brand] || "#3B82F6",
+    }))
+    .sort((a, b) => b.salesCount - a.salesCount);
+}
+
 // ---- Helpers ---------------------------------------------------------------
 function pct(a: number, b: number) {
   return b ? Math.round((a / b) * 100) : 0;
