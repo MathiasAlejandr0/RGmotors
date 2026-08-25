@@ -17,6 +17,7 @@ import {
   formatCLPShort,
 } from "@/lib/analytics";
 import { HBarChart, Donut, LineForecast, Funnel, Gauge, KpiCard } from "./charts";
+import { ChannelBadge } from "./AdminSections";
 
 type CapturedLead = {
   id: string;
@@ -29,6 +30,11 @@ type CapturedLead = {
   name?: string;
   contact?: string;
   messages?: number;
+  trafficSource?: {
+    source?: string;
+    medium?: string;
+    campaign?: string;
+  };
 };
 
 export default function AnalyticsDashboard() {
@@ -211,36 +217,45 @@ export default function AnalyticsDashboard() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full min-w-[720px] text-sm">
               <thead className="text-left text-white/40">
                 <tr className="border-b border-white/10">
                   <th className="pb-2 font-medium">Fecha</th>
                   <th className="pb-2 font-medium">Interés</th>
                   <th className="pb-2 font-medium">Presupuesto</th>
                   <th className="pb-2 font-medium">Financiamiento</th>
-                  <th className="pb-2 font-medium">Intenciones</th>
+                  <th className="pb-2 font-medium">Canal de Origen</th>
                   <th className="pb-2 font-medium">Contacto</th>
                 </tr>
               </thead>
               <tbody>
-                {captured.slice(0, 20).map((c) => (
-                  <tr key={c.id} className="border-b border-white/5">
-                    <td className="py-2.5 text-white/50">
-                      {new Date(c.createdAt).toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" })}
-                    </td>
-                    <td className="py-2.5 text-white/70">{c.bodyType ?? "—"}</td>
-                    <td className="py-2.5 text-white/70">{c.budget ? formatCLP(c.budget) : "—"}</td>
-                    <td className="py-2.5">
-                      {c.financing ? (
-                        <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-xs text-amber-300">Sí</span>
-                      ) : (
-                        <span className="text-white/40">—</span>
-                      )}
-                    </td>
-                    <td className="py-2.5 text-xs text-white/50">{(c.intents ?? []).join(", ") || "—"}</td>
-                    <td className="py-2.5 text-white/70">{c.contact ?? <span className="text-white/30">anónimo</span>}</td>
-                  </tr>
-                ))}
+                {captured.slice(0, 20).map((c) => {
+                  const source =
+                    c.trafficSource?.source ||
+                    (c.intents?.find((i) => i.startsWith("canal-"))?.replace("canal-", "")) ||
+                    "Directo";
+
+                  return (
+                    <tr key={c.id} className="border-b border-white/5">
+                      <td className="py-2.5 text-white/50">
+                        {new Date(c.createdAt).toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" })}
+                      </td>
+                      <td className="py-2.5 text-white/70">{c.bodyType ?? "—"}</td>
+                      <td className="py-2.5 text-white/70">{c.budget ? formatCLP(c.budget) : "—"}</td>
+                      <td className="py-2.5">
+                        {c.financing ? (
+                          <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-xs text-amber-300">Sí</span>
+                        ) : (
+                          <span className="text-white/40">—</span>
+                        )}
+                      </td>
+                      <td className="py-2.5">
+                        <ChannelBadge source={source} />
+                      </td>
+                      <td className="py-2.5 text-white/70">{c.contact ?? <span className="text-white/30">anónimo</span>}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -17,6 +17,7 @@ import {
   TradeInsSection,
   CarRequestsSection,
   PriceAlertsSection,
+  TestDrivesSection,
 } from "@/components/admin/AdminSections";
 import { asset } from "@/lib/asset";
 import { Vehicle, formatCLP } from "@/lib/vehicles";
@@ -24,16 +25,17 @@ import { Vehicle, formatCLP } from "@/lib/vehicles";
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "▦" },
   { id: "leadscoring", label: "🔥 Lead Scoring", icon: "🔥" },
+  { id: "testdrives", label: "🚗 Pruebas de Manejo", icon: "🚗" },
+  { id: "reservas", label: "Reservas Online", icon: "★" },
+  { id: "creditos", label: "Créditos & RUT", icon: "💳" },
   { id: "tasaciones", label: "💎 Tasaciones / Retomas", icon: "💎" },
   { id: "pedidos", label: "🎯 Autos a Pedido", icon: "🎯" },
   { id: "alertas", label: "🔔 Alertas de Precio", icon: "🔔" },
-  { id: "vehiculos", label: "Vehículos", icon: "🚗" },
-  { id: "reservas", label: "Reservas", icon: "★" },
-  { id: "creditos", label: "Créditos", icon: "💳" },
+  { id: "vehiculos", label: "Vehículos", icon: "🚘" },
   { id: "fotos", label: "Fotos & Galería", icon: "📸" },
   { id: "spin360", label: "360° / Videos", icon: "🔄" },
-  { id: "analitica", label: "Analítica", icon: "📊" },
-  { id: "clientes", label: "Clientes", icon: "👥" },
+  { id: "analitica", label: "Analítica & Canales", icon: "📊" },
+  { id: "clientes", label: "Clientes & Leads", icon: "👥" },
   { id: "config", label: "Configuración", icon: "⚙" },
 ];
 
@@ -132,15 +134,16 @@ export default function AdminPage() {
                     {
                       dashboard: "Dashboard Principal",
                       leadscoring: "Lead Scoring Inteligente",
+                      testdrives: "Pruebas de Manejo (Test Drives)",
                       tasaciones: "Minería de Tasaciones & Retomas",
                       pedidos: "Autos a Pedido / Personal Shopper",
                       alertas: "Alertas de Baja de Precio",
-                      analitica: "Analítica de Negocio & Ventas",
+                      analitica: "Analítica de Negocio & Canales",
                       vehiculos: "Gestión de Inventario",
                       fotos: "Gestor de Fotos y Galería",
                       spin360: "Generador 360° desde Video (IA)",
                       reservas: "CRM de Reservas Online",
-                      creditos: "Solicitudes de Financiamiento",
+                      creditos: "Solicitudes de Financiamiento & RUT",
                       clientes: "Base de Clientes & Leads",
                       config: "Configuración del Negocio",
                     }[active]
@@ -151,16 +154,17 @@ export default function AdminPage() {
                     {
                       dashboard: "Resumen integral de ventas, inventario y reservas activas",
                       leadscoring: "Semáforo comercial de prospectos clasificados por temperatura de compra",
+                      testdrives: "Gestión de agendamientos, sucursales y confirmación directa por WhatsApp",
                       tasaciones: "Clientes que entregan su auto actual en parte de pago (Oportunidad de doble margen)",
                       pedidos: "Compradores en lista de espera para modelos no encontrados en stock",
                       alertas: "Prospectos esperando rebaja u ofertas para cerrar compra rápida",
-                      analitica: "Inteligencia de datos y señales de compra inferidas",
+                      analitica: "Inteligencia de datos, señales de compra y atribución multicanal (FB, Google, IG, Referidos)",
                       vehiculos: "Crea, edita y organiza los vehículos del catálogo",
                       fotos: "Sube y organiza fotos y fotogramas 360° por arrastre",
                       spin360: "Genera giros 360° con recorte de fondo automático",
                       reservas: "Control de abonos y contacto directo por WhatsApp",
                       creditos: "Evaluaciones y pre-aprobaciones con RUT en 60 segundos",
-                      clientes: "Leads capturados desde la web y chatbot",
+                      clientes: "Leads capturados desde la web y chatbot clasificados por canal",
                       config: "Datos de contacto, teléfonos, horarios y parámetros de cálculo",
                     }[active]
                   }
@@ -195,6 +199,7 @@ export default function AdminPage() {
             </div>
 
             {active === "leadscoring" && <LeadScoringSection />}
+            {active === "testdrives" && <TestDrivesSection />}
             {active === "tasaciones" && <TradeInsSection />}
             {active === "pedidos" && <CarRequestsSection />}
             {active === "alertas" && <PriceAlertsSection />}

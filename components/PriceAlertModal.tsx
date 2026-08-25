@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatCLP } from "@/lib/vehicles";
+import { getTrafficSource } from "@/lib/trafficTracking";
 
 type Props = {
   isOpen: boolean;
@@ -50,6 +51,7 @@ export default function PriceAlertModal({
           clientName: name.trim(),
           phone: phone.trim(),
           email: email.trim() || undefined,
+          trafficSource: getTrafficSource(),
         }),
       });
 

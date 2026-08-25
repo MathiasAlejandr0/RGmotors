@@ -17,6 +17,7 @@ export type CreditApplication = {
   score?: number; // Lead Score (0 - 100)
   status: "En evaluación" | "Pre-aprobado" | "Aprobado" | "Rechazado";
   date: string;
+  trafficSource?: any;
   notes?: string;
 };
 

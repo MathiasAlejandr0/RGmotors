@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatCLP } from "@/lib/vehicles";
+import { getTrafficSource } from "@/lib/trafficTracking";
 
 type Props = {
   isOpen: boolean;
@@ -56,6 +57,7 @@ export default function TradeInModal({
           year,
           km,
           targetVehicleSlug,
+          trafficSource: getTrafficSource(),
           notes,
         }),
       });

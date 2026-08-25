@@ -31,6 +31,8 @@ export const metadata: Metadata = {
   },
 };
 
+import TrafficTracker from "@/components/TrafficTracker";
+
 export default function RootLayout({
   children,
 }: {
@@ -38,7 +40,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es-CL" className={inter.variable}>
-      <body>{children}</body>
+      <body>
+        <TrafficTracker />
+        {children}
+      </body>
     </html>
   );
 }

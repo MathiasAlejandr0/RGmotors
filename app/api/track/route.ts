@@ -18,6 +18,7 @@ type CapturedLead = {
   name?: string;
   contact?: string;
   messages?: number;
+  trafficSource?: any;
 };
 
 const DATA_DIR = join(process.cwd(), "data");
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
     if (body.financing != null) existing.financing = body.financing;
     if (body.name) existing.name = body.name;
     if (body.contact) existing.contact = body.contact;
+    if (body.trafficSource) existing.trafficSource = body.trafficSource;
     existing.intents = mergeArr(existing.intents, body.intents);
     existing.models = mergeArr(existing.models, body.models);
     existing.messages = (existing.messages ?? 0) + (body.messages ?? 1);
@@ -88,6 +90,7 @@ export async function POST(req: NextRequest) {
       name: body.name,
       contact: body.contact,
       messages: body.messages ?? 1,
+      trafficSource: body.trafficSource,
     });
   }
 

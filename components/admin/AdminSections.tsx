@@ -11,6 +11,28 @@ import { SystemSettings } from "@/lib/server/settingsStore";
 import { TradeInRequest } from "@/lib/server/tradeInStore";
 import { CarRequest } from "@/lib/server/carRequestsStore";
 import { PriceAlert } from "@/lib/server/priceAlertsStore";
+import { TestDrive } from "@/lib/server/testDrivesStore";
+
+export function ChannelBadge({ source }: { source?: string }) {
+  if (!source) return <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/50">Directo</span>;
+  const s = source.toLowerCase();
+  if (s.includes("facebook") || s.includes("fb")) {
+    return <span className="rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">🟦 Facebook</span>;
+  }
+  if (s.includes("instagram") || s.includes("ig")) {
+    return <span className="rounded-full bg-pink-500/15 border border-pink-500/30 px-2 py-0.5 text-[10px] font-bold text-pink-300">📸 Instagram</span>;
+  }
+  if (s.includes("google")) {
+    return <span className="rounded-full bg-red-500/15 border border-red-500/30 px-2 py-0.5 text-[10px] font-bold text-red-300">🔴 Google Ads</span>;
+  }
+  if (s.includes("refer") || s.includes("chileautos") || s.includes("autofact")) {
+    return <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[10px] font-bold text-purple-300">🔗 {source}</span>;
+  }
+  if (s.includes("org")) {
+    return <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-300">🌱 Orgánico</span>;
+  }
+  return <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/70">🌐 {source}</span>;
+}
 
 const STATUS_BADGES = {
   Disponible: "bg-emerald-400/15 text-emerald-300 border-emerald-500/30",
@@ -25,6 +47,10 @@ const STATUS_BADGES = {
   Aprobado: "bg-emerald-400/15 text-emerald-300 border-emerald-500/30",
   "En evaluación": "bg-amber-400/15 text-amber-300 border-amber-500/30",
   Rechazado: "bg-red-400/15 text-red-300 border-red-500/30",
+  Pendiente: "bg-amber-400/15 text-amber-300 border-amber-500/30",
+  Confirmada: "bg-emerald-400/15 text-emerald-300 border-emerald-500/30",
+  Realizada: "bg-blue-400/15 text-blue-300 border-blue-500/30",
+  "No asistió": "bg-red-400/15 text-red-300 border-red-500/30",
 } as const;
 
 function Panel({
@@ -689,13 +715,14 @@ export function ClientsSection() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[760px] text-sm">
               <thead className="text-left text-white/40">
                 <tr className="border-b border-white/10">
                   <th className="pb-2 font-medium">Fecha</th>
                   <th className="pb-2 font-medium">Contacto</th>
                   <th className="pb-2 font-medium">Interés / Carrocería</th>
                   <th className="pb-2 font-medium">Presupuesto</th>
+                  <th className="pb-2 font-medium">Canal de Origen</th>
                   <th className="pb-2 font-medium text-right">WhatsApp</th>
                 </tr>
               </thead>
@@ -705,6 +732,11 @@ export function ClientsSection() {
                   const waUrl = clean
                     ? `https://wa.me/${clean}?text=${encodeURIComponent("Hola! Te contactamos de RG Motors.")}`
                     : null;
+
+                  const sourceName =
+                    l.trafficSource?.source ||
+                    (l.intents?.find((i: string) => i.startsWith("canal-"))?.replace("canal-", "")) ||
+                    "Directo";
 
                   return (
                     <tr key={l.id} className="border-b border-white/5">
@@ -719,6 +751,9 @@ export function ClientsSection() {
                       </td>
                       <td className="py-3 font-bold text-brand-300">
                         {l.budget ? formatCLP(l.budget) : "—"}
+                      </td>
+                      <td className="py-3">
+                        <ChannelBadge source={sourceName} />
                       </td>
                       <td className="py-3 text-right">
                         {waUrl ? (
@@ -1536,4 +1571,245 @@ export function PriceAlertsSection() {
     </Panel>
   );
 }
+
+/** 
+ * SECCIÓN: GESTIÓN CRM DE PRUEBAS DE MANEJO (TEST DRIVES) CON CONFIRMACIÓN WHATSAPP
+ */
+export function TestDrivesSection() {
+  const [testDrives, setTestDrives] = useState<TestDrive[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filterBranch, setFilterBranch] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [search, setSearch] = useState("");
+
+  const fetchTestDrives = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/test-drives");
+      if (res.ok) {
+        const data = await res.json();
+        setTestDrives(data.testDrives || []);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTestDrives();
+  }, [fetchTestDrives]);
+
+  const handleStatusChange = async (id: string, newStatus: TestDrive["status"]) => {
+    try {
+      const res = await fetch(`/api/test-drives/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setTestDrives((prev) =>
+          prev.map((td) => (td.id === id ? { ...td, status: newStatus } : td))
+        );
+      }
+    } catch {
+      alert("Error al actualizar estado del test drive.");
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`¿Eliminar la prueba de manejo de ${name}?`)) return;
+    try {
+      const res = await fetch(`/api/test-drives/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setTestDrives((prev) => prev.filter((td) => td.id !== id));
+      }
+    } catch {
+      alert("Error al eliminar.");
+    }
+  };
+
+  const filtered = testDrives.filter((td) => {
+    const matchSearch =
+      td.clientName.toLowerCase().includes(search.toLowerCase()) ||
+      td.clientPhone.includes(search) ||
+      td.vehicleTitle.toLowerCase().includes(search.toLowerCase());
+    const matchBranch = filterBranch === "all" || td.branch === filterBranch;
+    const matchStatus = filterStatus === "all" || td.status === filterStatus;
+    return matchSearch && matchBranch && matchStatus;
+  });
+
+  const totalPending = testDrives.filter((td) => td.status === "Pendiente").length;
+  const totalConfirmed = testDrives.filter((td) => td.status === "Confirmada").length;
+  const totalCompleted = testDrives.filter((td) => td.status === "Realizada").length;
+
+  return (
+    <div className="space-y-4">
+      {/* Top Stat Cards */}
+      <div className="grid gap-3 sm:grid-cols-4">
+        <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-4">
+          <p className="text-xs text-white/50">Agendamientos totales</p>
+          <p className="mt-1 text-2xl font-bold text-white">{testDrives.length}</p>
+        </div>
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+          <p className="text-xs text-amber-300/80">Pendientes de confirmar</p>
+          <p className="mt-1 text-2xl font-bold text-amber-400">{totalPending}</p>
+        </div>
+        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+          <p className="text-xs text-emerald-300/80">Confirmadas / En curso</p>
+          <p className="mt-1 text-2xl font-bold text-emerald-400">{totalConfirmed}</p>
+        </div>
+        <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
+          <p className="text-xs text-blue-300/80">Pruebas realizadas</p>
+          <p className="mt-1 text-2xl font-bold text-blue-300">{totalCompleted}</p>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-white/10 bg-ink-900/60 p-3">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="🔍 Buscar por cliente, teléfono o vehículo…"
+            className="w-full rounded-xl border border-white/15 bg-ink-950 px-4 py-2 text-xs text-white placeholder-white/40 outline-none focus:border-brand-500"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={filterBranch}
+            onChange={(e) => setFilterBranch(e.target.value)}
+            className="rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-xs font-medium text-white outline-none focus:border-brand-500"
+          >
+            <option value="all">Todas las sucursales</option>
+            <option value="Las Condes">Las Condes</option>
+            <option value="Providencia">Providencia</option>
+            <option value="Maipú">Maipú</option>
+            <option value="La Florida">La Florida</option>
+          </select>
+
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-xs font-medium text-white outline-none focus:border-brand-500"
+          >
+            <option value="all">Todos los estados</option>
+            <option value="Pendiente">🟡 Pendientes</option>
+            <option value="Confirmada">🟢 Confirmadas</option>
+            <option value="Realizada">🔵 Realizadas</option>
+            <option value="No asistió">🔴 No asistió</option>
+            <option value="Cancelada">⚪ Canceladas</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Main Table */}
+      <Panel title="Pruebas de Manejo (Test Drives)">
+        {isLoading ? (
+          <div className="grid h-32 place-items-center text-xs text-white/40">
+            Cargando agendamientos…
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-8 text-center text-xs text-white/40">
+            No hay pruebas de manejo registradas con los filtros actuales.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-sm">
+              <thead className="text-left text-white/40">
+                <tr className="border-b border-white/10">
+                  <th className="pb-2.5 font-medium">Cita / Horario</th>
+                  <th className="pb-2.5 font-medium">Cliente</th>
+                  <th className="pb-2.5 font-medium">Vehículo</th>
+                  <th className="pb-2.5 font-medium">Sucursal & Ejecutivo</th>
+                  <th className="pb-2.5 font-medium">Canal de Origen</th>
+                  <th className="pb-2.5 font-medium">Estado</th>
+                  <th className="pb-2.5 font-medium text-right">Acción WhatsApp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((td) => {
+                  const cleanPhone = td.clientPhone.replace(/[^0-9]/g, "");
+                  const phoneWithCountry = cleanPhone.startsWith("56") ? cleanPhone : `56${cleanPhone}`;
+                  const waConfirmMsg = `Hola ${td.clientName}, te contactamos de RG Motors para confirmar tu prueba de manejo del ${td.vehicleTitle} el día ${td.date} a las ${td.time} en nuestra sucursal de ${td.branch}. ¿Nos confirmas tu asistencia?`;
+                  const waUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(waConfirmMsg)}`;
+
+                  return (
+                    <tr key={td.id} className="border-b border-white/5 hover:bg-white/[0.02] transition">
+                      <td className="py-3">
+                        <p className="font-bold text-brand-300">{td.date}</p>
+                        <p className="text-xs text-white/70 font-semibold">{td.time}</p>
+                        <p className="text-[10px] text-white/35">ID: {td.id}</p>
+                      </td>
+                      <td className="py-3">
+                        <p className="font-bold text-white">{td.clientName}</p>
+                        <p className="text-xs text-white/50">{td.clientPhone}</p>
+                        {td.clientEmail && <p className="text-[10px] text-white/40">{td.clientEmail}</p>}
+                      </td>
+                      <td className="py-3">
+                        <Link
+                          href={`/vehiculo/${td.vehicleSlug}`}
+                          target="_blank"
+                          className="font-medium text-white hover:text-brand-300 transition hover:underline"
+                        >
+                          {td.vehicleTitle || td.vehicleSlug}
+                        </Link>
+                      </td>
+                      <td className="py-3 text-xs text-white/70">
+                        <p className="font-semibold text-white">{td.branch}</p>
+                        <p className="text-[11px] text-white/40">Ejecutivo: {td.executive || "Sin preferencia"}</p>
+                      </td>
+                      <td className="py-3">
+                        <ChannelBadge source={td.trafficSource?.source} />
+                      </td>
+                      <td className="py-3">
+                        <select
+                          value={td.status}
+                          onChange={(e) => handleStatusChange(td.id, e.target.value as any)}
+                          className={`rounded-lg border px-2.5 py-1 text-xs font-semibold outline-none cursor-pointer ${
+                            STATUS_BADGES[td.status] || "bg-white/10 text-white"
+                          }`}
+                        >
+                          <option value="Pendiente">🟡 Pendiente</option>
+                          <option value="Confirmada">🟢 Confirmada</option>
+                          <option value="Realizada">🔵 Realizada</option>
+                          <option value="No asistió">🔴 No asistió</option>
+                          <option value="Cancelada">⚪ Cancelada</option>
+                        </select>
+                      </td>
+                      <td className="py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <a
+                            href={waUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-xl bg-[#25D366]/20 border border-[#25D366]/40 px-3 py-1.5 text-xs font-bold text-[#25D366] hover:bg-[#25D366] hover:text-white transition shadow-sm"
+                            title="Confirmar cita al cliente por WhatsApp"
+                          >
+                            <span>💬</span> Confirmar
+                          </a>
+                          <button
+                            onClick={() => handleDelete(td.id, td.clientName)}
+                            className="rounded-lg bg-red-500/10 p-1.5 text-xs text-red-300 hover:bg-red-500 hover:text-white transition"
+                            title="Eliminar registro"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
 

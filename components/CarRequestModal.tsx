@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatCLP } from "@/lib/vehicles";
+import { getTrafficSource } from "@/lib/trafficTracking";
 
 type Props = {
   isOpen: boolean;
@@ -64,6 +65,7 @@ export default function CarRequestModal({ isOpen, onClose }: Props) {
           minYear,
           fuel: fuel === "Sin preferencia" ? undefined : fuel,
           transmission: transmission === "Sin preferencia" ? undefined : transmission,
+          trafficSource: getTrafficSource(),
           notes: notes.trim() || undefined,
         }),
       });

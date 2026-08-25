@@ -10,6 +10,7 @@ export type Reservation = {
   method: string;
   status: "Pagada" | "En proceso" | "Entregado" | "Cancelada";
   date: string;
+  trafficSource?: any;
   notes?: string;
 };
 

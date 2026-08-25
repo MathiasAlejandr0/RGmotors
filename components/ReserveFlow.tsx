@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { asset } from "@/lib/asset";
 import { Vehicle, formatCLP } from "@/lib/vehicles";
+import { getTrafficSource } from "@/lib/trafficTracking";
 
 const RESERVE_AMOUNT = 200000;
 
@@ -46,6 +47,7 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
           amount: RESERVE_AMOUNT,
           method,
           status: "Pagada",
+          trafficSource: getTrafficSource(),
           notes: "Reserva realizada desde flujo online web.",
         }),
       });

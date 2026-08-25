@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { COMPANY, whatsappLink } from "@/lib/company";
+import { getTrafficSource } from "@/lib/trafficTracking";
 
 export default function ContactForm() {
   const [sent, setSent] = useState(false);
@@ -45,6 +46,7 @@ export default function ContactForm() {
       onSubmit={async (e) => {
         e.preventDefault();
         setSent(true);
+        const traffic = getTrafficSource();
         try {
           await fetch("/api/track", {
             method: "POST",
@@ -53,7 +55,7 @@ export default function ContactForm() {
               sessionId: `contact_${Date.now()}`,
               name,
               contact: phone || email,
-              intents: ["formulario-contacto", message.slice(0, 50)],
+              intents: ["formulario-contacto", `canal-${traffic.source}`, message.slice(0, 50)],
             }),
           });
         } catch {}

@@ -1,15 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { vehicles, formatCLP } from "@/lib/vehicles";
+import { vehicles, formatCLP, Vehicle } from "@/lib/vehicles";
+import FastCreditPreApprovalModal from "@/components/FastCreditPreApprovalModal";
 
 const MONTHLY_RATE = 0.019;
 
 export default function SimuladorPage() {
-  const [price, setPrice] = useState(18990000);
+  const [selectedSlug, setSelectedSlug] = useState(vehicles[0]?.slug || "");
+  const [price, setPrice] = useState(vehicles[0]?.price || 18990000);
   const [downPct, setDownPct] = useState(20);
   const [term, setTerm] = useState(48);
-  const [sent, setSent] = useState(false);
+  const [isPreApprovalOpen, setIsPreApprovalOpen] = useState(false);
+
+  const selectedVehicle: Vehicle | undefined = vehicles.find((v) => v.slug === selectedSlug);
+
+  const handleVehicleChange = (slug: string) => {
+    setSelectedSlug(slug);
+    const found = vehicles.find((v) => v.slug === slug);
+    if (found) setPrice(found.price);
+  };
 
   const r = useMemo(() => {
     const down = Math.round((price * downPct) / 100);
@@ -28,119 +38,123 @@ export default function SimuladorPage() {
   }, [price, downPct, term]);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <div className="mb-10 text-center">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
-          Simulador de crédito automotriz
-        </h1>
-        <p className="mt-2 text-sm text-white/50 max-w-lg mx-auto">
-          Calcula tu cuota al instante con CAE y costos transparentes para tu próximo vehículo.
-        </p>
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-2 items-start">
-        {/* Inputs */}
-        <div className="apple-glass-card rounded-3xl p-7 space-y-6">
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-white/70">Vehículo o precio referencial</label>
-            <select
-              onChange={(e) => setPrice(Number(e.target.value))}
-              defaultValue={price}
-              className="mt-2 w-full rounded-2xl border border-white/15 bg-white/[0.06] px-4 py-3 text-xs font-medium text-white outline-none focus:border-brand-500 transition cursor-pointer"
-            >
-              {vehicles.map((v) => (
-                <option key={v.slug} value={v.price} className="bg-ink-900">
-                  {v.brand} {v.model} {v.year} — {formatCLP(v.price)}
-                </option>
-              ))}
-            </select>
+    <>
+      <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        <div className="mb-10 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3.5 py-1 text-[11px] font-bold text-brand-300 mb-3">
+            ⚡ Pre-aprobación instantánea en 60 segundos con RUT
           </div>
-
-          <div>
-            <div className="mb-2 flex justify-between text-xs font-semibold">
-              <span className="text-white/60">Valor del vehículo</span>
-              <span className="text-white font-bold">{formatCLP(price)}</span>
-            </div>
-            <input
-              type="range"
-              min={5000000}
-              max={30000000}
-              step={500000}
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-              className="apple-range w-full cursor-pointer"
-            />
-          </div>
-
-          <div>
-            <div className="mb-2 flex justify-between text-xs font-semibold">
-              <span className="text-white/60">Pie inicial ({downPct}%)</span>
-              <span className="text-white font-bold">{formatCLP(r.down)}</span>
-            </div>
-            <input
-              type="range"
-              min={10}
-              max={60}
-              step={5}
-              value={downPct}
-              onChange={(e) => setDownPct(Number(e.target.value))}
-              className="apple-range w-full cursor-pointer"
-            />
-          </div>
-
-          <div>
-            <div className="mb-2 flex justify-between text-xs font-semibold">
-              <span className="text-white/60">Plazo ({term} cuotas)</span>
-              <span className="text-white font-bold">{term} meses</span>
-            </div>
-            <input
-              type="range"
-              min={12}
-              max={60}
-              step={6}
-              value={term}
-              onChange={(e) => setTerm(Number(e.target.value))}
-              className="apple-range w-full cursor-pointer"
-            />
-          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
+            Simulador de crédito automotriz
+          </h1>
+          <p className="mt-2 text-sm text-white/50 max-w-lg mx-auto">
+            Calcula tu cuota al instante con CAE y costos transparentes para tu próximo vehículo.
+          </p>
         </div>
 
-        {/* Result */}
-        <div className="apple-glass-card relative overflow-hidden rounded-3xl p-7 border-brand-500/30 bg-gradient-to-br from-brand-500/15 via-ink-900/90 to-black">
-          <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Tu cuota mensual estimada</p>
-          <p className="mt-2 text-5xl font-extrabold tracking-tight text-brand-300">
-            {formatCLP(r.monthly)}
-          </p>
+        <div className="grid gap-8 lg:grid-cols-2 items-start">
+          {/* Inputs */}
+          <div className="apple-glass-card rounded-3xl p-7 space-y-6">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-white/70">
+                Vehículo del catálogo
+              </label>
+              <select
+                onChange={(e) => handleVehicleChange(e.target.value)}
+                value={selectedSlug}
+                className="mt-2 w-full rounded-2xl border border-white/15 bg-white/[0.06] px-4 py-3 text-xs font-medium text-white outline-none focus:border-brand-500 transition cursor-pointer"
+              >
+                {vehicles.map((v) => (
+                  <option key={v.slug} value={v.slug} className="bg-ink-900">
+                    {v.brand} {v.model} {v.year} — {formatCLP(v.price)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="mt-8 space-y-3.5 border-t border-white/10 pt-6">
-            <Row label="Monto a financiar" value={formatCLP(r.financed)} />
-            <Row label="Tasa de interés mensual" value={`${(MONTHLY_RATE * 100).toFixed(2)}%`} />
-            <Row label="CAE aproximada" value={`${r.cae.toFixed(1)}%`} />
-            <Row label="Costo total estimado" value={formatCLP(r.total)} highlight />
+            <div>
+              <div className="mb-2 flex justify-between text-xs font-semibold">
+                <span className="text-white/60">Valor del vehículo</span>
+                <span className="text-white font-bold">{formatCLP(price)}</span>
+              </div>
+              <input
+                type="range"
+                min={5000000}
+                max={30000000}
+                step={500000}
+                value={price}
+                onChange={(e) => setPrice(Number(e.target.value))}
+                className="apple-range w-full cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <div className="mb-2 flex justify-between text-xs font-semibold">
+                <span className="text-white/60">Pie inicial ({downPct}%)</span>
+                <span className="text-white font-bold">{formatCLP(r.down)}</span>
+              </div>
+              <input
+                type="range"
+                min={10}
+                max={60}
+                step={5}
+                value={downPct}
+                onChange={(e) => setDownPct(Number(e.target.value))}
+                className="apple-range w-full cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <div className="mb-2 flex justify-between text-xs font-semibold">
+                <span className="text-white/60">Plazo ({term} cuotas)</span>
+                <span className="text-white font-bold">{term} meses</span>
+              </div>
+              <input
+                type="range"
+                min={12}
+                max={60}
+                step={6}
+                value={term}
+                onChange={(e) => setTerm(Number(e.target.value))}
+                className="apple-range w-full cursor-pointer"
+              />
+            </div>
           </div>
 
-          {sent ? (
-            <div className="mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs">
-              <p className="font-bold text-emerald-400">¡Evaluación crediticia enviada! ✓</p>
-              <p className="mt-1 leading-relaxed text-white/70">
-                Un ejecutivo revisará tu perfil y te contactará con tu aprobación en menos de 24 horas hábiles.
-              </p>
+          {/* Result */}
+          <div className="apple-glass-card relative overflow-hidden rounded-3xl p-7 border-brand-500/30 bg-gradient-to-br from-brand-500/15 via-ink-900/90 to-black">
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Tu cuota mensual estimada</p>
+            <p className="mt-2 text-5xl font-extrabold tracking-tight text-brand-300">
+              {formatCLP(r.monthly)}
+            </p>
+
+            <div className="mt-8 space-y-3.5 border-t border-white/10 pt-6">
+              <Row label="Monto a financiar" value={formatCLP(r.financed)} />
+              <Row label="Tasa de interés mensual" value={`${(MONTHLY_RATE * 100).toFixed(2)}%`} />
+              <Row label="CAE aproximada" value={`${r.cae.toFixed(1)}%`} />
+              <Row label="Costo total estimado" value={formatCLP(r.total)} highlight />
             </div>
-          ) : (
+
             <button
-              onClick={() => setSent(true)}
-              className="apple-btn-primary mt-8 w-full rounded-full py-3.5 text-xs font-semibold text-white shadow-glow"
+              onClick={() => setIsPreApprovalOpen(true)}
+              className="apple-btn-primary mt-8 flex items-center justify-center gap-2 w-full rounded-full py-3.5 text-xs font-bold text-white shadow-glow"
             >
-              Pre-aprobar mi crédito ahora
+              <span>⚡</span> Pre-aprobar crédito en 60s con RUT
             </button>
-          )}
 
-          <p className="mt-4 text-[10px] leading-relaxed text-white/40 text-center">
-            Simulación referencial. La tasa y cuota definitiva dependen de la evaluación de la entidad financiera.
-          </p>
+            <p className="mt-4 text-[10px] leading-relaxed text-white/40 text-center">
+              Simulación referencial. La pre-aprobación en línea te entrega tu certificado oficial sin alterar tu historial financiero.
+            </p>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+
+      <FastCreditPreApprovalModal
+        isOpen={isPreApprovalOpen}
+        onClose={() => setIsPreApprovalOpen(false)}
+        targetVehicle={selectedVehicle}
+      />
+    </>
   );
 }
 
@@ -164,4 +178,3 @@ function Row({
     </div>
   );
 }
-

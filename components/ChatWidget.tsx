@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { asset } from "@/lib/asset";
 import { vehicles, formatCLP } from "@/lib/vehicles";
+import { getTrafficSource } from "@/lib/trafficTracking";
 
 type Msg = { role: "user" | "ai"; text: string; cars?: string[] };
 
@@ -60,11 +61,16 @@ export default function ChatWidget() {
   const track = (payload: Record<string, unknown>) => {
     if (!sessionIdRef.current) return;
     try {
+      const traffic = getTrafficSource();
       fetch("/api/track", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         keepalive: true,
-        body: JSON.stringify({ sessionId: sessionIdRef.current, ...payload }),
+        body: JSON.stringify({
+          sessionId: sessionIdRef.current,
+          trafficSource: traffic,
+          ...payload,
+        }),
       }).catch(() => {});
     } catch {
       /* noop */

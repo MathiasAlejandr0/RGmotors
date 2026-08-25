@@ -6,6 +6,8 @@ import { formatCLP, vehicles as staticVehicles, Vehicle } from "@/lib/vehicles";
 import { formatRut, validateRut, evaluateCreditCapacity } from "@/lib/rut";
 import { asset } from "@/lib/asset";
 
+import { getTrafficSource } from "@/lib/trafficTracking";
+
 type Props = {
   isOpen: boolean;
   onClose: () => void;
@@ -102,6 +104,7 @@ export default function FastCreditPreApprovalModal({
           maxApprovedAmount: evaluation.totalPurchasingPower,
           score: 95,
           status: "Pre-aprobado",
+          trafficSource: getTrafficSource(),
           notes: `Pre-aprobación en 60s con RUT: ${rut}. Situación: ${employmentType}. Renta: ${formatCLP(income)}. Pie: ${formatCLP(downPayment)}.`,
         }),
       });
