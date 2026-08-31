@@ -62,11 +62,14 @@ export async function extractPhotosFromFolder(folderId: string): Promise<{ fileN
     while ((m = regex.exec(html)) !== null) {
       const fileName = m[1];
       const fileId = m[2].split("-")[0];
-      photos.push({
-        fileName,
-        fileId,
-        downloadUrl: `https://drive.google.com/uc?export=download&id=${fileId}`,
-      });
+      // Evitar duplicados si el HTML renderiza el mismo archivo varias veces
+      if (!photos.some((p) => p.fileId === fileId)) {
+        photos.push({
+          fileName,
+          fileId,
+          downloadUrl: `https://drive.google.com/uc?export=download&id=${fileId}`,
+        });
+      }
     }
     // Ordenamos alfabéticamente por el nombre de archivo original. 
     // Como las cámaras nombran secuencialmente (ej. IMG_001.jpg), la primera foto suele ser la frontal.
