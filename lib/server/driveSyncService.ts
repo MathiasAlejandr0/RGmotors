@@ -84,7 +84,7 @@ export async function syncCatalogFromDriveFolders(folderUrls: string[]): Promise
     }
   }
 
-  await mkdir("public/cars/real", { recursive: true });
+  // Las fotos se obtendrán directamente de Google Drive en tiempo real
 
   const existingList = await getVehicles();
   let newPhotos = 0;
