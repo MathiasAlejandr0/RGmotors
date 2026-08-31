@@ -174,6 +174,26 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     }
   };
 
+  // Set a photo as the cover image
+  const handleSetAsCover = async (url: string) => {
+    try {
+      const res = await fetch(`/api/vehicles/${selectedSlug}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: url }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Optimistically update the UI
+        fetchPhotos(selectedSlug);
+      } else {
+        alert(data.error || "No se pudo actualizar la portada.");
+      }
+    } catch {
+      alert("Error de conexión al actualizar la portada.");
+    }
+  };
+
   const formatBytes = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -460,16 +480,23 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
                     {/* Overlay Actions */}
                     <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 backdrop-blur-sm transition group-hover:opacity-100">
                       <button
+                        onClick={() => handleSetAsCover(photo.url)}
+                        title="Establecer como Portada"
+                        className={`grid h-8 w-8 place-items-center rounded-full text-sm hover:scale-110 transition ${photo.isCover ? 'bg-brand-500 text-white' : 'bg-white/20 text-white hover:bg-brand-500/80'}`}
+                      >
+                        ⭐
+                      </button>
+                      <button
                         onClick={() => setPreviewImage(photo.url)}
                         title="Ver en grande"
-                        className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-sm text-white hover:bg-white/30"
+                        className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-sm text-white hover:bg-white/30 hover:scale-110 transition"
                       >
                         🔍
                       </button>
                       <button
                         onClick={() => handleDeletePhoto(photo.name, "gallery")}
                         title="Eliminar foto"
-                        className="grid h-8 w-8 place-items-center rounded-full bg-red-500/80 text-sm text-white hover:bg-red-500"
+                        className="grid h-8 w-8 place-items-center rounded-full bg-red-500/80 text-sm text-white hover:bg-red-500 hover:scale-110 transition"
                       >
                         🗑️
                       </button>

@@ -68,7 +68,9 @@ export async function extractPhotosFromFolder(folderId: string): Promise<{ fileN
         downloadUrl: `https://drive.google.com/uc?export=download&id=${fileId}`,
       });
     }
-    return photos;
+    // Ordenamos alfabéticamente por el nombre de archivo original. 
+    // Como las cámaras nombran secuencialmente (ej. IMG_001.jpg), la primera foto suele ser la frontal.
+    return photos.sort((a, b) => a.fileName.localeCompare(b.fileName, undefined, { numeric: true }));
   } catch {
     return [];
   }
