@@ -1,7 +1,5 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getVehicle, vehicles } from "@/lib/vehicles";
-import ReserveFlow from "@/components/ReserveFlow";
 
 export function generateStaticParams() {
   return vehicles.map((v) => ({ slug: v.slug }));
@@ -14,17 +12,8 @@ export default async function ReservaPage({
 }) {
   const { slug } = await params;
   const v = getVehicle(slug);
-  if (!v) notFound();
-
-  return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <nav className="mb-4 text-sm text-white/40">
-        <Link href={`/vehiculo/${v.slug}`} className="hover:text-white">
-          ← Volver al vehículo
-        </Link>
-      </nav>
-      <h1 className="mb-6 text-3xl font-bold">Reserva online</h1>
-      <ReserveFlow vehicle={v} />
-    </main>
-  );
+  if (!v) {
+    redirect("/catalogo");
+  }
+  redirect(`/vehiculo/${v.slug}`);
 }

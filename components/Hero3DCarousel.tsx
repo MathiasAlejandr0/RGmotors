@@ -55,11 +55,10 @@ export default function Hero3DCarousel({ vehicles }: Hero3DCarouselProps) {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* 3D Stage Container — Tamaño compacto Cover Flow que respeta el margen con el título */}
-      <div className="relative mx-auto h-[260px] sm:h-[300px] w-full max-w-[400px] [perspective:1000px] flex items-center justify-center">
+      {/* 3D Stage Container */}
+      <div className="relative mx-auto h-[270px] sm:h-[310px] w-full max-w-[420px] [perspective:1000px] flex items-center justify-center">
         {items.map((item, idx) => {
           const total = items.length;
-          // Calculate offset relative to active card
           let offset = idx - currentIndex;
           if (offset < -Math.floor(total / 2)) offset += total;
           if (offset > Math.floor(total / 2)) offset -= total;
@@ -68,7 +67,6 @@ export default function Hero3DCarousel({ vehicles }: Hero3DCarouselProps) {
           const isPrev = offset === -1;
           const isNext = offset === 1;
 
-          // Transición Cover Flow 3D compacta
           let transformStyle = "";
           let opacity = 0;
           let zIndex = 0;
@@ -111,13 +109,11 @@ export default function Hero3DCarousel({ vehicles }: Hero3DCarouselProps) {
               }}
               className="absolute inset-0 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer"
             >
-
-
               <div
                 className={`apple-glass-card relative h-full w-full overflow-hidden rounded-3xl border transition-all duration-500 ${
                   isActive
-                    ? "border-brand-500/50 shadow-glow-lg ring-1 ring-white/20"
-                    : "border-white/10 hover:border-white/25"
+                    ? "border-brand-400/50 shadow-glow ring-1 ring-white/20"
+                    : "border-white/10 hover:border-white/20"
                 }`}
               >
                 {/* Vehicle Image */}
@@ -130,27 +126,26 @@ export default function Hero3DCarousel({ vehicles }: Hero3DCarouselProps) {
                       isActive ? "hover:scale-105" : ""
                     }`}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
                   {/* Top Badges */}
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md shadow-sm">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      360° disponible
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/75 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md shadow-sm">
+                      <span>📸</span> Fotos Reales
                     </span>
 
-                    <span className="rounded-full border border-white/15 bg-black/60 px-3 py-1 text-[11px] font-bold text-brand-300 backdrop-blur-md">
+                    <span className="rounded-full border border-white/20 bg-black/80 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
                       {formatCLP(item.price)}
                     </span>
                   </div>
 
                   {/* Bottom Info Bar */}
-                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-2xl border border-white/15 bg-black/70 p-3 backdrop-blur-md z-20">
+                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-2xl border border-white/15 bg-black/80 p-3 backdrop-blur-md z-20">
                     <div>
                       <p className="text-sm font-bold text-white tracking-tight">
                         {item.brand} {item.model}
                       </p>
-                      <p className="text-[11px] text-white/55">
+                      <p className="text-[11px] text-white/50">
                         {item.version} · {item.year}
                       </p>
                     </div>
@@ -158,9 +153,9 @@ export default function Hero3DCarousel({ vehicles }: Hero3DCarouselProps) {
                     {isActive ? (
                       <Link
                         href={`/vehiculo/${item.slug}`}
-                        className="apple-btn-primary rounded-full px-3.5 py-1.5 text-xs font-semibold text-white shadow-glow transition-all hover:scale-105"
+                        className="apple-btn-primary rounded-full px-4 py-2 text-xs font-bold text-white shadow-glow transition-all hover:scale-105"
                       >
-                        Ver auto 360° →
+                        Ver vehículo →
                       </Link>
                     ) : (
                       <span className="text-xs font-semibold text-white/50">Ver →</span>
@@ -181,7 +176,7 @@ export default function Hero3DCarousel({ vehicles }: Hero3DCarouselProps) {
         <button
           onClick={handlePrev}
           aria-label="Anterior"
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-white/80 backdrop-blur-md transition-all hover:bg-white/15 hover:text-white active:scale-95"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-white/80 backdrop-blur-md transition-all hover:bg-white/15 hover:text-white active:scale-95 font-bold"
         >
           ‹
         </button>
@@ -194,7 +189,7 @@ export default function Hero3DCarousel({ vehicles }: Hero3DCarouselProps) {
               onClick={() => setCurrentIndex(i)}
               aria-label={`Ir a diapositiva ${i + 1}`}
               className={`h-2 rounded-full transition-all duration-300 ${
-                currentIndex === i
+                i === currentIndex
                   ? "w-6 bg-brand-400 shadow-glow"
                   : "w-2 bg-white/20 hover:bg-white/40"
               }`}
@@ -205,7 +200,7 @@ export default function Hero3DCarousel({ vehicles }: Hero3DCarouselProps) {
         <button
           onClick={handleNext}
           aria-label="Siguiente"
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-white/80 backdrop-blur-md transition-all hover:bg-white/15 hover:text-white active:scale-95"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-white/80 backdrop-blur-md transition-all hover:bg-white/15 hover:text-white active:scale-95 font-bold"
         >
           ›
         </button>

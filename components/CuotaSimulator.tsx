@@ -41,7 +41,7 @@ export default function CuotaSimulator({ price }: Props) {
     <div className="apple-glass-card rounded-3xl p-6">
       <div className="mb-5 flex items-center justify-between">
         <h3 className="text-base font-bold tracking-tight text-white">Simulador de crédito</h3>
-        <span className="flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-[11px] font-semibold text-brand-300 backdrop-blur-md">
+        <span className="flex items-center gap-1.5 rounded-full border border-brand-400/30 bg-brand-400/10 px-3 py-1 text-[11px] font-semibold text-brand-300 backdrop-blur-md">
           <span className="h-1.5 w-1.5 rounded-full bg-brand-400 animate-pulse" />
           En tiempo real
         </span>
@@ -66,14 +66,14 @@ export default function CuotaSimulator({ price }: Props) {
 
         <div>
           <div className="mb-2 flex justify-between text-xs font-semibold">
-            <span className="text-white/60">Plazo de financiamiento</span>
-            <span className="text-white font-bold">{term} cuotas</span>
+            <span className="text-white/60">Plazo ({term} meses)</span>
+            <span className="text-white font-bold">{term / 12} años</span>
           </div>
           <input
             type="range"
             min={12}
             max={60}
-            step={6}
+            step={12}
             value={term}
             onChange={(e) => setTerm(Number(e.target.value))}
             className="apple-range w-full cursor-pointer"
@@ -109,4 +109,3 @@ export default function CuotaSimulator({ price }: Props) {
     </div>
   );
 }
-

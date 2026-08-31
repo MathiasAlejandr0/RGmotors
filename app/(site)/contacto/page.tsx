@@ -30,6 +30,31 @@ export default function ContactoPage() {
               <p className="text-xs text-white/60">Respuesta promedio &lt; 5 min · {COMPANY.phoneDisplay}</p>
             </div>
           </a>
+
+          {/* Social Lead Generation Channels */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <a
+              href={COMPANY.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-3xl border border-pink-500/30 bg-gradient-to-b from-pink-500/15 to-purple-500/10 p-3.5 text-center transition hover:border-pink-500/60 hover:bg-pink-500/25"
+            >
+              <span className="text-2xl">📸</span>
+              <p className="text-xs font-bold text-pink-300">Instagram</p>
+              <p className="text-[11px] text-white/60">@_rgmotors</p>
+            </a>
+
+            <a
+              href={COMPANY.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-3xl border border-blue-500/30 bg-gradient-to-b from-blue-500/15 to-blue-700/10 p-3.5 text-center transition hover:border-blue-500/60 hover:bg-blue-500/25"
+            >
+              <span className="text-2xl">📘</span>
+              <p className="text-xs font-bold text-blue-300">Facebook</p>
+              <p className="text-[11px] text-white/60">@automotoraga</p>
+            </a>
+          </div>
         </div>
       </div>
     </main>

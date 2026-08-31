@@ -6,15 +6,16 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://rgmotors.cl"),
-  title: "RG Motors — Autos usados con experiencia 360°",
+  title: "RG Motors — Vehículos Seleccionados y Calidad Garantizada",
   description:
-    "Compra tu próximo auto usado con la primera experiencia 360° interactiva de Chile. Gira el vehículo, revisa cada detalle, simula tu crédito y reserva online.",
+    "Compra tu próximo auto o camioneta en Puerto Montt, Los Lagos. Stock 100% verificado, fotos reales de cada unidad, simulación de crédito automotriz y garantía RG Motors.",
   keywords: [
     "autos usados",
-    "vehículos segunda mano",
-    "spin 360",
+    "camionetas 4x4",
+    "vehículos seleccionados",
     "crédito automotriz",
     "RG Motors",
+    "Puerto Montt",
     "Chile",
   ],
   icons: {
@@ -22,9 +23,9 @@ export const metadata: Metadata = {
     apple: "/logo.png",
   },
   openGraph: {
-    title: "RG Motors — Autos usados con experiencia 360°",
+    title: "RG Motors — Vehículos Seleccionados en Puerto Montt",
     description:
-      "La primera automotora de Chile con visor 360° interactivo. Revisa cada ángulo del auto antes de comprar.",
+      "Automotora líder en Puerto Montt. Catálogo de camionetas y autos con fotografías reales, financiamiento y garantía de 6 meses.",
     type: "website",
     locale: "es_CL",
     images: [{ url: "/logo.png", width: 512, height: 512, alt: "RG Motors" }],

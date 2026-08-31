@@ -108,7 +108,7 @@ export default function VehicleEditorModal({
     const current = formData.highlights || [];
     setFormData((prev) => ({
       ...prev,
-      highlights: current.filter((_, i) => i !== idx),
+      highlights: current.filter((_: string, i: number) => i !== idx),
     }));
   };
 
@@ -416,7 +416,7 @@ export default function VehicleEditorModal({
                 </div>
 
                 <div className="flex flex-wrap gap-2 pt-2">
-                  {(formData.highlights || []).map((h, i) => (
+                  {(formData.highlights || []).map((h: string, i: number) => (
                     <span
                       key={i}
                       className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs text-white/90"

@@ -7,199 +7,203 @@ import Hero3DCarousel from "@/components/Hero3DCarousel";
 import AppleCareTrustSection from "@/components/AppleCareTrustSection";
 
 export default function Home() {
-
-  const featured = vehicles.filter((v) => v.featured).slice(0, 3);
+  const featured = vehicles.filter((v) => v.featured).slice(0, 6);
 
   return (
     <main className="relative overflow-hidden">
-      {/* Hero */}
-
-
-      <section className="relative border-b border-white/[0.08] pt-10 pb-16 lg:pt-16 lg:pb-24">
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2">
+      {/* 1. HERO SECTION */}
+      <section className="relative hero-bg border-b border-white/[0.08] pt-10 pb-16 lg:pt-14 lg:pb-20">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
+          {/* Left Hero Copy */}
           <div className="animate-fade-up">
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 backdrop-blur-md shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3.5 py-1 backdrop-blur-md shadow-sm">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-300 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-400" />
               </span>
-              <span className="text-xs font-semibold text-white/90 tracking-wide">
-                +450 vehículos con inspección y garantía
+              <span className="text-xs font-semibold text-brand-200 tracking-wide">
+                Calidad Garantizada · Inspección 150 Puntos
               </span>
             </div>
 
-            <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-white">
-              La nueva forma de comprar tu próximo{" "}
-              <span className="bg-gradient-to-r from-brand-300 via-brand-400 to-white bg-clip-text text-transparent">
-                vehículo.
+            <h1 className="mt-5 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-white leading-[1.1]">
+              Tu próximo vehículo,{" "}
+              <span className="bg-gradient-to-r from-brand-200 via-white to-brand-300 bg-clip-text text-transparent drop-shadow-sm">
+                garantizado y con financiamiento a tu medida.
               </span>
             </h1>
 
-            <p className="mt-5 max-w-lg text-base sm:text-lg leading-relaxed text-white/60">
-              Explora en 360°, simula tu financiamiento al instante y reserva tu auto 100% online con total transparencia.
+            <p className="mt-4 max-w-lg text-base sm:text-lg leading-relaxed text-white/65 font-normal">
+              Explora nuestra selección de camionetas 4x4, SUVs y autos seminuevos inspeccionados. Fotografías 100% reales, evaluación crediticia rápida y entrega inmediata en Puerto Montt.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3.5">
+            <div className="mt-7 flex flex-wrap items-center gap-3.5">
               <Link
                 href="/catalogo"
-                className="apple-btn-primary rounded-full px-7 py-3.5 text-sm font-semibold text-white"
+                className="apple-btn-primary rounded-full px-7 py-3 text-sm font-bold text-white shadow-glow transition hover:scale-105"
               >
-                Ver catálogo
+                Explorar Catálogo Completo
               </Link>
               <Link
                 href="/simulador"
-                className="apple-btn-secondary rounded-full px-7 py-3.5 text-sm font-medium"
+                className="apple-btn-secondary rounded-full px-6 py-3 text-sm font-semibold text-white"
               >
-                Solicitar crédito
+                Simular Crédito Online
               </Link>
             </div>
           </div>
 
-          {/* Apple TV Style 3D Showcase Carousel */}
-          <div className="animate-fade-up lg:pl-6">
+          {/* Right 3D Carousel Stage */}
+          <div className="animate-fade-up lg:pl-4">
             <Hero3DCarousel vehicles={vehicles} />
           </div>
-
         </div>
 
-
-        {/* Feature strip */}
-        <div className="mt-14 border-t border-white/[0.08] bg-white/[0.02] backdrop-blur-md">
-          <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-white/[0.08] px-4 py-6 text-center sm:grid-cols-3 lg:grid-cols-5">
-            <Stat
-              icon={
-                <svg className="h-5 w-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 17a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4zM3 9l2-4h14l2 4M3 9v8a1 1 0 001 1h1m16-9v8a1 1 0 01-1 1h-1M3 9h18" />
-                </svg>
-              }
-              title="+450 autos"
-              text="disponibles"
+        {/* Value Props Clean Strip */}
+        <div className="mt-12 border-t border-white/[0.08] bg-white/[0.02] backdrop-blur-md">
+          <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-white/[0.08] px-4 py-5 sm:grid-cols-4">
+            <Pillar
+              icon="🚘"
+              title="Stock Verificado"
+              text="Historial y kilometraje auditado"
             />
-            <Stat
-              icon={
-                <svg className="h-5 w-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              }
-              title="Financiamiento"
-              text="inmediato"
+            <Pillar
+              icon="⚡"
+              title="Simulación Online"
+              text="Respuesta ágil a tu correo"
             />
-            <Stat
-              icon={
-                <svg className="h-5 w-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              }
-              title="Compra"
-              text="100% segura"
+            <Pillar
+              icon="📸"
+              title="Fotos Reales HD"
+              text="Exteriores, interiores y motor"
             />
-            <Stat
-              icon={
-                <svg className="h-5 w-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              }
-              title="Tours 360°"
-              text="exterior e interior"
-            />
-            <Stat
-              icon={
-                <svg className="h-5 w-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              }
-              title="Reserva"
-              text="online instantánea"
+            <Pillar
+              icon="🛡️"
+              title="Garantía & Respaldo"
+              text="Inspección mecánica 150 puntos"
             />
           </div>
         </div>
       </section>
 
-      {/* Featured Vehicles with Scroll Reveal */}
+      {/* 2. FEATURED VEHICLES */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <RevealOnScroll>
-          <div className="mb-8 flex items-end justify-between">
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl text-white">
-                Vehículos destacados
-              </h2>
+              <div className="flex items-center gap-2">
+                <span className="h-4 w-1 rounded-full bg-brand-400" />
+                <h2 className="text-2xl font-bold tracking-tight sm:text-3xl text-white">
+                  Vehículos destacados
+                </h2>
+              </div>
               <p className="mt-1 text-sm text-white/50">
-                Seleccionados minuciosamente por su historial y excelente estado.
+                Unidades seleccionadas minuciosamente por su óptimo estado mecánico y estético.
               </p>
             </div>
             <Link
               href="/catalogo"
-              className="flex items-center gap-1 text-sm font-semibold text-brand-400 transition hover:text-brand-300"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-300 transition hover:text-white"
             >
-              Ver todos los autos <span className="text-xs">→</span>
+              Ver catálogo completo <span className="text-xs">→</span>
             </Link>
           </div>
         </RevealOnScroll>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {featured.map((v, idx) => (
-            <RevealOnScroll key={v.slug} delay={idx * 150}>
+            <RevealOnScroll key={v.slug} delay={idx * 100}>
               <VehicleCard vehicle={v} />
             </RevealOnScroll>
           ))}
         </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            href="/catalogo"
+            className="apple-btn-secondary inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-semibold text-white"
+          >
+            Ver todos los {vehicles.length} vehículos disponibles →
+          </Link>
+        </div>
       </section>
 
-      {/* How it works with Scroll Reveal */}
-      <section className="border-y border-white/[0.08] bg-ink-900/40 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      {/* 3. HOW IT WORKS (SIMPLE 4 STEPS) */}
+      <section className="border-y border-white/[0.08] bg-ink-900/40 backdrop-blur-xl py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <RevealOnScroll>
-            <div className="text-center">
+            <div className="text-center max-w-2xl mx-auto">
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl text-white">
-                Comprar tu auto nunca fue tan fácil
+                Comprar tu auto nunca fue tan simple y seguro
               </h2>
-              <p className="mt-2 text-sm text-white/50 max-w-lg mx-auto">
-                Un proceso simple, transparente y diseñado para darte total tranquilidad.
+              <p className="mt-2 text-sm text-white/50">
+                Experiencia 100% digital respaldada por atención personalizada en cada etapa.
               </p>
             </div>
           </RevealOnScroll>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-4">
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <RevealOnScroll delay={100}>
-              <Step n="1" title="Explora" text="Filtra entre cientos de autos con inspección certificada de 150 puntos." />
+              <Step
+                n="1"
+                title="Explora el stock"
+                text="Filtra entre autos inspeccionados con certificación técnica de 150 puntos."
+              />
             </RevealOnScroll>
             <RevealOnScroll delay={200}>
-              <Step n="2" title="Revisa en 360°" text="Míralo por dentro y por fuera desde tu casa con fotos reales." />
+              <Step
+                n="2"
+                title="Inspección 360°"
+                text="Revisa cada rincón exterior e interior con fotos reales de alta fidelidad."
+              />
             </RevealOnScroll>
             <RevealOnScroll delay={300}>
-              <Step n="3" title="Simula tu crédito" text="Conoce tu cuota estimada al instante con condiciones claras." />
+              <Step
+                n="3"
+                title="Simula tu cuota"
+                text="Elige tu pie y plazo. Recibiremos tu solicitud para responderte a la brevedad."
+              />
             </RevealOnScroll>
             <RevealOnScroll delay={400}>
-              <Step n="4" title="Reserva online" text="Bloquéalo pagando una abono 100% reembolsable de forma segura." />
+              <Step
+                n="4"
+                title="Entrega & Showroom"
+                text="Visita nuestro showroom en Puerto Montt o coordinamos la entrega de tu auto."
+              />
             </RevealOnScroll>
           </div>
         </div>
       </section>
 
-      {/* 4. Apple Care Style Trust & Guarantee Bento Cards */}
+      {/* 4. TRUST & GUARANTEES BENTO */}
       <RevealOnScroll>
         <AppleCareTrustSection />
       </RevealOnScroll>
 
-
-      {/* CTA Banner with Scroll Reveal */}
+      {/* 5. CTA BANNER */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-
         <RevealOnScroll>
-          <div className="relative overflow-hidden rounded-3xl border border-brand-500/30 bg-gradient-to-br from-brand-500/15 via-ink-900/90 to-black p-8 text-center sm:p-14 shadow-apple-card">
+          <div className="relative overflow-hidden rounded-3xl border border-brand-500/40 bg-gradient-to-br from-brand-600/25 via-ink-900/90 to-black p-8 text-center sm:p-14 shadow-apple-card">
             <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
-
-              ¿Listo para encontrar tu próximo auto?
+              ¿Listo para encontrar tu próximo vehículo?
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-base text-white/60">
-              Explora nuestro catálogo completo con experiencia 360° e inicia tu simulación de financiamiento en minutos.
+              Explora nuestro catálogo con fotos 360°, simula tu crédito online o solicita una tasación por tu vehículo actual.
             </p>
-            <Link
-              href="/catalogo"
-              className="apple-btn-primary mt-8 inline-block rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-glow"
-            >
-              Explorar catálogo completo
-            </Link>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/catalogo"
+                className="apple-btn-primary rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-glow"
+              >
+                Explorar catálogo completo
+              </Link>
+              <Link
+                href="/contacto"
+                className="apple-btn-secondary rounded-full px-8 py-3.5 text-sm font-semibold text-white"
+              >
+                Hablar con un asesor
+              </Link>
+            </div>
           </div>
         </RevealOnScroll>
       </section>
@@ -207,23 +211,20 @@ export default function Home() {
   );
 }
 
-
-function Stat({
+function Pillar({
   icon,
   title,
   text,
 }: {
-  icon: React.ReactNode;
+  icon: string;
   title: string;
   text: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center px-3 py-2">
-      <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04]">
-        {icon}
-      </div>
-      <p className="mt-2 text-sm font-bold tracking-tight text-white">{title}</p>
-      <p className="text-xs text-white/45">{text}</p>
+    <div className="flex flex-col items-center justify-center px-4 py-2 text-center">
+      <span className="text-xl mb-1.5">{icon}</span>
+      <p className="text-sm font-bold tracking-tight text-white">{title}</p>
+      <p className="text-[11px] text-white/50 mt-0.5">{text}</p>
     </div>
   );
 }
@@ -235,8 +236,7 @@ function Step({ n, title, text }: { n: string; title: string; text: string }) {
         {n}
       </span>
       <h3 className="mt-5 text-base font-bold tracking-tight text-white">{title}</h3>
-      <p className="mt-2 text-xs leading-relaxed text-white/55">{text}</p>
+      <p className="mt-2 text-xs leading-relaxed text-white/55 font-normal">{text}</p>
     </div>
   );
 }
-

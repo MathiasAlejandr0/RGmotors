@@ -12,6 +12,8 @@ import { TradeInRequest } from "@/lib/server/tradeInStore";
 import { CarRequest } from "@/lib/server/carRequestsStore";
 import { PriceAlert } from "@/lib/server/priceAlertsStore";
 import { TestDrive } from "@/lib/server/testDrivesStore";
+import PhotoManager from "./PhotoManager";
+import DriveSyncModal from "./DriveSyncModal";
 
 export function ChannelBadge({ source }: { source?: string }) {
   if (!source) return <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/50">Directo</span>;
@@ -89,6 +91,7 @@ export function VehiclesSection({
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   const fetchVehicles = useCallback(async () => {
     setIsLoading(true);
@@ -196,6 +199,12 @@ export function VehiclesSection({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setIsSyncModalOpen(true)}
+            className="rounded-xl border border-emerald-500/30 bg-emerald-500/15 px-4 py-2.5 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/25 shadow-sm flex items-center gap-1.5"
+          >
+            <span>🔄</span> Sincronizar Drive & Excel
+          </button>
           {onManagePhotos && (
             <button
               onClick={() => onManagePhotos(vehicleList[0]?.slug || "")}
@@ -379,6 +388,15 @@ export function VehiclesSection({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSaved={() => {
+          fetchVehicles();
+        }}
+      />
+
+      {/* Google Drive & Excel Sync Modal */}
+      <DriveSyncModal
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+        onSuccess={() => {
           fetchVehicles();
         }}
       />
@@ -1770,7 +1788,7 @@ export function TestDrivesSection() {
                           value={td.status}
                           onChange={(e) => handleStatusChange(td.id, e.target.value as any)}
                           className={`rounded-lg border px-2.5 py-1 text-xs font-semibold outline-none cursor-pointer ${
-                            STATUS_BADGES[td.status] || "bg-white/10 text-white"
+                            STATUS_BADGES[td.status as keyof typeof STATUS_BADGES] || "bg-white/10 text-white"
                           }`}
                         >
                           <option value="Pendiente">🟡 Pendiente</option>
@@ -1811,5 +1829,122 @@ export function TestDrivesSection() {
     </div>
   );
 }
+
+/**
+ * HUB DE INVENTARIO Y MULTIMEDIA UNIFICADO
+ */
+export function InventoryHubSection({
+  initialSubTab = "catalogo",
+  initialSlug,
+}: {
+  initialSubTab?: "catalogo" | "multimedia";
+  initialSlug?: string;
+}) {
+  const [subTab, setSubTab] = useState<"catalogo" | "multimedia">(initialSubTab);
+  const [photoSlug, setPhotoSlug] = useState<string>(initialSlug || "");
+
+  const handleManagePhotos = (slug: string) => {
+    setPhotoSlug(slug);
+    setSubTab("multimedia");
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Sub-navegación de Inventario */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-ink-900/80 p-2 backdrop-blur-xl">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setSubTab("catalogo")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+              subTab === "catalogo"
+                ? "bg-brand-500 text-white shadow-glow"
+                : "text-white/60 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <span>🚘</span> Catálogo de Vehículos
+          </button>
+          <button
+            onClick={() => setSubTab("multimedia")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+              subTab === "multimedia"
+                ? "bg-brand-500 text-white shadow-glow"
+                : "text-white/60 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <span>📸</span> Estudio de Fotos & Visores 360°
+          </button>
+        </div>
+        <p className="text-xs text-white/40 px-3 hidden sm:block">
+          {subTab === "catalogo" ? "Edición, estados y publicación de autos" : "Galería HD, portadas y giros 360° con IA"}
+        </p>
+      </div>
+
+      {subTab === "catalogo" ? (
+        <VehiclesSection onManagePhotos={handleManagePhotos} />
+      ) : (
+        <PhotoManager initialSlug={photoSlug} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * HUB DE CRM COMERCIAL Y OPORTUNIDADES UNIFICADO
+ */
+export function CrmHubSection({
+  initialTab = "leads",
+}: {
+  initialTab?: "leads" | "testdrives" | "reservas" | "creditos" | "tasaciones" | "pedidos" | "clientes";
+}) {
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+
+  const TABS = [
+    { id: "leads", label: "Leads & Scoring", icon: "🔥" },
+    { id: "testdrives", label: "Pruebas de Manejo", icon: "🚗" },
+    { id: "reservas", label: "Reservas Online", icon: "★" },
+    { id: "creditos", label: "Créditos & RUT", icon: "💳" },
+    { id: "tasaciones", label: "Tasaciones / Retomas", icon: "💎" },
+    { id: "pedidos", label: "Autos a Pedido & Alertas", icon: "🎯" },
+    { id: "clientes", label: "Base de Clientes", icon: "👥" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Selector de sub-pestañas CRM */}
+      <div className="rounded-2xl border border-white/10 bg-ink-900/80 p-2 backdrop-blur-xl">
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+                activeTab === tab.id
+                  ? "bg-brand-500 text-white shadow-glow"
+                  : "text-white/60 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              <span>{tab.icon}</span> {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Renderizado de la sub-sección activa */}
+      {activeTab === "leads" && <LeadScoringSection />}
+      {activeTab === "testdrives" && <TestDrivesSection />}
+      {activeTab === "reservas" && <ReservationsSection />}
+      {activeTab === "creditos" && <CreditsSection />}
+      {activeTab === "tasaciones" && <TradeInsSection />}
+      {activeTab === "pedidos" && (
+        <div className="space-y-6">
+          <CarRequestsSection />
+          <PriceAlertsSection />
+        </div>
+      )}
+      {activeTab === "clientes" && <ClientsSection />}
+    </div>
+  );
+}
+
 
 

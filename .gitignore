@@ -60,6 +60,7 @@ next-env.d.ts
 **/~$*.docx
 **/~$*.doc
 
-# omo session data
-.omo/
+# scratch and debug dumps
+/scratch/
+/public/inspect_photos.html
 

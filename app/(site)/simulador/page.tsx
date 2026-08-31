@@ -11,7 +11,7 @@ export default function SimuladorPage() {
   const [price, setPrice] = useState(vehicles[0]?.price || 18990000);
   const [downPct, setDownPct] = useState(20);
   const [term, setTerm] = useState(48);
-  const [isPreApprovalOpen, setIsPreApprovalOpen] = useState(false);
+  const [isSimulationOpen, setIsSimulationOpen] = useState(false);
 
   const selectedVehicle: Vehicle | undefined = vehicles.find((v) => v.slug === selectedSlug);
 
@@ -42,13 +42,13 @@ export default function SimuladorPage() {
       <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <div className="mb-10 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3.5 py-1 text-[11px] font-bold text-brand-300 mb-3">
-            ⚡ Pre-aprobación instantánea en 60 segundos con RUT
+            ⚡ Simulación de Crédito Online
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
             Simulador de crédito automotriz
           </h1>
           <p className="mt-2 text-sm text-white/50 max-w-lg mx-auto">
-            Calcula tu cuota al instante con CAE y costos transparentes para tu próximo vehículo.
+            Calcula tu cuota al instante y envía tu simulación a nuestro equipo para recibir una cotización a la brevedad.
           </p>
         </div>
 
@@ -130,28 +130,28 @@ export default function SimuladorPage() {
 
             <div className="mt-8 space-y-3.5 border-t border-white/10 pt-6">
               <Row label="Monto a financiar" value={formatCLP(r.financed)} />
-              <Row label="Tasa de interés mensual" value={`${(MONTHLY_RATE * 100).toFixed(2)}%`} />
+              <Row label="Tasa de interés mensual referencial" value={`${(MONTHLY_RATE * 100).toFixed(2)}%`} />
               <Row label="CAE aproximada" value={`${r.cae.toFixed(1)}%`} />
               <Row label="Costo total estimado" value={formatCLP(r.total)} highlight />
             </div>
 
             <button
-              onClick={() => setIsPreApprovalOpen(true)}
+              onClick={() => setIsSimulationOpen(true)}
               className="apple-btn-primary mt-8 flex items-center justify-center gap-2 w-full rounded-full py-3.5 text-xs font-bold text-white shadow-glow"
             >
-              <span>⚡</span> Pre-aprobar crédito en 60s con RUT
+              <span>⚡</span> Solicitar simulación a nuestro equipo
             </button>
 
-            <p className="mt-4 text-[10px] leading-relaxed text-white/40 text-center">
-              Simulación referencial. La pre-aprobación en línea te entrega tu certificado oficial sin alterar tu historial financiero.
+            <p className="mt-4 text-[11px] leading-relaxed text-white/50 text-center">
+              Tu simulación será enviada a nuestro equipo de ventas y te responderemos a la brevedad a tu correo electrónico con las mejores opciones de financiamiento.
             </p>
           </div>
         </div>
       </main>
 
       <FastCreditPreApprovalModal
-        isOpen={isPreApprovalOpen}
-        onClose={() => setIsPreApprovalOpen(false)}
+        isOpen={isSimulationOpen}
+        onClose={() => setIsSimulationOpen(false)}
         targetVehicle={selectedVehicle}
       />
     </>

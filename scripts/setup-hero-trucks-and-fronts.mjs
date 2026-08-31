@@ -1,0 +1,732 @@
+import { copyFileSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
+
+async function main() {
+  // 1. Copiar imágenes de camionetas insignia del Hero
+  copyFileSync(
+    "C:/Users/mathi/.gemini/antigravity-ide/brain/3e62196d-b1c3-4f99-9443-95784927c59c/ford_raptor_front_1787784228060.jpg",
+    "public/cars/ford-raptor-2023.jpg"
+  );
+  copyFileSync(
+    "C:/Users/mathi/.gemini/antigravity-ide/brain/3e62196d-b1c3-4f99-9443-95784927c59c/mitsubishi_l200_front_1787784137690.jpg",
+    "public/cars/mitsubishi-l200-2022.jpg"
+  );
+
+  console.log("✅ Fotos frontales de Raptor y L200 copiadas a public/cars/");
+
+  // 2. Definir catálogo completo con fotos 100% FRONTALES para la portada
+  const finalVehicles = [
+    // --- CAMIONETAS Y VEHÍCULOS ESTRELLA DEL HERO ---
+    {
+      slug: "ford-ranger-raptor-2023",
+      brand: "Ford",
+      model: "Raptor",
+      version: "3.0 V6 Twin-Turbo 4x4",
+      year: 2023,
+      price: 34990000,
+      km: 18500,
+      fuel: "Bencina",
+      transmission: "Automática",
+      bodyType: "Camioneta",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/ford-raptor-2023.jpg",
+      engine: "3.0L EcoBoost V6 Twin-Turbo",
+      power: "392 HP",
+      traction: "4x4",
+      doors: 4,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      highlights: [
+        "Suspensión FOX Live Valve 2.5",
+        "Modo Baja & tracción 4x4 integral",
+        "Inspección de 150 puntos aprobada",
+        "Garantía oficial RG Motors",
+      ],
+    },
+    {
+      slug: "toyota-hilux-2022",
+      brand: "Toyota",
+      model: "Hilux",
+      version: "2.8 SRV 4x4 Automática",
+      year: 2022,
+      price: 24990000,
+      km: 42000,
+      fuel: "Diésel",
+      transmission: "Automática",
+      bodyType: "Camioneta",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/toyota-hilux-2020.jpg",
+      engine: "2.8L Turbo Diésel D-4D",
+      power: "204 HP",
+      traction: "4x4",
+      doors: 4,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      highlights: [
+        "Tracción 4x4 con bloqueo diferencial",
+        "Equipamiento SRV Full Cuero",
+        "Inspección de 150 puntos aprobada",
+        "Garantía RG Motors de 6 meses",
+      ],
+    },
+    {
+      slug: "mitsubishi-l200-2022",
+      brand: "Mitsubishi",
+      model: "L200",
+      version: "2.4 TDI Dakar High Power 4x4",
+      year: 2022,
+      price: 21990000,
+      km: 39000,
+      fuel: "Diésel",
+      transmission: "Automática",
+      bodyType: "Camioneta",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/mitsubishi-l200-2022.jpg",
+      engine: "2.4L MIVEC Turbo Diésel",
+      power: "178 HP",
+      traction: "4x4",
+      doors: 4,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      highlights: [
+        "Edición Dakar High Power 4x4",
+        "Super Select 4WD-II",
+        "Inspección de 150 puntos aprobada",
+        "Garantía RG Motors de 6 meses",
+      ],
+    },
+    {
+      slug: "toyota-rav4-hibrido",
+      brand: "Toyota",
+      model: "RAV4",
+      version: "2.5 Hybrid AWD",
+      year: 2023,
+      price: 21990000,
+      km: 28500,
+      fuel: "Híbrido",
+      transmission: "Automática",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/toyota-rav4-hibrido.jpg",
+      engine: "2.5L Hybrid",
+      power: "218 HP",
+      traction: "AWD",
+      doors: 5,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      spin: { count: 200 },
+      highlights: [
+        "Tour 360° con video real del vehículo",
+        "Híbrido AWD — bajo consumo",
+        "Inspección de 150 puntos aprobada",
+        "Garantía RG Motors de 6 meses",
+      ],
+    },
+    {
+      slug: "auto-lxbd49",
+      brand: "Chevrolet",
+      model: "D-Max",
+      version: "2.5 TD 4x4 Doble Cabina",
+      year: 2020,
+      price: 16990000,
+      km: 62000,
+      fuel: "Diésel",
+      transmission: "Manual",
+      bodyType: "Camioneta",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-lxbd49-2.jpg", // Foto 100% frontal
+      engine: "2.5L Turbo Diésel",
+      power: "136 HP",
+      traction: "4x4",
+      doors: 4,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      highlights: [
+        "Patente: LXBD49",
+        "Foto frontal real en automotora",
+        "Inspección de 150 puntos aprobada",
+        "Garantía RG Motors de 6 meses",
+      ],
+      gallery: [
+        "/cars/real_stock/rg-lxbd49-0.jpg",
+        "/cars/real_stock/rg-lxbd49-1.jpg",
+        "/cars/real_stock/rg-lxbd49-3.jpg",
+        "/cars/real_stock/rg-lxbd49-4.jpg",
+      ],
+    },
+
+    // --- STOCK REAL DE SUCURSAL CON FOTOS FRONTALES ---
+    {
+      slug: "auto-cvff32",
+      brand: "Nissan",
+      model: "Terrano",
+      version: "2.5 TDI 4x4 Doble Cabina",
+      year: 2013,
+      price: 9490000,
+      km: 168000,
+      fuel: "Diésel",
+      transmission: "Manual",
+      bodyType: "Camioneta",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-cvff32-1.jpg", // Foto 100% frontal
+      engine: "2.5L Turbo Diésel",
+      power: "133 HP",
+      traction: "4x4",
+      doors: 4,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      highlights: [
+        "Patente: CVFF32",
+        "Inspección de 150 puntos aprobada",
+        "Garantía RG Motors de 6 meses",
+      ],
+      gallery: [
+        "/cars/real_stock/rg-cvff32-0.jpg",
+        "/cars/real_stock/rg-cvff32-2.jpg",
+        "/cars/real_stock/rg-cvff32-3.jpg",
+      ],
+    },
+    {
+      slug: "auto-ddlj95",
+      brand: "Mercedes-Benz",
+      model: "ML 350",
+      version: "3.5 V6 4MATIC",
+      year: 2012,
+      price: 13990000,
+      km: 124000,
+      fuel: "Bencina",
+      transmission: "Automática",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-ddlj95-1.jpg", // Foto 100% frontal
+      engine: "3.5L V6",
+      power: "306 HP",
+      traction: "AWD",
+      doors: 5,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      highlights: [
+        "Patente: DDLJ95",
+        "Tracción Integral 4MATIC",
+        "Inspección de 150 puntos aprobada",
+        "Garantía RG Motors de 6 meses",
+      ],
+      gallery: [
+        "/cars/real_stock/rg-ddlj95-0.jpg",
+        "/cars/real_stock/rg-ddlj95-2.jpg",
+        "/cars/real_stock/rg-ddlj95-3.jpg",
+      ],
+    },
+    {
+      slug: "auto-dxtz99",
+      brand: "Nissan",
+      model: "Terrano",
+      version: "2.5 TDI 4x4 DX Blanco",
+      year: 2014,
+      price: 10490000,
+      km: 145000,
+      fuel: "Diésel",
+      transmission: "Manual",
+      bodyType: "Camioneta",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-dxtz99-0.jpg", // Foto 100% frontal
+      engine: "2.5L Turbo Diésel",
+      power: "133 HP",
+      traction: "4x4",
+      doors: 4,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      highlights: [
+        "Patente: DXTZ99",
+        "Camioneta 4x4 lista para faena y ciudad",
+        "Inspección de 150 puntos aprobada",
+        "Garantía RG Motors de 6 meses",
+      ],
+      gallery: [
+        "/cars/real_stock/rg-dxtz99-1.jpg",
+        "/cars/real_stock/rg-dxtz99-2.jpg",
+        "/cars/real_stock/rg-dxtz99-3.jpg",
+      ],
+    },
+    {
+      slug: "auto-hjcw79",
+      brand: "Subaru",
+      model: "Outback",
+      version: "2.5i AWD Limited",
+      year: 2016,
+      price: 12990000,
+      km: 98000,
+      fuel: "Bencina",
+      transmission: "Automática",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-hjcw79-1.jpg", // Foto 100% frontal
+      engine: "2.5L Boxer",
+      power: "175 HP",
+      traction: "AWD",
+      doors: 5,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      highlights: [
+        "Patente: HJCW79",
+        "Symmetrical AWD",
+        "Inspección de 150 puntos aprobada",
+        "Garantía RG Motors de 6 meses",
+      ],
+      gallery: [
+        "/cars/real_stock/rg-hjcw79-0.jpg",
+        "/cars/real_stock/rg-hjcw79-2.jpg",
+        "/cars/real_stock/rg-hjcw79-3.jpg",
+      ],
+    },
+    {
+      slug: "auto-jspb25",
+      brand: "Peugeot",
+      model: "2008",
+      version: "1.2 PureTech Allure",
+      year: 2018,
+      price: 8990000,
+      km: 74000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-jspb25-0.jpg", // Foto 100% frontal
+      engine: "1.2L PureTech",
+      power: "110 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      highlights: [
+        "Patente: JSPB25",
+        "Excelente rendimiento y confort",
+        "Inspección de 150 puntos aprobada",
+        "Garantía RG Motors de 6 meses",
+      ],
+      gallery: [
+        "/cars/real_stock/rg-jspb25-1.jpg",
+        "/cars/real_stock/rg-jspb25-2.jpg",
+      ],
+    },
+    {
+      slug: "auto-kxdz62",
+      brand: "DFSK",
+      model: "Glory 580",
+      version: "1.5 Turbo 3 Filas",
+      year: 2019,
+      price: 8990000,
+      km: 65000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-kxdz62-0.jpg", // Foto 100% frontal
+      engine: "1.5L Turbo",
+      power: "148 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: true,
+      status: "Disponible",
+      highlights: [
+        "Patente: KXDZ62",
+        "Capacidad 7 Pasajeros (3 Filas)",
+        "Inspección de 150 puntos aprobada",
+        "Garantía RG Motors de 6 meses",
+      ],
+      gallery: [
+        "/cars/real_stock/rg-kxdz62-1.jpg",
+        "/cars/real_stock/rg-kxdz62-2.jpg",
+      ],
+    },
+    {
+      slug: "auto-jgrf99",
+      brand: "Chevrolet",
+      model: "Tracker",
+      version: "1.2 Turbo Premier",
+      year: 2021,
+      price: 13490000,
+      km: 41000,
+      fuel: "Bencina",
+      transmission: "Automática",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-jgrf99-0.jpg",
+      engine: "1.2L Turbo",
+      power: "130 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: JGRF99", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-jzkb82",
+      brand: "Kia",
+      model: "Sportage",
+      version: "2.0 EX Special GSL",
+      year: 2018,
+      price: 13990000,
+      km: 68000,
+      fuel: "Bencina",
+      transmission: "Automática",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-jzkb82-0.jpg",
+      engine: "2.0L MPI",
+      power: "152 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: JZKB82", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-kbbj67",
+      brand: "Hyundai",
+      model: "Tucson",
+      version: "2.0 CRDi 4x2",
+      year: 2018,
+      price: 14490000,
+      km: 82000,
+      fuel: "Diésel",
+      transmission: "Automática",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-kbbj67-0.jpg",
+      engine: "2.0L CRDi",
+      power: "178 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: KBBJ67", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-kfls48",
+      brand: "Chevrolet",
+      model: "Sail",
+      version: "1.5 LT Sedan",
+      year: 2019,
+      price: 6490000,
+      km: 61000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "Sedán",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-kfls48-0.jpg",
+      engine: "1.5L DOHC",
+      power: "109 HP",
+      traction: "4x2",
+      doors: 4,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: KFLS48", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-kwrg63",
+      brand: "Chery",
+      model: "Tiggo 3",
+      version: "1.6 GLS",
+      year: 2019,
+      price: 7490000,
+      km: 58000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-kwrg63-0.jpg",
+      engine: "1.6L DVVT",
+      power: "125 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: KWRG63", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-kxxj56",
+      brand: "Suzuki",
+      model: "Baleno",
+      version: "1.4 GLX",
+      year: 2019,
+      price: 8490000,
+      km: 52000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "Hatchback",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-kxxj56-0.jpg",
+      engine: "1.4L K14B",
+      power: "91 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: KXXJ56", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-kzwl56",
+      brand: "Kia",
+      model: "Rio 5",
+      version: "1.4 EX Full",
+      year: 2019,
+      price: 8990000,
+      km: 49000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "Hatchback",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-kzwl56-0.jpg",
+      engine: "1.4L Kappa",
+      power: "99 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: KZWL56", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-lbxc37",
+      brand: "MG",
+      model: "ZS",
+      version: "1.5 STD MT",
+      year: 2020,
+      price: 8990000,
+      km: 54000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-lbxc37-0.jpg",
+      engine: "1.5L NSE",
+      power: "114 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: LBXC37", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-lfgk64",
+      brand: "Peugeot",
+      model: "3008",
+      version: "1.5 BlueHDi Allure",
+      year: 2020,
+      price: 17990000,
+      km: 48000,
+      fuel: "Diésel",
+      transmission: "Automática",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-lfgk64-0.jpg",
+      engine: "1.5L BlueHDi",
+      power: "130 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: LFGK64", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-lglk16",
+      brand: "Volkswagen",
+      model: "Gol",
+      version: "1.6 Comfortline",
+      year: 2020,
+      price: 7490000,
+      km: 43000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "Hatchback",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-lglk16-0.jpg",
+      engine: "1.6L MSI",
+      power: "101 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: LGLK16", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-lpbr18",
+      brand: "Hyundai",
+      model: "Grand i10",
+      version: "1.2 GLS",
+      year: 2020,
+      price: 7290000,
+      km: 38000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "Hatchback",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-lpbr18-0.jpg",
+      engine: "1.2L Kappa",
+      power: "86 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: LPBR18", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-lppw35",
+      brand: "Kia",
+      model: "Morning",
+      version: "1.2 EX",
+      year: 2020,
+      price: 7690000,
+      km: 34000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "Hatchback",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-lppw35-0.jpg",
+      engine: "1.2L",
+      power: "83 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: LPPW35", "Inspección aprobada", "Garantía 6 meses"],
+    },
+    {
+      slug: "auto-ltyf61",
+      brand: "Chery",
+      model: "Tiggo 2",
+      version: "1.5 GLS",
+      year: 2020,
+      price: 7990000,
+      km: 46000,
+      fuel: "Bencina",
+      transmission: "Manual",
+      bodyType: "SUV",
+      location: "Puerto Montt, Los Lagos",
+      image: "/cars/real_stock/rg-ltyf61-0.jpg",
+      engine: "1.5L",
+      power: "105 HP",
+      traction: "4x2",
+      doors: 5,
+      owners: 1,
+      featured: false,
+      status: "Disponible",
+      highlights: ["Patente: LTYF61", "Inspección aprobada", "Garantía 6 meses"],
+    },
+  ];
+
+  await writeFile("data/vehicles.json", JSON.stringify(finalVehicles, null, 2), "utf8");
+
+  const tsContent = `import { asset } from "@/lib/asset";
+
+export type Vehicle = {
+  slug: string;
+  brand: string;
+  model: string;
+  version: string;
+  year: number;
+  price: number;
+  km: number;
+  fuel: "Bencina" | "Diésel" | "Híbrido" | "Eléctrico";
+  transmission: "Automática" | "Manual";
+  bodyType: "SUV" | "Sedán" | "Camioneta" | "Hatchback";
+  location: string;
+  image: string;
+  engine: string;
+  power: string;
+  traction: string;
+  doors: number;
+  owners: number;
+  featured: boolean;
+  status?: "Disponible" | "En reserva" | "Vendido" | "Borrador";
+  highlights: string[];
+  gallery?: string[];
+  spin?: { count: number; ext?: string };
+};
+
+export const vehicles: Vehicle[] = ${JSON.stringify(finalVehicles, null, 2)};
+
+export const BRANDS = [...new Set(vehicles.map((v) => v.brand))].sort();
+export const BODY_TYPES = [...new Set(vehicles.map((v) => v.bodyType))];
+export const FUELS = [...new Set(vehicles.map((v) => v.fuel))];
+export const TRANSMISSIONS = [...new Set(vehicles.map((v) => v.transmission))];
+
+export function getVehicle(slug: string): Vehicle | undefined {
+  return vehicles.find((v) => v.slug === slug);
+}
+
+export function spinFramesOf(v: Vehicle): string[] {
+  if (!v.spin || v.spin.count <= 0) return [];
+  const ext = v.spin.ext ?? "jpg";
+  return Array.from(
+    { length: v.spin.count },
+    (_, i) =>
+      asset(\`/cars/spin/\${v.slug}/\${String(i + 1).padStart(3, "0")}.\${ext}\`)
+  );
+}
+
+export function specsOf(v: Vehicle): { label: string; value: string }[] {
+  return [
+    { label: "Año", value: String(v.year) },
+    { label: "Kilometraje", value: \`\${v.km.toLocaleString("es-CL")} km\` },
+    { label: "Combustible", value: v.fuel },
+    { label: "Transmisión", value: v.transmission },
+    { label: "Motor", value: v.engine },
+    { label: "Potencia", value: v.power },
+    { label: "Tracción", value: v.traction },
+    { label: "Puertas", value: String(v.doors) },
+    { label: "Carrocería", value: v.bodyType },
+    { label: "Dueños", value: String(v.owners) },
+  ];
+}
+
+export function formatCLP(value: number): string {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+/** Cuota mensual referencial (crédito francés), pie 20% por defecto. */
+export function estimateMonthly(
+  price: number,
+  downPct = 20,
+  term = 48,
+  monthlyRate = 0.019
+): number {
+  const financed = price - Math.round((price * downPct) / 100);
+  if (financed <= 0) return 0;
+  const i = monthlyRate;
+  return Math.round((financed * i) / (1 - Math.pow(1 + i, -term)));
+}
+`;
+
+  await writeFile("lib/vehicles.ts", tsContent, "utf8");
+  console.log("✅ Catálogo configurado con éxito. Las camionetas Ford Raptor, Toyota Hilux, Mitsubishi L200 y fotos frontales están activas.");
+}
+
+main().catch(console.error);

@@ -56,6 +56,7 @@ export default function AnalyticsDashboard() {
   const brandsShare = useMemo(() => brandMarketShare(leads), [leads]);
   const missingDemand = useMemo(() => unmetDemandZeroStock(), []);
 
+  const [analyticsTab, setAnalyticsTab] = useState<"rendimiento" | "compras" | "canales">("rendimiento");
   const [procurementView, setProcurementView] = useState<"zero_stock" | "bestsellers">("zero_stock");
   const [procurementFilter, setProcurementFilter] = useState<string>("all");
   const [procurementCategory, setProcurementCategory] = useState<string>("all");
@@ -91,64 +92,137 @@ export default function AnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Aviso demo */}
-      <div className="rounded-xl border border-brand-500/20 bg-brand-500/5 px-4 py-2.5 text-xs text-white/60">
-        📊 Inteligencia de negocio con ciencia de datos. Los datos históricos son
-        una simulación de demostración; los <strong>leads del chatbot son reales</strong> y
-        se capturan en vivo. Listo para conectar la base de datos real.
+      {/* Sub-navegación de Analítica */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-ink-900/80 p-2 backdrop-blur-xl">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <button
+            onClick={() => setAnalyticsTab("rendimiento")}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition ${
+              analyticsTab === "rendimiento"
+                ? "bg-brand-500 text-white shadow-glow"
+                : "text-white/60 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <span>📈</span> Rendimiento & Ventas
+          </button>
+          <button
+            onClick={() => setAnalyticsTab("compras")}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition ${
+              analyticsTab === "compras"
+                ? "bg-brand-500 text-white shadow-glow"
+                : "text-white/60 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <span>🛒</span> Compra Inteligente & Stock
+            <span className="rounded-full bg-red-500/30 border border-red-500/40 text-red-200 px-2 py-0.5 text-[10px]">
+              Sin Stock
+            </span>
+          </button>
+          <button
+            onClick={() => setAnalyticsTab("canales")}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition ${
+              analyticsTab === "canales"
+                ? "bg-brand-500 text-white shadow-glow"
+                : "text-white/60 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <span>🌐</span> Canales & Atribución
+          </button>
+        </div>
+        <p className="text-xs text-white/40 px-3 hidden lg:block">
+          {analyticsTab === "rendimiento" && "Proyección de ingresos, conversión y segmentos"}
+          {analyticsTab === "compras" && "Radar de autos más buscados y rotación"}
+          {analyticsTab === "canales" && "Atribución multicanal y prospectos en vivo"}
+        </p>
       </div>
 
-      {/* KPIs */}
+      {/* KPIs Globales */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard icon="👥" value={kpis.totalLeads.toLocaleString("es-CL")} label="Leads totales (6 meses)" trend={`+${kpis.momLeadGrowth}% MoM`} />
         <KpiCard icon="🔥" value={String(kpis.hotLeads)} label="Leads calientes por contactar" accent="#F97316" />
         <KpiCard icon="🎯" value={`${kpis.conversion}%`} label="Conversión a venta" accent="#22C55E" />
         <KpiCard icon="💰" value={formatCLPShort(kpis.revenue)} label="Ingresos atribuidos" accent="#7C3AED" />
-        <KpiCard icon="📅" value={String(kpis.leads30d)} label="Leads últimos 30 días" />
-        <KpiCard icon="🏷️" value={formatCLPShort(kpis.avgTicket)} label="Ticket promedio" accent="#2DD4BF" />
-        <KpiCard icon="💳" value={`${kpis.creditRate}%`} label="Simula crédito" accent="#FACC15" />
-        <KpiCard icon="⭐" value={String(kpis.avgScore)} label="Score promedio de lead" accent="#49A7FF" />
       </div>
 
-      {/* Tendencia + Segmentos */}
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <Card title="Ventas e ingresos — tendencia y proyección" hint="* meses proyectados con regresión lineal">
-          <LineForecast months={trend.months} forecast={trend.forecast} />
-          <div className="mt-2 flex gap-4 text-xs text-white/50">
-            <span><span className="mr-1 inline-block h-2 w-4 rounded bg-brand-500 align-middle" />Histórico</span>
-            <span><span className="mr-1 inline-block h-2 w-4 rounded align-middle" style={{ background: "#49A7FF" }} />Proyección</span>
+      {/* PESTAÑA 1: RENDIMIENTO COMERCIAL & VENTAS */}
+      {analyticsTab === "rendimiento" && (
+        <div className="space-y-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <KpiCard icon="📅" value={String(kpis.leads30d)} label="Leads últimos 30 días" />
+            <KpiCard icon="🏷️" value={formatCLPShort(kpis.avgTicket)} label="Ticket promedio" accent="#2DD4BF" />
+            <KpiCard icon="💳" value={`${kpis.creditRate}%`} label="Simula crédito" accent="#FACC15" />
+            <KpiCard icon="⭐" value={String(kpis.avgScore)} label="Score promedio de lead" accent="#49A7FF" />
           </div>
-        </Card>
-        <Card title="Segmentos de clientes (RFM)">
-          <Donut data={segs.map((s) => ({ name: s.name, count: s.count, color: s.color }))} />
-        </Card>
-      </div>
 
-      {/* Embudo + Demanda + Financiamiento */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card title="Embudo de conversión">
-          <Funnel stages={fun} />
-        </Card>
-        <Card title="Demanda vs. stock por tipo" hint="ratio alto = oportunidad de reponer">
-          <HBarChart
-            data={dvs.map((d) => ({
-              label: `${d.body}`,
-              value: d.demand,
-              sub: `stock ${d.stock} · ratio ${d.ratio}`,
-              color: d.status === "alta" ? "#F97316" : d.status === "media" ? "#FACC15" : "#006CFF",
-            }))}
-          />
-        </Card>
-        <Card title="Apetito de financiamiento">
-          <div className="flex items-center justify-around">
-            <Gauge value={fin.wantsPct} label="Pide crédito" suffix="%" color="#FACC15" />
-            <Gauge value={fin.approvalRate} label="Aprobación est." suffix="%" color="#22C55E" />
+          {/* Tendencia + Segmentos */}
+          <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+            <Card title="Ventas e ingresos — tendencia y proyección" hint="* meses proyectados con regresión lineal">
+              <LineForecast months={trend.months} forecast={trend.forecast} />
+              <div className="mt-2 flex gap-4 text-xs text-white/50">
+                <span><span className="mr-1 inline-block h-2 w-4 rounded bg-brand-500 align-middle" />Histórico</span>
+                <span><span className="mr-1 inline-block h-2 w-4 rounded align-middle" style={{ background: "#49A7FF" }} />Proyección</span>
+              </div>
+            </Card>
+            <Card title="Segmentos de clientes (RFM)">
+              <Donut data={segs.map((s) => ({ name: s.name, count: s.count, color: s.color }))} />
+            </Card>
           </div>
-          <div className="mt-3">
-            <HBarChart data={fin.terms.map((t) => ({ label: t.label, value: t.pct }))} unit="%" color="#2D8CFF" />
+
+          {/* Embudo + Financiamiento */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card title="Embudo de conversión">
+              <Funnel stages={fun} />
+            </Card>
+            <Card title="Apetito de financiamiento">
+              <div className="flex items-center justify-around">
+                <Gauge value={fin.wantsPct} label="Pide crédito" suffix="%" color="#FACC15" />
+                <Gauge value={fin.approvalRate} label="Aprobación est." suffix="%" color="#22C55E" />
+              </div>
+              <div className="mt-3">
+                <HBarChart data={fin.terms.map((t) => ({ label: t.label, value: t.pct }))} unit="%" color="#2D8CFF" />
+              </div>
+            </Card>
           </div>
-        </Card>
-      </div>
+        </div>
+      )}
+
+      {/* PESTAÑA 2: COMPRA INTELIGENTE & DEMANDA */}
+      {analyticsTab === "compras" && (
+        <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card title="Demanda vs. stock por tipo de carrocería" hint="ratio alto = oportunidad de reponer">
+              <HBarChart
+                data={dvs.map((d) => ({
+                  label: `${d.body}`,
+                  value: d.demand,
+                  sub: `stock ${d.stock} · ratio ${d.ratio}`,
+                  color: d.status === "alta" ? "#F97316" : d.status === "media" ? "#FACC15" : "#006CFF",
+                }))}
+              />
+            </Card>
+            <Card title="Recomendaciones accionables de compra">
+              <ul className="space-y-2.5">
+                {recs.map((r, i) => (
+                  <li
+                    key={i}
+                    className={`flex gap-3 rounded-xl border px-3 py-2.5 ${
+                      r.tone === "opp"
+                        ? "border-brand-500/30 bg-brand-500/5"
+                        : r.tone === "warn"
+                          ? "border-amber-400/30 bg-amber-400/5"
+                          : "border-emerald-400/30 bg-emerald-400/5"
+                    }`}
+                  >
+                    <span className="text-lg">{r.icon}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{r.title}</p>
+                      <p className="text-xs text-white/60">{r.detail}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </div>
 
       {/* MÓDULO ESTRATÉGICO: COMPRA INTELIGENTE DE INVENTARIO & RADAR DE DEMANDA */}
       <div className="space-y-4 rounded-3xl border border-brand-500/30 bg-ink-900/90 p-5 shadow-2xl backdrop-blur-xl">
@@ -578,41 +652,46 @@ export default function AnalyticsDashboard() {
           </div>
         </div>
       )}
+        </div>
+      )}
 
-      {/* Canales + Recomendaciones */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-        <Card title="Atribución por canal">
-          <HBarChart
-            data={chs.map((c) => ({
-              label: c.name,
-              value: c.leads,
-              sub: `conv. ${c.conversion}%`,
-            }))}
-          />
-        </Card>
-        <Card title="Recomendaciones accionables">
-          <ul className="space-y-2.5">
-            {recs.map((r, i) => (
-              <li
-                key={i}
-                className={`flex gap-3 rounded-xl border px-3 py-2.5 ${
-                  r.tone === "opp"
-                    ? "border-brand-500/30 bg-brand-500/5"
-                    : r.tone === "warn"
-                      ? "border-amber-400/30 bg-amber-400/5"
-                      : "border-emerald-400/30 bg-emerald-400/5"
-                }`}
-              >
-                <span className="text-lg">{r.icon}</span>
-                <div>
-                  <p className="text-sm font-semibold text-white">{r.title}</p>
-                  <p className="text-xs text-white/60">{r.detail}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
+      {/* PESTAÑA 3: CANALES & ATRIBUCIÓN */}
+      {analyticsTab === "canales" && (
+        <div className="space-y-6">
+          {/* Canales + Recomendaciones */}
+          <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+            <Card title="Atribución por canal">
+              <HBarChart
+                data={chs.map((c) => ({
+                  label: c.name,
+                  value: c.leads,
+                  sub: `conv. ${c.conversion}%`,
+                }))}
+              />
+            </Card>
+            <Card title="Recomendaciones accionables">
+              <ul className="space-y-2.5">
+                {recs.map((r, i) => (
+                  <li
+                    key={i}
+                    className={`flex gap-3 rounded-xl border px-3 py-2.5 ${
+                      r.tone === "opp"
+                        ? "border-brand-500/30 bg-brand-500/5"
+                        : r.tone === "warn"
+                          ? "border-amber-400/30 bg-amber-400/5"
+                          : "border-emerald-400/30 bg-emerald-400/5"
+                    }`}
+                  >
+                    <span className="text-lg">{r.icon}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{r.title}</p>
+                      <p className="text-xs text-white/60">{r.detail}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </div>
 
       {/* Clientes potenciales */}
       <Card title="Clientes potenciales priorizados" hint="ordenados por score de intención de compra">
@@ -722,6 +801,8 @@ export default function AnalyticsDashboard() {
           </div>
         )}
       </Card>
+        </div>
+      )}
     </div>
   );
 }

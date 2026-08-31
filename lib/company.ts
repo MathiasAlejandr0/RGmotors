@@ -1,6 +1,5 @@
 /**
- * Datos de contacto de RG Motors (demo de presentación).
- * Cambia estos valores cuando tengas los datos reales de la empresa.
+ * Datos de contacto oficiales de RG Motors Chile.
  */
 export const COMPANY = {
   name: "RG Motors",
@@ -8,10 +7,12 @@ export const COMPANY = {
   phoneDisplay: "+56 9 8765 4321",
   /** Solo dígitos, formato internacional sin + */
   whatsapp: "56987654321",
-  email: "contacto@rgmotors.cl",
-  address: "puerto montt",
+  email: "administracion@rgmotorschile.cl",
+  address: "Puerto Montt, Región de Los Lagos",
   hours: "Lun a Vie 9:00–19:00 · Sáb 10:00–14:00",
   website: "www.rgmotors.cl",
+  instagram: "https://www.instagram.com/_rgmotors/",
+  facebook: "https://www.facebook.com/automotoraga?locale=es_LA",
 };
 
 /** Link de WhatsApp con mensaje prearmado. */

@@ -1,22 +1,25 @@
+"use client";
+
 import { asset } from "@/lib/asset";
 
 type Props = {
   className?: string;
-  /** Altura del logo en px. */
+  /** Altura en px del logo */
   size?: number;
-  /** Compatibilidad: sin efecto (el logo ya incluye la bajada). */
   tagline?: boolean;
 };
 
-export default function Logo({ className = "", size = 44 }: Props) {
+export default function Logo({ className = "", size = 42 }: Props) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={asset("/logo.png")}
-      alt="RG Motors — Vehículos de segunda mano"
-      style={{ height: size }}
-      className={`w-auto select-none ${className}`}
-      draggable={false}
-    />
+    <div className={`inline-flex items-center select-none ${className}`} style={{ height: size }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={asset("/logo.png")}
+        alt="RG Motors — Automotora"
+        style={{ height: size, width: "auto" }}
+        className="object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] transition-transform duration-300 hover:scale-[1.02]"
+        draggable={false}
+      />
+    </div>
   );
 }

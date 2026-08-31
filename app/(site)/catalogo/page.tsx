@@ -300,9 +300,9 @@ function CatalogContent() {
             ⚡
           </span>
           <div>
-            <h2 className="text-sm font-bold text-white">¿Quieres saber qué autos puedes comprar hoy?</h2>
+            <h2 className="text-sm font-bold text-white">¿Quieres calcular tu financiamiento a medida?</h2>
             <p className="text-xs text-white/60 mt-0.5">
-              Calcula tu cupo pre-aprobado en 60 segundos con tu RUT o pide el modelo exacto que buscas.
+              Simula tu cuota online y nuestro equipo te responderá a la brevedad con las opciones disponibles.
             </p>
           </div>
         </div>
@@ -311,7 +311,7 @@ function CatalogContent() {
             onClick={() => setIsPreApprovalOpen(true)}
             className="apple-btn-primary flex-1 md:flex-none rounded-full px-5 py-2.5 text-xs font-bold text-white shadow-glow"
           >
-            Pre-aprobar crédito en 60s
+            ⚡ Simular crédito online
           </button>
           <button
             onClick={() => setIsCarRequestOpen(true)}

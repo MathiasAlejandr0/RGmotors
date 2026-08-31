@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { asset } from "@/lib/asset";
 import { vehicles, formatCLP } from "@/lib/vehicles";
 import { getTrafficSource } from "@/lib/trafficTracking";
+import { COMPANY } from "@/lib/company";
 
 type Msg = { role: "user" | "ai"; text: string; cars?: string[] };
 
@@ -233,13 +234,41 @@ export default function ChatWidget() {
                 <p className="text-[10px] text-emerald-400">● En línea para ayudarte</p>
               </div>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              className="grid h-7 w-7 place-items-center rounded-lg text-white/40 hover:bg-white/10 hover:text-white transition"
-              aria-label="Cerrar chat"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-1.5">
+              <a
+                href={COMPANY.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="grid h-7 w-7 place-items-center rounded-full border border-pink-500/20 bg-pink-500/10 text-pink-300 transition hover:bg-pink-500/25"
+                title="Instagram @_rgmotors"
+                aria-label="Instagram"
+              >
+                <svg className="h-3 w-3 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                </svg>
+              </a>
+
+              <a
+                href={COMPANY.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="grid h-7 w-7 place-items-center rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-300 transition hover:bg-blue-500/25"
+                title="Facebook Automotora GA"
+                aria-label="Facebook"
+              >
+                <svg className="h-3 w-3 fill-current" viewBox="0 0 24 24">
+                  <path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.374 14.5 5 15.5 5H18V0h-3.808C10.597 0 9 1.582 9 4.615V8z" />
+                </svg>
+              </a>
+
+              <button
+                onClick={() => setOpen(false)}
+                className="grid h-7 w-7 place-items-center rounded-lg text-white/40 hover:bg-white/10 hover:text-white transition"
+                aria-label="Cerrar chat"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
@@ -349,7 +378,7 @@ export default function ChatWidget() {
               />
               <button
                 type="submit"
-                className="apple-btn-primary grid h-8 w-8 place-items-center rounded-full text-white text-xs"
+                className="apple-btn-primary grid h-8 w-8 place-items-center rounded-full text-white text-xs shadow-glow"
                 aria-label="Enviar"
               >
                 ➔
@@ -361,4 +390,3 @@ export default function ChatWidget() {
     </>
   );
 }
-

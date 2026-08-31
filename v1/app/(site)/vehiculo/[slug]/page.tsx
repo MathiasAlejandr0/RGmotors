@@ -63,7 +63,7 @@ export default async function VehiclePage({
           <section className="mt-8">
             <h2 className="text-xl font-semibold">Características destacadas</h2>
             <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-              {v.highlights.map((h) => (
+              {(v.highlights || []).map((h) => (
                 <li key={h} className="flex items-center gap-2 rounded-xl border border-white/10 bg-ink-800/60 px-4 py-3 text-sm text-white/70">
                   <span className="text-emerald-400">✓</span> {h}
                 </li>

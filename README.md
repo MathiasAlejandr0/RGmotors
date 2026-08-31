@@ -93,10 +93,13 @@ Paleta inspirada en marcas premium — regla **80 / 15 / 5** (oscuros / blancos 
 
 ---
 
-## 🛠️ Stack tecnológico
+## 🛠️ Stack tecnológico & Arquitectura Cloud ($0/mes)
 
-**Next.js 16** (App Router, SSR/SSG) · **React 19** · **TypeScript** · **Tailwind CSS** ·
-**Three.js** · **@napi-rs/canvas** (generación de assets) · Deploy en **Vercel**.
+- **Frontend & Web**: **Next.js 16** (App Router, SSR/SSG) · **React 19** · **TypeScript** · **Tailwind CSS**
+- **3D & Tours 360°**: **Three.js** · **HTML5 Canvas API** (sin licencias de pago externas)
+- **Base de Datos & Auth**: **Supabase (PostgreSQL - Free Tier)** (soporta catálogo de 400+ vehículos con búsqueda y filtros instantáneos)
+- **Almacenamiento Multimedia**: **Cloudflare R2 (Free Tier)** (10 GB gratis para +2.000 fotos y 400 videos con **$0 costo por transferencia/tráfico**)
+- **Hosting**: **Vercel (Hobby Free)** vinculado a dominio corporativo `.cl`
 
 ---
 
@@ -146,6 +149,7 @@ components/
   VehicleCard · VehicleViewer
   Showroom3D · InteriorTour · PhotoSpin360      # Visores 360°
   CuotaSimulator · ReserveFlow · TestDriveForm
+documentos/                  # Documentación de proyecto y solicitudes formales
 lib/
   vehicles.ts                # Datos de vehículos y utilidades
 public/
@@ -158,8 +162,9 @@ scripts/                     # Generación de assets (frames, logo)
 
 ## 🗺️ Roadmap
 
-- [ ] Base de datos real (**Supabase**) para inventario, reservas y usuarios.
-- [ ] Autenticación real y panel admin con carga de autos y fotos.
+- [x] Arquitectura de nube optimizada a **Costo $0/mes** (Vercel + Supabase Free + Cloudflare R2 Free).
+- [ ] Conexión de Base de datos real (**Supabase Postgres**) para inventario, reservas y usuarios.
+- [ ] Panel admin conectado a Supabase Auth y subida directa de fotos/videos a **Cloudflare R2**.
 - [ ] Pago real con **Transbank WebPay Plus**.
 - [ ] Pre-calificación de crédito con financiera/bureau e informe **Autofact**.
 - [ ] Giro 360° por fotos reales para todo el inventario.

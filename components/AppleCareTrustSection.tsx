@@ -6,34 +6,33 @@ export default function AppleCareTrustSection() {
   const guarantees = [
     {
       icon: "🛡️",
-      title: "Garantía de Satisfacción 48 hrs",
-      badge: "100% Reembolsable",
-      desc: "Si el vehículo no supera tus expectativas tras la compra, te devolvemos el 100% de tu reserva sin penalizaciones ni letras chicas.",
+      title: "Garantía Mecánica & Cobertura",
+      badge: "6 Meses de Respaldo",
+      desc: "Todos nuestros autos son sometidos a un exhaustivo chequeo de 150 puntos y cuentan con garantía mecánica para tu total tranquilidad.",
     },
     {
       icon: "📄",
       title: "Certificación Legal & Autofact",
       badge: "Documentación Limpia",
-      desc: "Cada vehículo cuenta con informe de dominio vigente, kilometraje auditado por escáner y cero anotaciones, deudas o encargos.",
+      desc: "Cada vehículo cuenta con informe de dominio vigente, kilometraje auditado por escáner y cero anotaciones, deudas o multas pendientes.",
     },
     {
       icon: "🚚",
-      title: "Entrega VIP en Showroom o Domicilio",
+      title: "Entrega VIP en Showroom",
       badge: "Servicio Premium",
-      desc: "Coordinamos la entrega de tu auto nuevo en nuestro showroom con atención personalizada o directo en la puerta de tu hogar.",
+      desc: "Coordinamos la entrega de tu auto nuevo en nuestro showroom de Puerto Montt con atención personalizada y transferencia ágil.",
     },
   ];
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-      <div className="apple-glass-card relative overflow-hidden rounded-3xl p-8 sm:p-10 border-brand-500/20 bg-gradient-to-b from-brand-500/10 via-ink-950/80 to-black space-y-8">
+      <div className="apple-glass-card relative overflow-hidden rounded-3xl p-8 sm:p-10 border border-white/10 space-y-8 shadow-apple-card">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3.5 py-1 text-xs font-bold text-brand-300">
-              ⚡ Compromiso de Calidad & Garantía RG Motors
+            <span className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3.5 py-1 text-xs font-semibold text-brand-300">
+              ⚡ Compromiso de Calidad & Respaldo RG Motors
             </span>
             <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl text-white">
-
               Transparencia total en cada etapa de tu compra
             </h2>
           </div>

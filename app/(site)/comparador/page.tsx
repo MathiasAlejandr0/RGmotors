@@ -20,8 +20,8 @@ const ROWS: { label: string; get: (v: Vehicle) => string }[] = [
 
 export default function ComparadorPage() {
   const [selected, setSelected] = useState<string[]>([
-    "toyota-rav4-2022",
-    "mazda-cx5-2021",
+    "toyota-hilux-2022-kzwl56",
+    "mitsubishi-l200-2021-jgrf99",
   ]);
 
   const cars = selected

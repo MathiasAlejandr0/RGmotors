@@ -17,6 +17,8 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
     cardRef.current.style.setProperty("--mouse-y", `${y}px`);
   };
 
+  const has360 = Boolean(v.spin && v.spin.count > 0);
+
   return (
     <Link
       ref={cardRef}
@@ -24,6 +26,7 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
       href={`/vehiculo/${v.slug}`}
       className="apple-glass-card apple-glass-glow group flex flex-col overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:shadow-apple-hover"
     >
+      {/* Vehicle Image Container */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-b from-ink-800 to-ink-950">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -32,10 +35,9 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
           className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-80" />
-        
-        <span className="absolute left-3.5 top-3.5 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/50 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md shadow-sm z-10">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          360° disponible
+
+        <span className="absolute left-3.5 top-3.5 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[10px] font-semibold text-white/90 backdrop-blur-md shadow-sm z-10">
+          <span>📸</span> Fotos Reales
         </span>
 
         {v.featured && (
@@ -45,6 +47,7 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
         )}
       </div>
 
+      {/* Vehicle Information */}
       <div className="flex flex-1 flex-col p-5 relative z-10">
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="text-base font-bold tracking-tight text-white group-hover:text-brand-300 transition-colors">
@@ -73,13 +76,13 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
                 {formatCLP(v.price)}
               </p>
               <p className="text-[11px] text-white/45">
-                o <span className="text-brand-300 font-medium">{formatCLP(estimateMonthly(v.price))}</span>/mes
+                o cuota desde <span className="text-brand-300 font-medium">{formatCLP(estimateMonthly(v.price))}</span>/mes
               </p>
             </div>
           </div>
 
           <span className="mt-4 flex items-center justify-center gap-1.5 w-full rounded-2xl border border-white/10 bg-white/[0.06] py-2.5 text-xs font-semibold text-white transition-all duration-200 group-hover:border-brand-500/50 group-hover:bg-brand-500 group-hover:shadow-glow">
-            Ver detalle
+            Ver vehículo & Fotos
             <span className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
           </span>
         </div>
@@ -87,5 +90,3 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
     </Link>
   );
 }
-
-

@@ -8,13 +8,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Azul corporativo RG Motors (estilo Apple Gloss)
+        // Azul Corporativo Banco de Chile (#173A79)
         brand: {
-          300: "#49A7FF", // glow
-          400: "#2D8CFF", // claro / hover
-          500: "#006CFF", // principal
-          600: "#0054CC", // oscuro
-          700: "#0040A3",
+          200: "#9CBDF2",
+          300: "#6597E5", // glow / texto destacado
+          400: "#2E62B8", // claro / hover
+          500: "#173A79", // azul Banco de Chile principal
+          600: "#112C5C", // azul profundo
+          700: "#0B1E40", // azul base oscuro
         },
         // Escala de oscuros profundos Apple (Jet Black / Obsidian)
         ink: {
@@ -45,8 +46,8 @@ const config: Config = {
         ],
       },
       boxShadow: {
-        glow: "0 12px 35px -5px rgba(0, 108, 255, 0.4)",
-        "glow-lg": "0 20px 60px -10px rgba(0, 108, 255, 0.5)",
+        glow: "0 12px 35px -5px rgba(23, 58, 121, 0.55)",
+        "glow-lg": "0 20px 60px -10px rgba(23, 58, 121, 0.7)",
         "apple-card": "0 20px 50px -12px rgba(0, 0, 0, 0.7)",
         "apple-glass": "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
         "apple-hover": "0 30px 60px -15px rgba(0, 0, 0, 0.8)",
@@ -72,4 +73,3 @@ const config: Config = {
 };
 
 export default config;
-

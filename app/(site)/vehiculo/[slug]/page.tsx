@@ -32,7 +32,7 @@ export async function generateMetadata({
 
   return {
     title: `${v.brand} ${v.model} ${v.year} — ${formatCLP(v.price)} | RG Motors`,
-    description: `${v.brand} ${v.model} ${v.version} año ${v.year} con ${v.km.toLocaleString("es-CL")} km. Inspección de 150 puntos y garantía RG Motors. Tour 360° disponible.`,
+    description: `${v.brand} ${v.model} ${v.version} año ${v.year} con ${v.km.toLocaleString("es-CL")} km. Inspección de 150 puntos y garantía RG Motors. Fotografías reales y simulación online.`,
     openGraph: {
       title: `${v.brand} ${v.model} ${v.year} | RG Motors`,
       description: `Precio: ${formatCLP(v.price)} · ${v.km.toLocaleString("es-CL")} km · ${v.fuel} · ${v.transmission}`,
@@ -127,9 +127,9 @@ export default async function VehiclePage({
                   ? "● Vehículo vendido"
                   : "✓ Disponible para entrega inmediata"}
               </span>
-              <h3 className="mt-3 text-lg font-bold text-white tracking-tight">Comprar o reservar vehículo</h3>
+              <h3 className="mt-3 text-lg font-bold text-white tracking-tight">Consultar o financiar vehículo</h3>
               <p className="mt-1 text-xs text-white/55">
-                Abono 100% reembolsable de $200.000 para bloquear el vehículo por 48 hrs.
+                Atención directa, simulación de crédito y tasación de tu auto en parte de pago.
               </p>
             </div>
 

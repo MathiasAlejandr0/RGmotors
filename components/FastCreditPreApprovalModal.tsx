@@ -5,7 +5,6 @@ import Link from "next/link";
 import { formatCLP, vehicles as staticVehicles, Vehicle } from "@/lib/vehicles";
 import { formatRut, validateRut, evaluateCreditCapacity } from "@/lib/rut";
 import { asset } from "@/lib/asset";
-
 import { getTrafficSource } from "@/lib/trafficTracking";
 
 type Props = {
@@ -32,6 +31,7 @@ export default function FastCreditPreApprovalModal({
   const [rutError, setRutError] = useState("");
   const [income, setIncome] = useState(1200000); // Renta líquida por defecto $1.2M
   const [downPayment, setDownPayment] = useState(targetVehicle ? Math.round(targetVehicle.price * 0.2) : 2500000);
+  const [term, setTerm] = useState(48);
   const [employmentType, setEmploymentType] = useState(EMPLOYMENT_TYPES[0]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -46,8 +46,8 @@ export default function FastCreditPreApprovalModal({
   } | null>(null);
 
   const evaluation = useMemo(() => {
-    return evaluateCreditCapacity(income, downPayment, 48);
-  }, [income, downPayment]);
+    return evaluateCreditCapacity(income, downPayment, term);
+  }, [income, downPayment, term]);
 
   const matchingVehicles = useMemo(() => {
     if (!evaluation) return [];
@@ -78,8 +78,8 @@ export default function FastCreditPreApprovalModal({
       setRutError("Por favor ingresa un RUT válido.");
       return;
     }
-    if (!name.trim() || !phone.trim()) {
-      alert("Por favor completa tu nombre y teléfono.");
+    if (!name.trim() || !phone.trim() || !email.trim()) {
+      alert("Por favor completa tu nombre, correo electrónico y teléfono.");
       return;
     }
 
@@ -93,19 +93,18 @@ export default function FastCreditPreApprovalModal({
           clientName: name.trim(),
           rut: rut.trim(),
           phone: phone.trim(),
-          email: email.trim() || "sin-correo@rgmotors.cl",
-          vehicleSlug: targetVehicle?.slug || "general-preapproval",
+          email: email.trim(),
+          vehicleSlug: targetVehicle?.slug || "simulacion-general",
           downPct: Math.round((downPayment / (targetVehicle?.price || evaluation.totalPurchasingPower)) * 100),
           downPayment,
-          term: 48,
+          term,
           monthlyEstimate: evaluation.maxMonthlyQuota,
           income,
           employmentType,
           maxApprovedAmount: evaluation.totalPurchasingPower,
-          score: 95,
-          status: "Pre-aprobado",
+          status: "En evaluación",
           trafficSource: getTrafficSource(),
-          notes: `Pre-aprobación en 60s con RUT: ${rut}. Situación: ${employmentType}. Renta: ${formatCLP(income)}. Pie: ${formatCLP(downPayment)}.`,
+          notes: `Simulación de crédito enviada por ${name} (RUT: ${rut}). Vehículo: ${targetVehicle?.brand || "General"} ${targetVehicle?.model || ""}. Renta: ${formatCLP(income)}. Pie: ${formatCLP(downPayment)}. Plazo: ${term} meses.`,
         }),
       });
 
@@ -114,7 +113,7 @@ export default function FastCreditPreApprovalModal({
         maxFinanced: evaluation.maxFinanced,
         totalPurchasingPower: evaluation.totalPurchasingPower,
         maxMonthlyQuota: evaluation.maxMonthlyQuota,
-        id: data.credit?.id || `PRE-${Date.now().toString().slice(-4)}`,
+        id: data.credit?.id || `SIM-${Date.now().toString().slice(-4)}`,
       });
       setStep(2);
     } catch {
@@ -122,7 +121,7 @@ export default function FastCreditPreApprovalModal({
         maxFinanced: evaluation.maxFinanced,
         totalPurchasingPower: evaluation.totalPurchasingPower,
         maxMonthlyQuota: evaluation.maxMonthlyQuota,
-        id: `PRE-${Date.now().toString().slice(-4)}`,
+        id: `SIM-${Date.now().toString().slice(-4)}`,
       });
       setStep(2);
     } finally {
@@ -130,15 +129,15 @@ export default function FastCreditPreApprovalModal({
     }
   };
 
-  const waCertMsg = `Hola RG Motors, acabo de obtener mi Certificado de Pre-Aprobación Online (${result?.id}).
-Mi RUT es ${rut} y mi cupo pre-aprobado es de ${formatCLP(result?.totalPurchasingPower || 0)}${
-    targetVehicle ? ` para comprar el ${targetVehicle.brand} ${targetVehicle.model}` : ""
-  }. Mi nombre es ${name}. ¿Con quién puedo coordinar la entrega?`;
+  const waCertMsg = `Hola RG Motors, acabo de enviar una Simulación de Crédito Online (${result?.id}).
+Mi nombre es ${name} (RUT: ${rut}) y solicito financiamiento para ${
+    targetVehicle ? `el ${targetVehicle.brand} ${targetVehicle.model}` : "comprar un vehículo"
+  } con pie de ${formatCLP(downPayment)} en ${term} cuotas. Mi correo es ${email}. ¿Me pueden asesorar?`;
   const waCertUrl = `https://wa.me/56987654321?text=${encodeURIComponent(waCertMsg)}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-xl rounded-3xl border border-white/15 bg-ink-900 shadow-2xl p-6 md:p-8 animate-fade-up">
+      <div className="relative w-full max-w-xl rounded-3xl border border-white/15 bg-ink-900 shadow-2xl p-6 md:p-8 animate-fade-up my-8">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
@@ -149,18 +148,18 @@ Mi RUT es ${rut} y mi cupo pre-aprobado es de ${formatCLP(result?.totalPurchasin
         {step === 1 ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="border-b border-white/10 pb-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] font-bold text-emerald-400">
-                ⚡ Evaluación crediticia instantánea en 60 seg
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-400/30 bg-brand-400/10 px-3 py-1 text-[11px] font-bold text-brand-300">
+                ⚡ Simulación de Crédito Automotriz
               </span>
-              <h2 className="mt-2 text-xl font-bold text-white">Pre-aprueba tu Crédito Automotriz</h2>
-              <p className="text-xs text-white/55 mt-0.5">
-                Ingresa tu RUT y renta para calcular tu cupo de compra de inmediato sin afectar tu historial.
+              <h2 className="mt-2 text-xl font-bold text-white">Simula tu Crédito en Línea</h2>
+              <p className="text-xs text-white/60 mt-1">
+                Ingresa tus datos y condiciones. La simulación llegará a nuestro equipo para responderte a la brevedad a tu correo electrónico.
               </p>
             </div>
 
             {targetVehicle && (
               <div className="rounded-2xl border border-brand-500/30 bg-brand-500/10 p-3 text-xs text-white flex items-center justify-between">
-                <span>Vehículo seleccionado: <b>{targetVehicle.brand} {targetVehicle.model}</b></span>
+                <span>Vehículo a financiar: <b>{targetVehicle.brand} {targetVehicle.model}</b></span>
                 <span className="font-extrabold text-brand-300">{formatCLP(targetVehicle.price)}</span>
               </div>
             )}
@@ -168,7 +167,7 @@ Mi RUT es ${rut} y mi cupo pre-aprobado es de ${formatCLP(result?.totalPurchasin
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-white/70 mb-1">RUT *</label>
+                  <label className="block text-[11px] font-medium text-white/70 mb-1">RUT del solicitante *</label>
                   <input
                     type="text"
                     value={rut}
@@ -229,66 +228,96 @@ Mi RUT es ${rut} y mi cupo pre-aprobado es de ${formatCLP(result?.totalPurchasin
                 />
               </div>
 
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3.5 text-xs text-white">
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-white/70">Plazo preferido:</span>
+                  <span className="font-bold text-brand-300 text-sm">{term} meses ({term / 12} años)</span>
+                </div>
+                <input
+                  type="range"
+                  min={12}
+                  max={60}
+                  step={12}
+                  value={term}
+                  onChange={(e) => setTerm(Number(e.target.value))}
+                  className="apple-range w-full cursor-pointer"
+                />
+              </div>
+
+              <div className="rounded-2xl border border-brand-500/20 bg-brand-500/10 p-3.5 text-xs text-white">
                 <div className="flex items-center justify-between">
-                  <span className="text-emerald-300 font-semibold">Capacidad de compra estimada:</span>
-                  <span className="text-base font-extrabold text-emerald-400">
-                    {formatCLP(evaluation.totalPurchasingPower)}
+                  <span className="text-brand-200 font-semibold">Cuota mensual estimada:</span>
+                  <span className="text-base font-extrabold text-brand-300">
+                    {formatCLP(evaluation.maxMonthlyQuota)}/mes
                   </span>
                 </div>
                 <p className="text-[10px] text-white/50 mt-1">
-                  Hasta {formatCLP(evaluation.maxFinanced)} financiado en 48 cuotas desde {formatCLP(evaluation.maxMonthlyQuota)}/mes.
+                  Monto financiable aprox: {formatCLP(evaluation.maxFinanced)} a {term} meses.
                 </p>
               </div>
 
-              <div className="border-t border-white/10 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Tu Nombre completo *"
-                  required
-                  className="rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-xs text-white outline-none focus:border-brand-500"
-                />
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="WhatsApp (+56 9 ...) *"
-                  required
-                  className="rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-xs text-white outline-none focus:border-brand-500"
-                />
+              {/* Contact Information */}
+              <div className="border-t border-white/10 pt-3 space-y-2.5">
+                <p className="text-[11px] font-semibold text-white/70">Datos de contacto para responderte:</p>
+                <div>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Tu Nombre y Apellido *"
+                    required
+                    className="w-full rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-xs text-white outline-none focus:border-brand-500"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Correo Electrónico (para recibir simulación) *"
+                    required
+                    className="rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-xs text-white outline-none focus:border-brand-500"
+                  />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="WhatsApp (+56 9 ...) *"
+                    required
+                    className="rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-xs text-white outline-none focus:border-brand-500"
+                  />
+                </div>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="apple-btn-primary w-full rounded-full py-3.5 text-xs font-bold text-white shadow-glow disabled:opacity-50"
+              className="apple-btn-primary w-full rounded-full py-3.5 text-xs font-bold text-white shadow-glow disabled:opacity-50 mt-2"
             >
-              {isSubmitting ? "Evaluando antecedentes…" : "Obtener Certificado de Pre-Aprobación Inmediato"}
+              {isSubmitting ? "Enviando simulación…" : "Enviar Simulación de Crédito a Nuestro Equipo"}
             </button>
           </form>
         ) : (
           <div className="space-y-5 text-center py-2 animate-fade-up">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-3xl font-bold text-emerald-400 shadow-glow">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-500/20 text-3xl font-bold text-brand-300 shadow-glow">
               ✓
             </div>
 
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-                Certificado Digital N° {result?.id}
+              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-300">
+                Simulación Registrada N° {result?.id}
               </span>
-              <h2 className="text-2xl font-extrabold text-white mt-1">¡Crédito Pre-Aprobado!</h2>
-              <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
-                Felicitaciones <b>{name}</b> (RUT: {rut}), tu perfil califica para financiamiento automotriz en RG Motors.
+              <h2 className="text-2xl font-extrabold text-white mt-1">¡Simulación Enviada con Éxito!</h2>
+              <p className="text-xs text-white/60 mt-1.5 max-w-md mx-auto leading-relaxed">
+                Hemos recibido tu solicitud, <b>{name}</b>. Nuestro equipo comercial evaluará tus antecedentes con las entidades financieras y te responderemos a la brevedad a tu correo <b>{email}</b>.
               </p>
             </div>
 
-            <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 via-ink-950 to-black p-5 text-left space-y-3">
+            <div className="rounded-3xl border border-brand-500/30 bg-gradient-to-br from-brand-600/20 via-ink-950 to-black p-5 text-left space-y-3">
               <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
-                <span className="text-xs text-white/70">Cupo Total de Compra:</span>
-                <span className="text-2xl font-extrabold text-emerald-400">{formatCLP(result?.totalPurchasingPower || 0)}</span>
+                <span className="text-xs text-white/70">Cuota Mensual Estimada:</span>
+                <span className="text-2xl font-extrabold text-brand-300">{formatCLP(result?.maxMonthlyQuota || 0)}/mes</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs text-white/60">
                 <div>
@@ -296,8 +325,8 @@ Mi RUT es ${rut} y mi cupo pre-aprobado es de ${formatCLP(result?.totalPurchasin
                   <p className="font-bold text-white">{formatCLP(result?.maxFinanced || 0)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-white/40">Cuota Máx. Estimada:</p>
-                  <p className="font-bold text-brand-300">{formatCLP(result?.maxMonthlyQuota || 0)}/mes</p>
+                  <p className="text-[10px] text-white/40">Plazo Simulado:</p>
+                  <p className="font-bold text-white">{term} meses ({term / 12} años)</p>
                 </div>
               </div>
             </div>
@@ -305,7 +334,7 @@ Mi RUT es ${rut} y mi cupo pre-aprobado es de ${formatCLP(result?.totalPurchasin
             {matchingVehicles.length > 0 && (
               <div className="text-left space-y-2 pt-1">
                 <p className="text-xs font-bold text-white/70 uppercase tracking-wide">
-                  Autos que puedes comprar hoy con tu cupo:
+                  Modelos sugeridos para tu presupuesto:
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {matchingVehicles.map((mv) => (
@@ -332,13 +361,13 @@ Mi RUT es ${rut} y mi cupo pre-aprobado es de ${formatCLP(result?.totalPurchasin
                 rel="noopener noreferrer"
                 className="apple-btn-primary flex-1 inline-flex items-center justify-center gap-2 rounded-full py-3.5 text-xs font-bold text-white shadow-glow"
               >
-                <span>💬</span> Validar con Ejecutivo por WhatsApp
+                <span>💬</span> Consultar directo por WhatsApp
               </a>
               <button
                 onClick={onClose}
                 className="apple-btn-secondary rounded-full px-6 py-3 text-xs font-semibold text-white/70 hover:text-white"
               >
-                Cerrar y ver catálogo
+                Cerrar
               </button>
             </div>
           </div>

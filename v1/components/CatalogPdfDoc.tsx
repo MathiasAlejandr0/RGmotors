@@ -327,7 +327,7 @@ function VehiclePage({
 
           <Text style={s.sectionTitle}>Destacados</Text>
           <View style={s.highlights}>
-            {v.highlights.map((h) => (
+            {(v.highlights || []).map((h: string) => (
               <View key={h} style={s.hlItem}>
                 <Text style={s.hlDot}>✓</Text>
                 <Text style={s.hlText}>{h}</Text>

@@ -4,20 +4,24 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 type Props = {
   frames: string[];
-  /** px de arrastre necesarios para avanzar 1 solo fotograma */
+  /** Sensibilidad en px por frame */
   dragSensitivity?: number;
   className?: string;
+  autoPlay?: boolean;
 };
 
-/**
- * Visor 360° por secuencia de fotos.
- * Usa canvas (un solo dibujo a la vez) para evitar el parpadeo típico
- * de apilar <img> con opacity. El arrastre avanza de a 1 frame.
- */
+const VIEW_PRESETS = [
+  { label: "Frente", pct: 0.5, icon: "🚘" },
+  { label: "Costado Der.", pct: 0.75, icon: "➡️" },
+  { label: "Trasera", pct: 0.0, icon: "🔄" },
+  { label: "Costado Izq.", pct: 0.25, icon: "⬅️" },
+];
+
 export default function PhotoSpin360({
   frames,
   dragSensitivity,
   className = "",
+  autoPlay = false,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -26,6 +30,7 @@ export default function PhotoSpin360({
   const dragAccRef = useRef(0);
   const draggingRef = useRef(false);
   const lastXRef = useRef(0);
+  const lastYRef = useRef(0);
   const sizeRef = useRef({ w: 0, h: 0, dpr: 1 });
   const total = frames.length;
 
@@ -34,46 +39,65 @@ export default function PhotoSpin360({
   const [index, setIndex] = useState(0);
   const [showHint, setShowHint] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isAutoRotating, setIsAutoRotating] = useState(autoPlay);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPan, setZoomPan] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
 
-  const draw = useCallback((i: number) => {
-    const canvas = canvasRef.current;
-    const img = imgsRef.current[i];
-    if (!canvas || !img || !img.complete || !img.naturalWidth) return;
+  const velocityRef = useRef(0);
+  const lastTimeRef = useRef(0);
+  const animFrameRef = useRef<number | null>(null);
+  const autoRotateTimerRef = useRef<number | null>(null);
 
-    const ctx = canvas.getContext("2d", { alpha: false });
-    if (!ctx) return;
+  // Dibuja la foto 100% original y orgánica sin fondos negros artificiales ni cortes
+  const draw = useCallback(
+    (i: number, zoom = isZoomed, pan = zoomPan) => {
+      const canvas = canvasRef.current;
+      const img = imgsRef.current[i];
+      if (!canvas || !img || !img.complete || !img.naturalWidth) return;
 
-    const { w, h, dpr } = sizeRef.current;
-    if (w < 2 || h < 2) return;
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) return;
 
-    // Fondo negro solo para letterbox; la foto va con su fondo original.
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, w * dpr, h * dpr);
+      const { w, h, dpr } = sizeRef.current;
+      if (w < 2 || h < 2) return;
 
-    const scale = Math.min(
-      (w * dpr) / img.naturalWidth,
-      (h * dpr) / img.naturalHeight
-    );
-    const dw = img.naturalWidth * scale;
-    const dh = img.naturalHeight * scale;
-    const dx = (w * dpr - dw) / 2;
-    const dy = (h * dpr - dh) / 2;
-    ctx.drawImage(img, dx, dy, dw, dh);
-  }, []);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      // Usamos cover/contain orgánico para que la foto real llene el visor perfectamente
+      const baseScale = Math.max(
+        (w * dpr) / img.naturalWidth,
+        (h * dpr) / img.naturalHeight
+      );
+      const zoomMultiplier = zoom ? 1.6 : 1.0;
+      const scale = baseScale * zoomMultiplier;
+
+      const dw = img.naturalWidth * scale;
+      const dh = img.naturalHeight * scale;
+
+      let dx = (w * dpr - dw) / 2;
+      let dy = (h * dpr - dh) / 2;
+
+      if (zoom) {
+        dx += pan.x * dpr;
+        dy += pan.y * dpr;
+      }
+
+      ctx.drawImage(img, dx, dy, dw, dh);
+    },
+    [isZoomed, zoomPan]
+  );
 
   const setFrame = useCallback(
     (i: number) => {
       let n = i % total;
       if (n < 0) n += total;
-      if (n === indexRef.current && ready) {
-        // igual, pero redibuja por si cambió el tamaño
-      }
       indexRef.current = n;
       setIndex(n);
       draw(n);
     },
-    [total, draw, ready]
+    [total, draw]
   );
 
   // Resize canvas
@@ -99,7 +123,7 @@ export default function PhotoSpin360({
     return () => ro.disconnect();
   }, [draw]);
 
-  // Preload
+  // Preload de fotogramas originales
   useEffect(() => {
     let cancelled = false;
     let count = 0;
@@ -107,7 +131,7 @@ export default function PhotoSpin360({
     setReady(false);
     setLoaded(0);
     setShowHint(true);
-    const start = total > 8 ? Math.floor(total * 0.18) : 0;
+    const start = 0;
     indexRef.current = start;
     setIndex(start);
 
@@ -140,17 +164,14 @@ export default function PhotoSpin360({
     };
   }, [frames, total, draw]);
 
-  // Hint de arrastre: 5s y desaparece (también al interactuar)
+  // Hint de arrastre desaparece a los 4s
   useEffect(() => {
     if (!ready || !showHint) return;
-    const t = window.setTimeout(() => setShowHint(false), 5000);
+    const t = window.setTimeout(() => setShowHint(false), 4000);
     return () => window.clearTimeout(t);
   }, [ready, showHint]);
 
-  const velocityRef = useRef(0);
-  const lastTimeRef = useRef(0);
-  const animFrameRef = useRef<number | null>(null);
-
+  // Detener inercia
   const stopInertia = useCallback(() => {
     if (animFrameRef.current !== null) {
       cancelAnimationFrame(animFrameRef.current);
@@ -158,14 +179,69 @@ export default function PhotoSpin360({
     }
   }, []);
 
+  // Animación de rotación automática fluida
+  useEffect(() => {
+    if (!ready || !isAutoRotating || dragging) {
+      if (autoRotateTimerRef.current !== null) {
+        clearInterval(autoRotateTimerRef.current);
+        autoRotateTimerRef.current = null;
+      }
+      return;
+    }
+
+    const interval = total > 50 ? 45 : 75; // paso fluido adaptado a la cantidad de frames
+    autoRotateTimerRef.current = window.setInterval(() => {
+      setFrame(indexRef.current + 1);
+    }, interval);
+
+    return () => {
+      if (autoRotateTimerRef.current !== null) {
+        clearInterval(autoRotateTimerRef.current);
+        autoRotateTimerRef.current = null;
+      }
+    };
+  }, [ready, isAutoRotating, dragging, setFrame, total]);
+
+  // Transición suave hacia un ángulo específico
+  const animateToRatio = useCallback(
+    (ratio: number) => {
+      setIsAutoRotating(false);
+      stopInertia();
+      const targetIndex = Math.round(ratio * (total - 1)) % total;
+      let diff = targetIndex - indexRef.current;
+      if (diff > total / 2) diff -= total;
+      if (diff < -total / 2) diff += total;
+
+      const steps = Math.abs(diff);
+      if (steps === 0) return;
+
+      const stepSign = Math.sign(diff);
+      let stepCount = 0;
+
+      const stepAnim = () => {
+        if (stepCount < steps) {
+          const stepSize = Math.max(1, Math.round(total / 60));
+          stepCount += stepSize;
+          setFrame(indexRef.current + stepSign * stepSize);
+          animFrameRef.current = requestAnimationFrame(stepAnim);
+        }
+      };
+      animFrameRef.current = requestAnimationFrame(stepAnim);
+    },
+    [total, stopInertia, setFrame]
+  );
+
+  // Manejo de puntero (Mouse / Touch)
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       stopInertia();
+      setIsAutoRotating(false);
       setShowHint(false);
       draggingRef.current = true;
       setDragging(true);
       dragAccRef.current = 0;
       lastXRef.current = e.clientX;
+      lastYRef.current = e.clientY;
       lastTimeRef.current = performance.now();
       velocityRef.current = 0;
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -179,16 +255,31 @@ export default function PhotoSpin360({
       const now = performance.now();
       const dt = Math.max(1, now - lastTimeRef.current);
       const dx = e.clientX - lastXRef.current;
+      const dy = e.clientY - lastYRef.current;
       lastXRef.current = e.clientX;
+      lastYRef.current = e.clientY;
       lastTimeRef.current = now;
+
+      if (isZoomed) {
+        setZoomPan((p) => {
+          const nextPan = {
+            x: Math.max(-200, Math.min(200, p.x + dx)),
+            y: Math.max(-120, Math.min(120, p.y + dy)),
+          };
+          draw(indexRef.current, true, nextPan);
+          return nextPan;
+        });
+        return;
+      }
 
       const instantVelocity = dx / dt;
       velocityRef.current = velocityRef.current * 0.4 + instantVelocity * 0.6;
 
+      // Sensibilidad adaptada al número de frames
       const sens = Math.max(
-        7,
+        3,
         dragSensitivity ??
-          Math.round(((sizeRef.current.w || 640) * 1.4) / Math.max(1, total))
+          Math.max(3, Math.round((sizeRef.current.w || 640) / Math.max(1, total * 0.8)))
       );
 
       dragAccRef.current += dx;
@@ -202,7 +293,7 @@ export default function PhotoSpin360({
         }
       }
     },
-    [dragSensitivity, setFrame, total]
+    [dragSensitivity, setFrame, total, isZoomed, draw]
   );
 
   const endDrag = useCallback(
@@ -216,22 +307,24 @@ export default function PhotoSpin360({
         /* noop */
       }
 
-      let v = velocityRef.current * 14;
+      if (isZoomed) return;
+
+      let v = velocityRef.current * (total > 50 ? 24 : 14);
       const sens = Math.max(
-        7,
+        3,
         dragSensitivity ??
-          Math.round(((sizeRef.current.w || 640) * 1.4) / Math.max(1, total))
+          Math.max(3, Math.round((sizeRef.current.w || 640) / Math.max(1, total * 0.8)))
       );
 
-      if (Math.abs(v) > 0.8) {
+      if (Math.abs(v) > 0.5) {
         let acc = dragAccRef.current;
         const stepInertia = () => {
-          if (Math.abs(v) < 0.15 || draggingRef.current) {
+          if (Math.abs(v) < 0.1 || draggingRef.current) {
             stopInertia();
             return;
           }
           acc += v;
-          v *= 0.91; // Fricción de desaceleración suave
+          v *= 0.93; // Fricción suave
 
           while (Math.abs(acc) >= sens) {
             if (acc > 0) {
@@ -247,7 +340,7 @@ export default function PhotoSpin360({
         animFrameRef.current = requestAnimationFrame(stepInertia);
       }
     },
-    [dragSensitivity, setFrame, stopInertia, total]
+    [dragSensitivity, setFrame, stopInertia, total, isZoomed]
   );
 
   const toggleFullscreen = useCallback(() => {
@@ -256,6 +349,15 @@ export default function PhotoSpin360({
     if (!document.fullscreenElement) el.requestFullscreen?.();
     else document.exitFullscreen?.();
   }, []);
+
+  const toggleZoom = useCallback(() => {
+    setIsZoomed((z) => {
+      const next = !z;
+      if (!next) setZoomPan({ x: 0, y: 0 });
+      draw(indexRef.current, next, { x: 0, y: 0 });
+      return next;
+    });
+  }, [draw]);
 
   useEffect(() => {
     const onFs = () => setIsFullscreen(!!document.fullscreenElement);
@@ -269,12 +371,12 @@ export default function PhotoSpin360({
   return (
     <div
       ref={wrapRef}
-      className={`relative select-none overflow-hidden rounded-2xl border border-white/10 bg-[#07090c] no-select ${className}`}
+      className={`relative select-none overflow-hidden rounded-3xl border border-white/15 bg-black shadow-2xl no-select group ${className}`}
     >
       <canvas
         ref={canvasRef}
         className={`absolute inset-0 h-full w-full touch-none ${
-          dragging ? "cursor-grabbing" : "cursor-grab"
+          dragging ? "cursor-grabbing" : isZoomed ? "cursor-move" : "cursor-grab"
         }`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -282,84 +384,134 @@ export default function PhotoSpin360({
         onPointerCancel={endDrag}
       />
 
+      {/* Loading Spinner */}
       {!ready && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#07090c]">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/15 border-t-brand-400" />
-          <p className="text-sm text-white/50">Preparando tour 360°… {pct}%</p>
-          <div className="h-1 w-44 overflow-hidden rounded-full bg-white/10">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/80 backdrop-blur-md">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-brand-500/20 border-t-brand-400" />
+          <p className="text-xs font-semibold text-white/80 tracking-wide">Cargando Tour 360° Real… {pct}%</p>
+          <div className="h-1.5 w-48 overflow-hidden rounded-full bg-white/15">
             <div
-              className="h-full bg-brand-400 transition-all duration-300"
+              className="h-full bg-gradient-to-r from-brand-500 to-brand-300 transition-all duration-300"
               style={{ width: `${pct}%` }}
             />
           </div>
         </div>
       )}
 
-      <div className="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-md">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
-        Tour 360°
+      {/* Top Controls Bar */}
+      <div className="pointer-events-none absolute inset-x-4 top-4 z-10 flex items-center justify-between">
+        {/* Left Badge */}
+        <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-3.5 py-1.5 text-xs font-semibold text-white/95 backdrop-blur-md shadow-md">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+          <span>Tour 360° Real</span>
+        </div>
+
+        {/* Right Tools */}
+        <div className="pointer-events-auto flex items-center gap-2">
+          {/* Auto-Rotate Button */}
+          <button
+            onClick={() => setIsAutoRotating((r) => !r)}
+            className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold backdrop-blur-md transition ${
+              isAutoRotating
+                ? "border-brand-400 bg-brand-500 text-white shadow-glow"
+                : "border-white/15 bg-black/70 text-white/90 hover:bg-white/20 hover:text-white"
+            }`}
+            title="Giro automático 360°"
+          >
+            <span>{isAutoRotating ? "⏸" : "▶"}</span>
+            <span className="hidden sm:inline">{isAutoRotating ? "Pausar" : "Auto-Giro"}</span>
+          </button>
+
+          {/* Zoom HD Button */}
+          <button
+            onClick={toggleZoom}
+            className={`grid h-8 w-8 place-items-center rounded-full border text-xs backdrop-blur-md transition ${
+              isZoomed
+                ? "border-brand-400 bg-brand-500 text-white shadow-glow"
+                : "border-white/15 bg-black/70 text-white/90 hover:bg-white/20 hover:text-white"
+            }`}
+            title={isZoomed ? "Restablecer vista normal" : "Zoom HD para inspeccionar detalles"}
+          >
+            {isZoomed ? "🔍-" : "🔍+"}
+          </button>
+
+          {/* Fullscreen Button */}
+          <button
+            onClick={toggleFullscreen}
+            aria-label="Pantalla completa"
+            className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-black/70 text-xs text-white/90 backdrop-blur-md transition hover:bg-white/20 hover:text-white"
+            title="Pantalla completa"
+          >
+            {isFullscreen ? "⤡" : "⤢"}
+          </button>
+        </div>
       </div>
 
-      {ready && showHint && (
-        <div className="spin-drag-hint pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-black/40 px-6 py-5 backdrop-blur-md">
-            <div className="relative flex h-10 w-36 items-center justify-center">
-              {/* Rastro horizontal suave */}
-              <div className="spin-drag-hint__trail absolute h-[2px] w-28 rounded-full bg-gradient-to-r from-transparent via-white/55 to-transparent" />
-              {/* Flechas laterales */}
-              <span className="absolute left-0 text-sm text-white/45">‹</span>
-              <span className="absolute right-0 text-sm text-white/45">›</span>
-              {/* Mano / cursor animado */}
-              <div className="spin-drag-hint__hand relative z-[1] flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/15 shadow-[0_0_20px_rgba(0,108,255,0.25)]">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4 text-white/90"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12" />
-                  <path d="M11 11.5V5.5a1.5 1.5 0 0 1 3 0V12" />
-                  <path d="M14 12V7a1.5 1.5 0 0 1 3 0v7.5a4.5 4.5 0 0 1-4.5 4.5H12a5 5 0 0 1-5-5v-2.5a1.5 1.5 0 0 1 3 0V13" />
-                </svg>
+      {/* Preset View Angles (Quick-Jump Chips) */}
+      {ready && !isZoomed && (
+        <div className="pointer-events-auto absolute top-14 left-4 z-10 hidden sm:flex flex-wrap gap-1.5">
+          {VIEW_PRESETS.map((vp) => (
+            <button
+              key={vp.label}
+              onClick={() => animateToRatio(vp.pct)}
+              className="flex items-center gap-1 rounded-full border border-white/15 bg-black/60 px-3 py-1 text-[11px] font-medium text-white/80 backdrop-blur-md transition hover:border-brand-400/50 hover:bg-brand-500/20 hover:text-white"
+            >
+              <span>{vp.icon}</span>
+              <span>{vp.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Interaction Drag Hint */}
+      {ready && showHint && !isAutoRotating && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/20 bg-black/75 px-6 py-4 backdrop-blur-xl shadow-2xl animate-fade-up">
+            <div className="relative flex h-8 w-32 items-center justify-center">
+              <div className="absolute h-[2px] w-24 rounded-full bg-gradient-to-r from-transparent via-brand-300 to-transparent" />
+              <span className="absolute left-0 text-xs text-white/60">‹</span>
+              <span className="absolute right-0 text-xs text-white/60">›</span>
+              <div className="relative z-[1] flex h-8 w-8 items-center justify-center rounded-full border border-brand-400/50 bg-brand-500/40 text-white shadow-glow">
+                🔄
               </div>
             </div>
-            <p className="text-xs font-medium tracking-wide text-white/75">
-              Arrastra para girar
+            <p className="text-xs font-semibold tracking-wide text-white">
+              Arrastra horizontalmente para girar 360°
             </p>
           </div>
         </div>
       )}
 
-      <div className="absolute right-4 top-4 z-10">
-        <button
-          onClick={toggleFullscreen}
-          aria-label="Pantalla completa"
-          className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-black/50 text-lg text-white/85 backdrop-blur-md transition hover:bg-white/10"
-        >
-          {isFullscreen ? "⤡" : "⤢"}
-        </button>
-      </div>
-
+      {/* Bottom Angle & Scrubber Bar */}
       {ready && (
-        <div className="absolute bottom-4 left-1/2 z-10 flex w-[min(88%,320px)] -translate-x-1/2 items-center gap-3 rounded-full border border-white/10 bg-black/55 px-4 py-2.5 backdrop-blur-md">
-          <span className="text-[10px] font-medium tracking-wide text-white/45">
+        <div className="absolute bottom-4 left-1/2 z-10 flex w-[min(90%,360px)] -translate-x-1/2 items-center gap-3 rounded-full border border-white/20 bg-black/80 px-4 py-2.5 backdrop-blur-xl shadow-2xl">
+          <span className="text-[11px] font-mono font-bold text-brand-300 w-10 text-right">
             {String(angle).padStart(3, "0")}°
           </span>
-          <div className="relative h-1 flex-1 rounded-full bg-white/12">
+
+          <div
+            className="relative h-1.5 flex-1 rounded-full bg-white/20 cursor-pointer"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const clickX = e.clientX - rect.left;
+              const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+              setFrame(Math.round(ratio * (total - 1)));
+            }}
+          >
             <div
               className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-brand-600 to-brand-400"
-              style={{ width: `${(index / Math.max(1, total)) * 100}%` }}
+              style={{ width: `${(index / Math.max(1, total - 1)) * 100}%` }}
             />
             <div
-              className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/80 bg-brand-400 shadow-[0_0_10px_rgba(0,108,255,0.55)]"
+              className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-brand-400 shadow-glow transition-transform hover:scale-125"
               style={{ left: `${(index / Math.max(1, total - 1)) * 100}%` }}
             />
           </div>
-          <span className="text-[10px] text-white/40">
+
+          <span className="text-[11px] font-mono text-white/60 w-14 text-left">
             {index + 1}/{total}
           </span>
         </div>

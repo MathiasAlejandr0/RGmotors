@@ -206,11 +206,11 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
         <h2 className="text-base font-bold text-white">Resumen de la reserva</h2>
         
         <div className="space-y-3 border-y border-white/10 py-4 text-xs">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-white/60">Vehículo seleccionado</span>
-            <span className="font-bold text-white">{v.brand} {v.model}</span>
+            <span className="font-bold text-white text-sm">{v.brand} {v.model}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-white/60">Monto de abono reserva</span>
             <span className="font-bold text-brand-300 text-sm">{formatCLP(RESERVE_AMOUNT)}</span>
           </div>
