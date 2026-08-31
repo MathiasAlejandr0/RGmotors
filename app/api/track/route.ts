@@ -21,7 +21,8 @@ type CapturedLead = {
   trafficSource?: any;
 };
 
-const DATA_DIR = join(process.cwd(), "data");
+const getCwd = () => process.cwd();
+const DATA_DIR = join(getCwd(), "data");
 const FILE = join(DATA_DIR, "leads.json");
 
 async function readAll(): Promise<CapturedLead[]> {

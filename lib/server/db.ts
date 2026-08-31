@@ -4,8 +4,10 @@ import { join } from "node:path";
 import os from "node:os";
 
 // Usamos data local si es escribible, o tmpdir en entornos serverless/Vercel
-const LOCAL_DIR = join(/*turbopackIgnore: true*/ process.cwd(), "data");
-const TMP_DIR = join(/*turbopackIgnore: true*/ os.tmpdir(), "rgmotors_data");
+const getCwd = () => process.cwd();
+const LOCAL_DIR = join(getCwd(), "data");
+const getTmpDir = () => os.tmpdir();
+const TMP_DIR = join(getTmpDir(), "rgmotors_data");
 
 const memoryCache = new Map<string, unknown>();
 
