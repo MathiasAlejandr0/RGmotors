@@ -41,6 +41,7 @@ const STATUS_BADGES = {
   "En reserva": "bg-amber-400/15 text-amber-300 border-amber-500/30",
   Vendido: "bg-red-400/15 text-red-300 border-red-500/30",
   Borrador: "bg-white/10 text-white/50 border-white/20",
+  "En preparación": "bg-slate-400/15 text-slate-300 border-slate-500/30",
   Pagada: "bg-emerald-400/15 text-emerald-300 border-emerald-500/30",
   "En proceso": "bg-amber-400/15 text-amber-300 border-amber-500/30",
   Cancelada: "bg-red-400/15 text-red-300 border-red-500/30",

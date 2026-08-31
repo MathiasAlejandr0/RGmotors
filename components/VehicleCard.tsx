@@ -36,9 +36,15 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-80" />
 
-        <span className="absolute left-3.5 top-3.5 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[10px] font-semibold text-white/90 backdrop-blur-md shadow-sm z-10">
-          <span>📸</span> Fotos Reales
-        </span>
+        {v.hasRealPhotos ? (
+          <span className="absolute left-3.5 top-3.5 flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-emerald-300 backdrop-blur-md shadow-sm z-10">
+            <span>📸</span> Fotos Reales de Patio
+          </span>
+        ) : (
+          <span className="absolute left-3.5 top-3.5 flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-amber-300 backdrop-blur-md shadow-sm z-10">
+            <span>⏳</span> Fotos en preparación
+          </span>
+        )}
 
         {v.featured && (
           <span className="absolute right-3.5 top-3.5 rounded-full bg-brand-500/90 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-md shadow-glow z-10">
