@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
 initAutoSyncScheduler();
 
 const DEFAULT_DRIVE_URLS = [
+  "https://drive.google.com/drive/folders/1zqX6z_sKWHjHyNoMlS_rtkkF6pK_FqVh?usp=sharing",
   "https://drive.google.com/drive/folders/1VQ6IHTjk5sJYjJckZY1kzeRJAI5d09Od?usp=sharing",
-  "https://drive.google.com/drive/folders/1zqX6z_sKWHjHyNoMlS_rtkkF6pK_FqVh",
 ];
 
 export async function GET() {

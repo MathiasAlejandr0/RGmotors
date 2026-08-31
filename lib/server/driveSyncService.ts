@@ -115,63 +115,67 @@ export async function syncCatalogFromDriveFolders(folderUrls: string[]): Promise
     const photos = await extractPhotosFromFolder(folder.id);
     if (photos.length === 0) continue;
 
-    const slug = folder.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
+    const cleanFolderName = folder.name.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-    const coverDest = `public/cars/real/${slug}-cover.jpg`;
-    if (!existsSync(coverDest)) {
-      try {
-        await downloadDriveImage(photos[0].fileId, coverDest);
-        newPhotos += 1;
-      } catch {}
-    }
+    const existing = existingList.find((v) => {
+      const vPlate = v.plate ? v.plate.toLowerCase().replace(/[^a-z0-9]/g, "") : "";
+      return vPlate === cleanFolderName || v.slug.includes(cleanFolderName);
+    });
+
+    const plate = existing?.plate?.toLowerCase().replace(/[^a-z0-9]/g, "") || cleanFolderName;
+    const inventoryDir = `public/cars/inventory/${plate}`;
+    await mkdir(inventoryDir, { recursive: true });
 
     const gallery: string[] = [];
-    for (let gi = 1; gi < Math.min(6, photos.length); gi++) {
-      const galDest = `public/cars/real/${slug}-gal-${gi}.jpg`;
-      if (!existsSync(galDest)) {
+    for (let gi = 0; gi < photos.length; gi++) {
+      const dest = `${inventoryDir}/${gi}.jpg`;
+      const webPath = `/cars/inventory/${plate}/${gi}.jpg`;
+      if (!existsSync(dest)) {
         try {
-          await downloadDriveImage(photos[gi].fileId, galDest);
+          await downloadDriveImage(photos[gi].fileId, dest);
           newPhotos += 1;
-          gallery.push(`/cars/real/${slug}-gal-${gi}.jpg`);
         } catch {}
-      } else {
-        gallery.push(`/cars/real/${slug}-gal-${gi}.jpg`);
+      }
+      if (existsSync(dest)) {
+        gallery.push(webPath);
       }
     }
 
-    const existing = existingList.find((v) => v.slug === slug || (v.highlights && v.highlights.includes(`Patente: ${folder.name}`)));
+    if (gallery.length === 0) continue;
+
+    const slug = existing?.slug || `${folder.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${new Date().getFullYear()}`;
+    const brand = existing?.brand || folder.name.split(" ")[0] || "Vehículo";
+    const model = existing?.model || folder.name.split(" ").slice(1).join(" ") || folder.name;
 
     const vehicle: Vehicle = {
+      ...existing,
       slug,
-      brand: existing?.brand || folder.name.split(" ")[0] || "Vehículo",
-      model: existing?.model || folder.name.split(" ").slice(1).join(" ") || folder.name,
-      version: existing?.version || "Full Equipo",
-      year: existing?.year || 2021,
-      price: existing?.price || 12990000,
-      km: existing?.km || 45000,
+      plate: existing?.plate || folder.name.toUpperCase(),
+      brand,
+      model,
+      version: existing?.version || "Versión por confirmar",
+      year: existing?.year || new Date().getFullYear(),
+      price: existing?.price || 0,
+      km: existing?.km || 0,
       fuel: existing?.fuel || "Bencina",
       transmission: existing?.transmission || "Automática",
       bodyType: existing?.bodyType || "SUV",
-      location: "Puerto Montt, Los Lagos",
-      image: `/cars/real/${slug}-cover.jpg`,
-      engine: existing?.engine || "2.0L",
-      power: existing?.power || "150 HP",
+      location: existing?.location || "Puerto Montt (Pendiente de ingreso)",
+      image: gallery[0],
+      engine: existing?.engine || "N/A",
+      power: existing?.power || "N/A",
       traction: existing?.traction || "4x2",
       doors: existing?.doors || 5,
       owners: existing?.owners || 1,
-      featured: existing?.featured ?? true,
-      status: existing?.status || "Disponible",
-      highlights: [
+      featured: existing ? existing.featured : false,
+      status: existing ? existing.status : "En preparación",
+      hasRealPhotos: true,
+      highlights: existing?.highlights || [
         `Patente: ${folder.name}`,
-        "Inspección de 150 puntos aprobada",
-        "Documentación y Autofact al día",
-        "Garantía RG Motors de 6 meses",
+        "Unidad recién llegada al stock",
+        "Fotografías reales sin edición",
       ],
-      gallery: gallery.length > 0 ? gallery : undefined,
-      spin: existing?.spin,
+      gallery,
     };
 
     await saveVehicle(vehicle);

@@ -85,6 +85,7 @@ export default async function VehiclePage({
         <div className="space-y-8">
           <VehicleViewer
             image={asset(v.image)}
+            gallery={v.gallery?.map(g => asset(g))}
             name={`${v.brand} ${v.model}`}
             slug={v.slug}
             spinFrames={spinFramesOf(v)}

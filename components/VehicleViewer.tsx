@@ -8,17 +8,21 @@ type Tab = "exterior" | "fotos";
 
 export default function VehicleViewer({
   image,
+  gallery = [],
   name,
   slug,
   spinFrames = [],
 }: {
   image: string;
+  gallery?: string[];
   name: string;
   slug?: string;
   spinFrames?: string[];
 }) {
   const [frames, setFrames] = useState<string[]>(spinFrames);
-  const [galleryImages, setGalleryImages] = useState<string[]>([image]);
+  const [galleryImages, setGalleryImages] = useState<string[]>(
+    gallery.length > 0 ? gallery : [image]
+  );
   const [selectedPhotoIdx, setSelectedPhotoIdx] = useState(0);
   const hasSpin = frames.length > 0;
   const [tab, setTab] = useState<Tab>(hasSpin ? "exterior" : "fotos");
@@ -46,14 +50,14 @@ export default function VehicleViewer({
       })
       .catch(() => {});
 
-    // Cargar galería de fotos orgánicas del vehículo
+    // Load more organic photos if available from API (merging with existing gallery)
     fetch(`/api/photos?slug=${encodeURIComponent(slug)}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data) return;
         if (data.gallery && data.gallery.length > 0) {
           const urls = data.gallery.map((g: { url: string }) => g.url);
-          const all = Array.from(new Set([image, ...urls]));
+          const all = Array.from(new Set([...galleryImages, ...urls]));
           setGalleryImages(all);
         }
       })
