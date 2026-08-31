@@ -17,9 +17,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Slug inválido o no especificado." }, { status: 400 });
   }
 
-  const getCwd = () => process.cwd();
-  const uploadDir = join(getCwd(), "public", "cars", "uploads", slug);
-  const spinDir = join(getCwd(), "public", "cars", "spin", slug);
+  const uploadDir = process.cwd() + "/public/cars/uploads/" + slug;
+  const spinDir = process.cwd() + "/public/cars/spin/" + slug;
 
   let gallery: Array<{ name: string; url: string; size: number; isCover?: boolean }> = [];
   let spinCount = 0;
@@ -90,8 +89,7 @@ export async function POST(req: NextRequest) {
   try {
     if (type === "spin") {
       // Subida de fotogramas 360°
-      const getCwd = () => process.cwd();
-      const spinDir = join(getCwd(), "public", "cars", "spin", slug);
+      const spinDir = process.cwd() + "/public/cars/spin/" + slug;
       await mkdir(spinDir, { recursive: true });
 
       // Ordenar por nombre si vienen numerados
@@ -119,8 +117,7 @@ export async function POST(req: NextRequest) {
 
     } else {
       // Subida de fotos de galería o portada
-      const getCwd = () => process.cwd();
-      const uploadDir = join(getCwd(), "public", "cars", "uploads", slug);
+      const uploadDir = process.cwd() + "/public/cars/uploads/" + slug;
       await mkdir(uploadDir, { recursive: true });
 
       for (const file of files) {
@@ -167,10 +164,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, "");
-    const getCwd = () => process.cwd();
     const baseDir = body.type === "spin"
-      ? join(getCwd(), "public", "cars", "spin", slug)
-      : join(getCwd(), "public", "cars", "uploads", slug);
+      ? process.cwd() + "/public/cars/spin/" + slug
+      : process.cwd() + "/public/cars/uploads/" + slug;
 
     const targetFile = join(baseDir, safeFilename);
 

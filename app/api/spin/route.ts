@@ -10,8 +10,7 @@ export const maxDuration = 300;
 
 /** Lista los giros 360° ya generados (para el panel de admin). */
 export async function GET() {
-  const getCwd = () => process.cwd();
-  const base = join(getCwd(), "public", "cars", "spin");
+  const base = process.cwd() + "/public/cars/spin";
   const out: Array<{ slug: string; count: number; studio?: boolean; aiUsed?: boolean; updatedAt?: string }> = [];
   try {
     const dirs = await readdir(base, { withFileTypes: true });

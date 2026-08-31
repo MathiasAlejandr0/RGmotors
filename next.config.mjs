@@ -3,9 +3,6 @@ const isGhPages = process.env.GITHUB_PAGES === "true";
 const basePath = isGhPages ? "/RGmotors" : "";
 
 const nextConfig = {
-  turbopack: {
-    root: ".",
-  },
   reactStrictMode: true,
   // Permite HMR cuando Playwright abre el origen por 127.0.0.1
   allowedDevOrigins: ["127.0.0.1"],
