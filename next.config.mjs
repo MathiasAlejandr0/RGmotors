@@ -4,19 +4,14 @@ const basePath = isGhPages ? "/RGmotors" : "";
 
 const nextConfig = {
   reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  experimental: {
-    outputFileTracingExcludes: {
-      "**/*": [
-        "public/**/*",
-        "public/cars/**/*",
-        "public/cars/inventory/**/*",
-        "public/cars/uploads/**/*",
-        "public/cars/spin/**/*"
-      ],
-    },
+  outputFileTracingExcludes: {
+    "**/*": [
+      "public/**/*",
+      "public/cars/**/*",
+      "public/cars/inventory/**/*",
+      "public/cars/uploads/**/*",
+      "public/cars/spin/**/*"
+    ],
   },
   // Permite HMR cuando Playwright abre el origen por 127.0.0.1
   allowedDevOrigins: ["127.0.0.1"],
