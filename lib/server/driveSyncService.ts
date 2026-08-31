@@ -101,44 +101,21 @@ export async function syncCatalogFromDriveFolders(folderUrls: string[]): Promise
       return vPlate === cleanFolderName || v.slug.includes(cleanFolderName);
     });
 
+    if (!existing) {
+      // Ignorar vehículos que no estén en la base de datos (PDF)
+      continue;
+    }
+
     const gallery = photos.map(p => `https://drive.google.com/thumbnail?id=${p.fileId}&sz=w1000`);
     newPhotos += photos.length;
 
     if (gallery.length === 0) continue;
 
-    const slug = existing?.slug || `${folder.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${new Date().getFullYear()}`;
-    const brand = existing?.brand || folder.name.split(" ")[0] || "Vehículo";
-    const model = existing?.model || folder.name.split(" ").slice(1).join(" ") || folder.name;
-
     const vehicle: Vehicle = {
       ...existing,
-      slug,
-      plate: existing?.plate || folder.name.toUpperCase(),
-      brand,
-      model,
-      version: existing?.version || "Versión por confirmar",
-      year: existing?.year || new Date().getFullYear(),
-      price: existing?.price || 0,
-      km: existing?.km || 0,
-      fuel: existing?.fuel || "Bencina",
-      transmission: existing?.transmission || "Automática",
-      bodyType: existing?.bodyType || "SUV",
-      location: existing?.location || "Puerto Montt (Pendiente de ingreso)",
-      image: existing?.image?.startsWith("https://drive") && gallery.includes(existing.image) ? existing.image : gallery[0],
-      engine: existing?.engine || "N/A",
-      power: existing?.power || "N/A",
-      traction: existing?.traction || "4x2",
-      doors: existing?.doors || 5,
-      owners: existing?.owners || 1,
-      featured: existing ? existing.featured : false,
-      status: existing ? existing.status : "En preparación",
       hasRealPhotos: true,
-      highlights: existing?.highlights || [
-        `Patente: ${folder.name}`,
-        "Unidad recién llegada al stock",
-        "Fotografías reales sin edición",
-      ],
       gallery,
+      image: existing.image?.startsWith("https://drive") && gallery.includes(existing.image) ? existing.image : gallery[0],
     };
 
     await saveVehicle(vehicle);
