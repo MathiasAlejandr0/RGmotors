@@ -22,6 +22,7 @@
     "@imgly/background-removal-node": "^1.4.5",
     "@napi-rs/canvas": "^1.0.3",
     "@react-pdf/renderer": "^4.5.1",
+    "@vercel/kv": "^3.0.0",
     "exif-parser": "^0.1.12",
     "heic-decode": "^2.1.0",
     "import-fresh": "^4.0.0",

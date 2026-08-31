@@ -37,16 +37,8 @@ export async function runAutoSync(): Promise<{ success: boolean; message: string
   }
 }
 
-export function initAutoSyncScheduler() {
-  if (timerStarted) return;
-  timerStarted = true;
-
-  console.log("[AutoSync] Programador de sincronización automática iniciado (cada 60 minutos).");
-
-  // Iniciar temporizador recurrente
-  setInterval(() => {
-    runAutoSync().catch((e) => console.error("[AutoSync Error]", e));
-  }, SYNC_INTERVAL_MS);
+export function startAutoSyncScheduler() {
+  console.log("[AutoSync] El programador local ha sido desactivado a favor de Vercel Cron Jobs.");
 }
 
 export function getAutoSyncStatus() {

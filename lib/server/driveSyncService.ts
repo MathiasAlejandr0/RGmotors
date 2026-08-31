@@ -25,33 +25,7 @@ function fetchUrl(url: string): Promise<string> {
     });
   });
 }
-
-function downloadDriveImage(fileId: string, dest: string): Promise<boolean> {
-  const url = `https://lh3.googleusercontent.com/d/${fileId}`;
-  return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
-      if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return https.get(res.headers.location, (res2) => {
-          const stream = createWriteStream(dest);
-          res2.pipe(stream);
-          stream.on("finish", () => {
-            stream.close();
-            resolve(true);
-          });
-          stream.on("error", reject);
-        });
-      }
-      const stream = createWriteStream(dest);
-      res.pipe(stream);
-      stream.on("finish", () => {
-        stream.close();
-        resolve(true);
-      });
-      stream.on("error", reject);
-    }).on("error", reject);
-  });
-}
-
+// downloadDriveImage function removed
 export async function extractPhotosFromFolder(folderId: string): Promise<{ fileName: string; fileId: string; downloadUrl: string }[]> {
   const url = `https://drive.google.com/drive/folders/${folderId}`;
   try {
@@ -127,24 +101,8 @@ export async function syncCatalogFromDriveFolders(folderUrls: string[]): Promise
       return vPlate === cleanFolderName || v.slug.includes(cleanFolderName);
     });
 
-    const plate = existing?.plate?.toLowerCase().replace(/[^a-z0-9]/g, "") || cleanFolderName;
-    const inventoryDir = `public/cars/inventory/${plate}`;
-    await mkdir(inventoryDir, { recursive: true });
-
-    const gallery: string[] = [];
-    for (let gi = 0; gi < photos.length; gi++) {
-      const dest = `${inventoryDir}/${gi}.jpg`;
-      const webPath = `/cars/inventory/${plate}/${gi}.jpg`;
-      if (!existsSync(dest)) {
-        try {
-          await downloadDriveImage(photos[gi].fileId, dest);
-          newPhotos += 1;
-        } catch {}
-      }
-      if (existsSync(dest)) {
-        gallery.push(webPath);
-      }
-    }
+    const gallery = photos.map(p => `https://drive.google.com/thumbnail?id=${p.fileId}&sz=w1000`);
+    newPhotos += photos.length;
 
     if (gallery.length === 0) continue;
 
@@ -166,7 +124,7 @@ export async function syncCatalogFromDriveFolders(folderUrls: string[]): Promise
       transmission: existing?.transmission || "Automática",
       bodyType: existing?.bodyType || "SUV",
       location: existing?.location || "Puerto Montt (Pendiente de ingreso)",
-      image: gallery[0],
+      image: existing?.image?.startsWith("https://drive") && gallery.includes(existing.image) ? existing.image : gallery[0],
       engine: existing?.engine || "N/A",
       power: existing?.power || "N/A",
       traction: existing?.traction || "4x2",

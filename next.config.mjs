@@ -12,9 +12,15 @@ const nextConfig = {
         basePath,
         assetPrefix: basePath,
         trailingSlash: true,
-        images: { unoptimized: true },
       }
-    : {}),
+    : {
+        images: {
+          remotePatterns: [
+            { protocol: "https", hostname: "drive.google.com" },
+            { protocol: "https", hostname: "lh3.googleusercontent.com" },
+          ],
+        },
+      }),
   // Módulos nativos que no deben empaquetarse: se cargan directo en el server.
   serverExternalPackages: [
     "@napi-rs/canvas",
