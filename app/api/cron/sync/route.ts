@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { runAutoSync, getAutoSyncStatus, initAutoSyncScheduler } from "@/lib/server/autoSyncScheduler";
+import { runAutoSync, getAutoSyncStatus, startAutoSyncScheduler } from "@/lib/server/autoSyncScheduler";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Inicializar el temporizador en la primera invocación del servidor
-initAutoSyncScheduler();
+startAutoSyncScheduler();
 
 export async function GET() {
   const status = getAutoSyncStatus();

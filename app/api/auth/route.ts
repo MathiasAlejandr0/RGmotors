@@ -7,7 +7,8 @@ export async function POST(request: Request) {
     const adminPassword = process.env.ADMIN_PASSWORD || "rgmotors2026"; // Fallback para desarrollo local
 
     if (password === adminPassword) {
-      cookies().set("rgmotors_session", adminPassword, {
+      const cookieStore = await cookies();
+      cookieStore.set("rgmotors_session", adminPassword, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",

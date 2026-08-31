@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncCatalogFromDriveFolders, parseExcelStockBuffer } from "@/lib/server/driveSyncService";
 import { saveVehicle, getVehicles } from "@/lib/server/vehiclesStore";
-import { initAutoSyncScheduler, getAutoSyncStatus } from "@/lib/server/autoSyncScheduler";
+import { startAutoSyncScheduler, getAutoSyncStatus } from "@/lib/server/autoSyncScheduler";
 import { Vehicle } from "@/lib/vehicles";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-initAutoSyncScheduler();
+// Inicializar temporizador si no estaba ya
+startAutoSyncScheduler();
 
 const DEFAULT_DRIVE_URLS = [
   "https://drive.google.com/drive/folders/1zqX6z_sKWHjHyNoMlS_rtkkF6pK_FqVh?usp=sharing",
