@@ -117,7 +117,7 @@ export async function processVideoToSpin(
   if (!duration || Number.isNaN(duration)) throw new Error("Video ilegible o sin duración.");
 
   const rawDir = await mkdtemp(join(tmpdir(), "rgspin-"));
-  const outDir = process.cwd() + "/public/cars/spin/" + slug;
+  const outDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "spin", slug);
 
   try {
     // --- 2. Extracción + mejora de imagen con ffmpeg -----------------------

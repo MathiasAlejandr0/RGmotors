@@ -23,6 +23,7 @@
     "@napi-rs/canvas": "^1.0.3",
     "@react-pdf/renderer": "^4.5.1",
     "@vercel/kv": "^3.0.0",
+    "cross-spawn": "^7.0.6",
     "exif-parser": "^0.1.12",
     "heic-decode": "^2.1.0",
     "import-fresh": "^4.0.0",
@@ -31,6 +32,8 @@
     "path-exists": "^5.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "shebang-command": "^2.0.0",
+    "shebang-regex": "^4.0.0",
     "three": "^0.185.1",
     "xlsx": "^0.18.5"
   },
