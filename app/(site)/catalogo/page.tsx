@@ -30,10 +30,20 @@ export default function CatalogPage() {
 }
 
 function CatalogContent() {
+  const [vehicleList, setVehicleList] = useState<Vehicle[]>(initialVehicles);
+
+  useEffect(() => {
+    fetch("/api/vehicles")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.vehicles) setVehicleList(data.vehicles);
+      })
+      .catch(console.error);
+  }, []);
+
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [vehicleList, setVehicleList] = useState<Vehicle[]>(initialVehicles);
   const [activeCat, setActiveCat] = useState<CategoryPill>("todos");
   const [brands, setBrands] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);

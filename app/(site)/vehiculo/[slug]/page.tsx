@@ -16,10 +16,7 @@ import CuotaSimulator from "@/components/CuotaSimulator";
 import VehicleHealthCard from "@/components/VehicleHealthCard";
 import VehicleActionButtons from "@/components/VehicleActionButtons";
 
-export async function generateStaticParams() {
-  const list = await getVehicles().catch(() => vehicles);
-  return list.map((v) => ({ slug: v.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

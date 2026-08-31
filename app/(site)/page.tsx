@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { asset } from "@/lib/asset";
-import { vehicles } from "@/lib/vehicles";
+import { getVehicles } from "@/lib/server/vehiclesStore";
 import VehicleCard from "@/components/VehicleCard";
 import RevealOnScroll from "@/components/RevealOnScroll";
 import Hero3DCarousel from "@/components/Hero3DCarousel";
 import AppleCareTrustSection from "@/components/AppleCareTrustSection";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const vehicles = await getVehicles();
   const featured = vehicles.filter((v) => v.featured).slice(0, 6);
 
   return (

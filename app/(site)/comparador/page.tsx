@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { asset } from "@/lib/asset";
-import { vehicles, Vehicle, formatCLP } from "@/lib/vehicles";
+import { vehicles as initialVehicles, Vehicle, formatCLP } from "@/lib/vehicles";
 
 const ROWS: { label: string; get: (v: Vehicle) => string }[] = [
   { label: "Precio", get: (v) => formatCLP(v.price) },
@@ -19,15 +19,23 @@ const ROWS: { label: string; get: (v: Vehicle) => string }[] = [
 ];
 
 export default function ComparadorPage() {
-  const [selected, setSelected] = useState<string[]>([
-    "toyota-hilux-2022-kzwl56",
-    "mitsubishi-l200-2021-jgrf99",
-  ]);
+  const [vehiclesData, setVehiclesData] = useState<Vehicle[]>(initialVehicles);
+  
+  useEffect(() => {
+    fetch("/api/vehicles")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.vehicles) setVehiclesData(data.vehicles);
+      })
+      .catch(console.error);
+  }, []);
+
+  const [selected, setSelected] = useState<string[]>([]);
 
   const cars = selected
-    .map((s) => vehicles.find((v) => v.slug === s))
+    .map((s) => vehiclesData.find((v) => v.slug === s))
     .filter(Boolean) as Vehicle[];
-  const available = vehicles.filter((v) => !selected.includes(v.slug));
+  const available = vehiclesData.filter((v) => !selected.includes(v.slug));
 
   const addCar = (slug: string) => {
     if (selected.length < 3 && slug) setSelected([...selected, slug]);

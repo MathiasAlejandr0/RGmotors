@@ -1,23 +1,34 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { vehicles, formatCLP, Vehicle } from "@/lib/vehicles";
+import { useMemo, useState, useEffect } from "react";
+import { vehicles as initialVehicles, formatCLP, Vehicle } from "@/lib/vehicles";
 import FastCreditPreApprovalModal from "@/components/FastCreditPreApprovalModal";
 
 const MONTHLY_RATE = 0.019;
 
 export default function SimuladorPage() {
-  const [selectedSlug, setSelectedSlug] = useState(vehicles[0]?.slug || "");
-  const [price, setPrice] = useState(vehicles[0]?.price || 18990000);
+  const [vehiclesData, setVehiclesData] = useState<Vehicle[]>(initialVehicles);
+  
+  useEffect(() => {
+    fetch("/api/vehicles")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.vehicles) setVehiclesData(data.vehicles);
+      })
+      .catch(console.error);
+  }, []);
+
+  const [selectedSlug, setSelectedSlug] = useState(vehiclesData[0]?.slug || "");
+  const [price, setPrice] = useState(vehiclesData[0]?.price || 18990000);
   const [downPct, setDownPct] = useState(20);
   const [term, setTerm] = useState(48);
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
 
-  const selectedVehicle: Vehicle | undefined = vehicles.find((v) => v.slug === selectedSlug);
+  const selectedVehicle: Vehicle | undefined = vehiclesData.find((v) => v.slug === selectedSlug);
 
   const handleVehicleChange = (slug: string) => {
     setSelectedSlug(slug);
-    const found = vehicles.find((v) => v.slug === slug);
+    const found = vehiclesData.find((v) => v.slug === slug);
     if (found) setPrice(found.price);
   };
 
@@ -64,7 +75,7 @@ export default function SimuladorPage() {
                 value={selectedSlug}
                 className="mt-2 w-full rounded-2xl border border-white/15 bg-white/[0.06] px-4 py-3 text-xs font-medium text-white outline-none focus:border-brand-500 transition cursor-pointer"
               >
-                {vehicles.map((v) => (
+                {vehiclesData.map((v) => (
                   <option key={v.slug} value={v.slug} className="bg-ink-900">
                     {v.brand} {v.model} {v.year} — {formatCLP(v.price)}
                   </option>

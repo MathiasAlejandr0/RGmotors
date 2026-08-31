@@ -8,7 +8,7 @@ import { kv } from "@vercel/kv";
 const LOCAL_DIR = join(process.cwd(), "data");
 const TMP_DIR = os.tmpdir() + "/rgmotors_data";
 
-const memoryCache = new Map<string, unknown>();
+
 
 function getPossiblePaths(filename: string) {
   return [join(LOCAL_DIR, filename), join(TMP_DIR, filename)];
@@ -21,16 +21,12 @@ const useKV = () => Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_A
  * Si el archivo no existe, devuelve `fallback` y lo almacena.
  */
 export async function readJson<T>(filename: string, fallback: T): Promise<T> {
-  if (memoryCache.has(filename)) {
-    return memoryCache.get(filename) as T;
-  }
 
   // 1. Intentar leer desde Vercel KV primero si está habilitado
   if (useKV()) {
     try {
       const data = await kv.get<T>(filename);
       if (data !== null) {
-        memoryCache.set(filename, data);
         return data;
       }
     } catch (error) {
@@ -61,16 +57,14 @@ export async function readJson<T>(filename: string, fallback: T): Promise<T> {
   }
 
   // Si no existe en ningún lado, guardamos en memoria y tratamos de escribir
-  memoryCache.set(filename, fallback);
-  await writeJson(filename, fallback).catch(() => {});
+  await writeJson(filename, fallback);
   return fallback;
 }
 
 /**
- * Escribe un archivo JSON de forma segura y actualiza el caché en memoria.
+ * Escribe un archivo JSON de forma segura.
  */
 export async function writeJson<T>(filename: string, data: T): Promise<boolean> {
-  memoryCache.set(filename, data);
 
   let kvSuccess = false;
   if (useKV()) {

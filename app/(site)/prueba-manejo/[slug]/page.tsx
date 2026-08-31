@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getVehicle, vehicles } from "@/lib/vehicles";
+import { getVehicleBySlug } from "@/lib/server/vehiclesStore";
+import { getVehicle } from "@/lib/vehicles";
 import TestDriveForm from "@/components/TestDriveForm";
 
-export function generateStaticParams() {
-  return vehicles.map((v) => ({ slug: v.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function PruebaManejoPage({
   params,
@@ -13,7 +12,7 @@ export default async function PruebaManejoPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const v = getVehicle(slug);
+  const v = (await getVehicleBySlug(slug)) || getVehicle(slug);
   if (!v) notFound();
 
   return (
