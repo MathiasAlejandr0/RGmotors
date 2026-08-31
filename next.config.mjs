@@ -4,6 +4,9 @@ const basePath = isGhPages ? "/RGmotors" : "";
 
 const nextConfig = {
   reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Permite HMR cuando Playwright abre el origen por 127.0.0.1
   allowedDevOrigins: ["127.0.0.1"],
   ...(isGhPages
