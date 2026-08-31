@@ -42,7 +42,6 @@ export async function readJson<T>(filename: string, fallback: T): Promise<T> {
       if (existsSync(p)) {
         const content = await readFile(p, "utf8");
         const parsed = JSON.parse(content) as T;
-        memoryCache.set(filename, parsed);
         
         // Sincronizar hacia KV si está habilitado pero no lo tenía
         if (useKV()) {
