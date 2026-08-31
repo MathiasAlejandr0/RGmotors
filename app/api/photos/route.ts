@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Slug inválido o no especificado." }, { status: 400 });
   }
 
-  const uploadDir = join(process.cwd(), "public", "cars", "uploads", slug);
-  const spinDir = join(process.cwd(), "public", "cars", "spin", slug);
+  const uploadDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "uploads", slug);
+  const spinDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "spin", slug);
 
   let gallery: Array<{ name: string; url: string; size: number; isCover?: boolean }> = [];
   let spinCount = 0;
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   try {
     if (type === "spin") {
       // Subida de fotogramas 360°
-      const spinDir = join(process.cwd(), "public", "cars", "spin", slug);
+      const spinDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "spin", slug);
       await mkdir(spinDir, { recursive: true });
 
       // Ordenar por nombre si vienen numerados
@@ -98,10 +98,12 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < sorted.length; i++) {
         const file = sorted[i];
         const num = String(i + 1).padStart(3, "0");
-        const filename = `${num}.jpg`;
-        const buffer = Buffer.from(await file.arrayBuffer());
-        await writeFile(join(spinDir, filename), buffer);
-        savedFiles.push(filename);
+        const ext = file.name.split(".").pop() || "jpg";
+        const dest = join(spinDir, `${num}.${ext}`);
+        
+        const bytes = await file.arrayBuffer();
+        await writeFile(dest, Buffer.from(bytes));
+        savedFiles.push(`/cars/spin/${slug}/${num}.${ext}`);
       }
 
       // Crear o actualizar manifest.json
@@ -115,7 +117,7 @@ export async function POST(req: NextRequest) {
 
     } else {
       // Subida de fotos de galería o portada
-      const uploadDir = join(process.cwd(), "public", "cars", "uploads", slug);
+      const uploadDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "uploads", slug);
       await mkdir(uploadDir, { recursive: true });
 
       for (const file of files) {

@@ -182,7 +182,7 @@ export default function VehicleEditorModal({
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as "general" | "engine" | "media" | "status")}
               className={`flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-xs font-semibold transition ${
                 activeTab === tab.id
                   ? "border-brand-500 text-brand-300 bg-brand-500/10 rounded-t-lg"
