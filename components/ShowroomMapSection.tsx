@@ -3,9 +3,9 @@
 import { COMPANY, whatsappLink } from "@/lib/company";
 
 export default function ShowroomMapSection({ className = "" }: { className?: string }) {
-  // Coordenadas exactas marcadas en el cruce Av. Cardonal / El Tepual con Ruta 5 Sur, Puerto Montt
-  const lat = -41.4632;
-  const lng = -72.9782;
+  // Coordenadas exactas marcadas en el punto de Av. El Tepual (al lado de Shell El Tepual), Puerto Montt
+  const lat = -41.46335;
+  const lng = -72.98245;
   const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
   const wazeUrl = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
 
@@ -21,7 +21,7 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
             Visítanos en RG Motors · Puerto Montt
           </h2>
           <p className="text-xs sm:text-sm text-white/50 mt-1 max-w-xl">
-            Ven a revisar los vehículos en persona, probarlos en ruta y recibir asesoría presencial en nuestra sucursal de Av. Cardonal.
+            Ven a revisar los vehículos en persona, probarlos en ruta y recibir asesoría presencial en nuestro showroom de Av. El Tepual.
           </p>
         </div>
 
@@ -44,7 +44,7 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
             <span>🚗</span> Abrir en Waze
           </a>
           <a
-            href={whatsappLink("Hola RG Motors, quiero coordinar una visita a su sucursal de Av. Cardonal en Puerto Montt.")}
+            href={whatsappLink("Hola RG Motors, quiero coordinar una visita a su showroom de Av. El Tepual en Puerto Montt.")}
             target="_blank"
             rel="noopener noreferrer"
             className="apple-btn-primary flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold text-white shadow-glow"
@@ -59,8 +59,8 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
         {/* Google Maps Iframe */}
         <div className="relative min-h-[340px] lg:min-h-[420px] w-full overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-ink-950">
           <iframe
-            title="Ubicación RG Motors Puerto Montt - Sucursal Cardonal"
-            src={`https://maps.google.com/maps?q=${lat},${lng}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
+            title="Ubicación RG Motors Puerto Montt - Av. El Tepual"
+            src={`https://maps.google.com/maps?q=${lat},${lng}&t=&z=17&ie=UTF8&iwloc=&output=embed`}
             className="absolute inset-0 h-full w-full border-0"
             allowFullScreen
             loading="lazy"
@@ -68,21 +68,21 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
           />
         </div>
 
-        {/* Card de la Sucursal Oficial Cardonal */}
+        {/* Card de la Sucursal Oficial */}
         <div className="space-y-4 flex flex-col justify-between">
           <div className="rounded-2xl border border-brand-500/30 bg-gradient-to-br from-brand-600/15 via-ink-900 to-black p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-extrabold text-brand-300">RG Motors · Sucursal Cardonal</span>
-              <span className="rounded-full bg-brand-500/20 px-2.5 py-0.5 text-[10px] font-bold text-brand-200">Showroom Oficial</span>
+              <span className="text-sm font-extrabold text-brand-300">RG Motors · Showroom Oficial</span>
+              <span className="rounded-full bg-brand-500/20 px-2.5 py-0.5 text-[10px] font-bold text-brand-200">Showroom</span>
             </div>
             
             <div>
-              <p className="text-sm font-bold text-white">Av. Cardonal / El Tepual (Cruce Ruta 5 Sur)</p>
+              <p className="text-sm font-bold text-white">Av. El Tepual (al lado de Shell El Tepual)</p>
               <p className="text-xs text-white/50">Puerto Montt, Región de Los Lagos</p>
             </div>
 
             <p className="text-xs text-white/65 leading-relaxed">
-              Exhibición de camionetas 4x4, SUVs y vehículos seleccionados. Contamos con atención personalizada, simulación de crédito y espacio para pruebas de manejo.
+              Exhibición de camionetas 4x4, SUVs y vehículos seleccionados. Ubicados en Av. El Tepual, junto a estación Shell y a pasos del enlace con Ruta 5 Sur. Contamos con atención personalizada y pruebas de manejo.
             </p>
 
             <div className="border-t border-white/10 pt-3 space-y-2 text-xs text-white/60">
