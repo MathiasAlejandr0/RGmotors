@@ -3,9 +3,9 @@
 import { COMPANY, whatsappLink } from "@/lib/company";
 
 export default function ShowroomMapSection({ className = "" }: { className?: string }) {
-  // Coordenadas exactas marcadas en el punto de Av. El Tepual (al lado de Shell El Tepual), Puerto Montt
-  const lat = -41.46335;
-  const lng = -72.98245;
+  // Coordenadas exactas del ex Edificio Banco de Chile en Ruta 226 / Av. El Tepual, Puerto Montt
+  const lat = -41.4636;
+  const lng = -72.9794;
   const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
   const wazeUrl = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
 
@@ -21,7 +21,7 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
             Visítanos en RG Motors · Puerto Montt
           </h2>
           <p className="text-xs sm:text-sm text-white/50 mt-1 max-w-xl">
-            Ven a revisar los vehículos en persona, probarlos en ruta y recibir asesoría presencial en nuestro showroom de Av. El Tepual.
+            Ven a revisar los vehículos en persona, probarlos en ruta y recibir asesoría presencial en nuestro showroom de Ruta 226 (Ex Edificio Banco de Chile).
           </p>
         </div>
 
@@ -44,7 +44,7 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
             <span>🚗</span> Abrir en Waze
           </a>
           <a
-            href={whatsappLink("Hola RG Motors, quiero coordinar una visita a su showroom de Av. El Tepual en Puerto Montt.")}
+            href={whatsappLink("Hola RG Motors, quiero coordinar una visita a su showroom de Ruta 226 (Ex Banco de Chile) en Puerto Montt.")}
             target="_blank"
             rel="noopener noreferrer"
             className="apple-btn-primary flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold text-white shadow-glow"
@@ -59,7 +59,7 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
         {/* Google Maps Iframe */}
         <div className="relative min-h-[340px] lg:min-h-[420px] w-full overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-ink-950">
           <iframe
-            title="Ubicación RG Motors Puerto Montt - Av. El Tepual"
+            title="Ubicación RG Motors Puerto Montt - Ex Banco de Chile"
             src={`https://maps.google.com/maps?q=${lat},${lng}&t=&z=17&ie=UTF8&iwloc=&output=embed`}
             className="absolute inset-0 h-full w-full border-0"
             allowFullScreen
@@ -77,12 +77,12 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
             </div>
             
             <div>
-              <p className="text-sm font-bold text-white">Av. El Tepual (al lado de Shell El Tepual)</p>
+              <p className="text-sm font-bold text-white">Ruta 226 / Av. El Tepual s/n (Ex Edificio Banco de Chile)</p>
               <p className="text-xs text-white/50">Puerto Montt, Región de Los Lagos</p>
             </div>
 
             <p className="text-xs text-white/65 leading-relaxed">
-              Exhibición de camionetas 4x4, SUVs y vehículos seleccionados. Ubicados en Av. El Tepual, junto a estación Shell y a pasos del enlace con Ruta 5 Sur. Contamos con atención personalizada y pruebas de manejo.
+              Exhibición de camionetas 4x4, SUVs y vehículos seleccionados. Ubicados en el emblemático edificio del ex Banco de Chile sobre Ruta 226 (Camino a El Tepual), a pasos del trébol con Ruta 5 Sur. Contamos con amplio patio de exhibición, estacionamiento para clientes y pruebas de manejo.
             </p>
 
             <div className="border-t border-white/10 pt-3 space-y-2 text-xs text-white/60">
