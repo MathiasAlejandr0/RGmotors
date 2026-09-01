@@ -17,7 +17,7 @@ import QuickCategoryFilter, { CategoryPill } from "@/components/QuickCategoryFil
 import FastCreditPreApprovalModal from "@/components/FastCreditPreApprovalModal";
 import CarRequestModal from "@/components/CarRequestModal";
 
-const MAX_PRICE = 30000000;
+const MAX_PRICE = 80000000;
 
 type Sort = "relevancia" | "precio-asc" | "precio-desc" | "km-asc" | "year-desc";
 
@@ -32,15 +32,6 @@ export default function CatalogPage() {
 function CatalogContent() {
   const [vehicleList, setVehicleList] = useState<Vehicle[]>(initialVehicles);
 
-  useEffect(() => {
-    fetch("/api/vehicles")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data && data.vehicles) setVehicleList(data.vehicles);
-      })
-      .catch(console.error);
-  }, []);
-
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -50,7 +41,7 @@ function CatalogContent() {
   const [fuels, setFuels] = useState<string[]>([]);
   const [trans, setTrans] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState(MAX_PRICE);
-  const [minYear, setMinYear] = useState(2018);
+  const [minYear, setMinYear] = useState(2010);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("relevancia");
   const [showFilters, setShowFilters] = useState(false);
@@ -64,7 +55,7 @@ function CatalogContent() {
     fetch("/api/vehicles")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data && data.vehicles) {
+        if (data && data.vehicles && data.vehicles.length > 0) {
           setVehicleList(data.vehicles);
         }
       })
@@ -207,7 +198,7 @@ function CatalogContent() {
     if (fuels.length) parts.push(fuels.join(", "));
     if (trans.length) parts.push(trans.join(", "));
     if (maxPrice < MAX_PRICE) parts.push(`hasta ${formatCLP(maxPrice)}`);
-    if (minYear > 2018) parts.push(`${minYear}+`);
+    if (minYear > 2010) parts.push(`${minYear}+`);
     if (query) parts.push(`"${query}"`);
     return parts.length ? parts.join(" · ") : "Catálogo completo";
   }, [brands, types, fuels, trans, maxPrice, minYear, query]);
@@ -218,7 +209,7 @@ function CatalogContent() {
     setFuels([]);
     setTrans([]);
     setMaxPrice(MAX_PRICE);
-    setMinYear(2018);
+    setMinYear(2010);
     setQuery("");
     setActiveCat("todos");
     router.replace("/catalogo", { scroll: false });
@@ -256,8 +247,8 @@ function CatalogContent() {
       <FilterGroup title="Año desde">
         <input
           type="range"
-          min={2015}
-          max={2024}
+          min={2010}
+          max={2026}
           step={1}
           value={minYear}
           onChange={(e) => setMinYear(Number(e.target.value))}
