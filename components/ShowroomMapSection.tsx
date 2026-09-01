@@ -3,9 +3,9 @@
 import { COMPANY, whatsappLink } from "@/lib/company";
 
 export default function ShowroomMapSection({ className = "" }: { className?: string }) {
-  // Coordenadas exactas del ex Edificio Banco de Chile en Ruta 226 / Av. El Tepual, Puerto Montt
-  const lat = -41.4636;
-  const lng = -72.9794;
+  // Coordenadas exactas en Av. El Tepual (al costado de Acenor, Ex Banco de Chile), Puerto Montt
+  const lat = -41.46386;
+  const lng = -72.98144;
   const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
   const wazeUrl = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
 
@@ -82,7 +82,7 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
             </div>
 
             <p className="text-xs text-white/65 leading-relaxed">
-              Exhibición de camionetas 4x4, SUVs y vehículos seleccionados. Ubicados en Av. El Tepual (Ex Banco de Chile), a pasos del trébol con Ruta 5 Sur. Contamos con amplio patio de exhibición, estacionamiento para clientes y pruebas de manejo.
+              Exhibición de camionetas 4x4, SUVs y vehículos seleccionados. Ubicados en Av. El Tepual (Ex Banco de Chile), al costado de Acenor y a pasos del enlace con Ruta 5 Sur. Contamos con amplio patio de exhibición, estacionamiento para clientes y pruebas de manejo.
             </p>
 
             <div className="border-t border-white/10 pt-3 space-y-2 text-xs text-white/60">
