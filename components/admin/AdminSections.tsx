@@ -1705,8 +1705,6 @@ export function TestDrivesSection() {
           >
             <option value="all">Todas las sucursales</option>
             <option value="Sucursal Cardonal (Puerto Montt)">Sucursal Cardonal</option>
-            <option value="Sucursal Salgado (Puerto Montt)">Sucursal Salgado</option>
-            <option value="Sucursal Unidades Chile (Puerto Montt)">Sucursal Unidades Chile</option>
           </select>
 
           <select

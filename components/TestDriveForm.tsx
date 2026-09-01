@@ -7,11 +7,7 @@ import { Vehicle, formatCLP } from "@/lib/vehicles";
 import { getTrafficSource } from "@/lib/trafficTracking";
 import { whatsappLink } from "@/lib/company";
 
-const BRANCHES = [
-  "Sucursal Cardonal (Puerto Montt)",
-  "Sucursal Salgado (Puerto Montt)",
-  "Sucursal Unidades Chile (Puerto Montt)",
-];
+const BRANCHES = ["Sucursal Cardonal (Puerto Montt)"];
 const TIMES = ["10:00", "11:30", "12:30", "15:00", "16:30", "17:30"];
 const EXECUTIVES = ["Sin preferencia", "Asesor de Ventas RG Motors", "Especialista Comercial"];
 

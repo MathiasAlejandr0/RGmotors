@@ -3,22 +3,25 @@
 import { COMPANY, whatsappLink } from "@/lib/company";
 
 export default function ShowroomMapSection({ className = "" }: { className?: string }) {
-  const gmapsUrl = "https://www.google.com/maps/search/?api=1&query=Cardonal,+Puerto+Montt,+Chile";
-  const wazeUrl = "https://waze.com/ul?q=Cardonal+Puerto+Montt";
+  // Coordenadas exactas marcadas en el cruce Av. Cardonal / El Tepual con Ruta 5 Sur, Puerto Montt
+  const lat = -41.4632;
+  const lng = -72.9782;
+  const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  const wazeUrl = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
 
   return (
     <section className={`rounded-3xl border border-white/10 bg-ink-800/60 p-6 sm:p-8 backdrop-blur-xl space-y-6 ${className}`}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b border-white/10 pb-5">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3 py-1 text-[11px] font-bold text-brand-300 mb-2.5">
-            <span>📍</span> Ubicación & Sucursales Físicas
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3.5 py-1 text-[11px] font-bold text-brand-300 mb-2.5">
+            <span>📍</span> Ubicación Showroom Oficial
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Encuéntranos en Puerto Montt
+            Visítanos en RG Motors · Puerto Montt
           </h2>
           <p className="text-xs sm:text-sm text-white/50 mt-1 max-w-xl">
-            Ven a revisar los vehículos en persona, probarlos en ruta y recibir asesoría comercial directa en nuestras sucursales.
+            Ven a revisar los vehículos en persona, probarlos en ruta y recibir asesoría presencial en nuestra sucursal de Av. Cardonal.
           </p>
         </div>
 
@@ -30,7 +33,7 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
             rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10 hover:border-brand-500/50"
           >
-            <span>🗺️</span> Google Maps
+            <span>🗺️</span> Abrir en Google Maps
           </a>
           <a
             href={wazeUrl}
@@ -38,10 +41,10 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
             rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10 hover:border-blue-400/50"
           >
-            <span>🚗</span> Waze
+            <span>🚗</span> Abrir en Waze
           </a>
           <a
-            href={whatsappLink("Hola RG Motors, quiero coordinar una visita a su sucursal de Puerto Montt.")}
+            href={whatsappLink("Hola RG Motors, quiero coordinar una visita a su sucursal de Av. Cardonal en Puerto Montt.")}
             target="_blank"
             rel="noopener noreferrer"
             className="apple-btn-primary flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold text-white shadow-glow"
@@ -51,13 +54,13 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
         </div>
       </div>
 
-      {/* Grid: Map + Locations info */}
+      {/* Grid: Map + Location Info */}
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr] items-stretch">
         {/* Google Maps Iframe */}
-        <div className="relative min-h-[320px] lg:min-h-[400px] w-full overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-ink-950">
+        <div className="relative min-h-[340px] lg:min-h-[420px] w-full overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-ink-950">
           <iframe
-            title="Mapa Ubicación RG Motors Puerto Montt"
-            src="https://maps.google.com/maps?q=Cardonal,+Puerto+Montt,+Los+Lagos,+Chile&t=&z=14&ie=UTF8&iwloc=&output=embed"
+            title="Ubicación RG Motors Puerto Montt - Sucursal Cardonal"
+            src={`https://maps.google.com/maps?q=${lat},${lng}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
             className="absolute inset-0 h-full w-full border-0"
             allowFullScreen
             loading="lazy"
@@ -65,41 +68,39 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
           />
         </div>
 
-        {/* Sucursales Info Cards */}
-        <div className="space-y-3.5 flex flex-col justify-between">
-          <div className="rounded-2xl border border-brand-500/30 bg-gradient-to-br from-brand-600/15 via-ink-900 to-black p-4 space-y-1.5">
+        {/* Card de la Sucursal Oficial Cardonal */}
+        <div className="space-y-4 flex flex-col justify-between">
+          <div className="rounded-2xl border border-brand-500/30 bg-gradient-to-br from-brand-600/15 via-ink-900 to-black p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-brand-300">Sucursal Principal Cardonal</span>
-              <span className="rounded-full bg-brand-500/20 px-2 py-0.5 text-[10px] font-bold text-brand-200">Showroom</span>
+              <span className="text-sm font-extrabold text-brand-300">RG Motors · Sucursal Cardonal</span>
+              <span className="rounded-full bg-brand-500/20 px-2.5 py-0.5 text-[10px] font-bold text-brand-200">Showroom Oficial</span>
             </div>
-            <p className="text-xs font-bold text-white">Av. Cardonal, Puerto Montt</p>
-            <p className="text-[11px] text-white/60 leading-relaxed">
-              Exhibición principal de camionetas 4x4, SUVs y vehículos de trabajo seleccionados.
+            
+            <div>
+              <p className="text-sm font-bold text-white">Av. Cardonal / El Tepual (Cruce Ruta 5 Sur)</p>
+              <p className="text-xs text-white/50">Puerto Montt, Región de Los Lagos</p>
+            </div>
+
+            <p className="text-xs text-white/65 leading-relaxed">
+              Exhibición de camionetas 4x4, SUVs y vehículos seleccionados. Contamos con atención personalizada, simulación de crédito y espacio para pruebas de manejo.
             </p>
-            <p className="text-[10px] text-white/40 pt-1">
-              🕒 {COMPANY.hours}
-            </p>
+
+            <div className="border-t border-white/10 pt-3 space-y-2 text-xs text-white/60">
+              <div className="flex items-center gap-2">
+                <span>🕒</span>
+                <span><b>Horario:</b> {COMPANY.hours}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>📞</span>
+                <span><b>Contacto directo:</b> {COMPANY.phoneDisplay}</span>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-ink-900/60 p-4 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-white/90">Sucursal Salgado</span>
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/60">Taller & Retomas</span>
-            </div>
-            <p className="text-xs text-white/80">Sector Salgado, Puerto Montt</p>
-            <p className="text-[11px] text-white/50 leading-relaxed">
-              Punto de evaluación técnica de retomas, inspección de 150 puntos y consignaciones.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-ink-900/60 p-4 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-white/90">Sucursal Unidades Chile</span>
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/60">Patio de Stock</span>
-            </div>
-            <p className="text-xs text-white/80">Puerto Montt, Región de Los Lagos</p>
-            <p className="text-[11px] text-white/50 leading-relaxed">
-              Patio de preparación de unidades, sesión fotográfica y entrega inmediata garantizada.
+          <div className="rounded-2xl border border-white/10 bg-ink-900/60 p-4 text-xs text-white/60 space-y-2">
+            <p className="font-semibold text-white/90">¿Cómo llegar?</p>
+            <p className="text-[11px] leading-relaxed text-white/50">
+              Ubicados estratégicamente a pasos del enlace de Ruta 5 Sur con Av. Cardonal y El Tepual, de fácil acceso vehicular desde cualquier punto de Puerto Montt, Puerto Varas o alrededores.
             </p>
           </div>
         </div>

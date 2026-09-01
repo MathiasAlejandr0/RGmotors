@@ -8,7 +8,7 @@ export const COMPANY = {
   /** Solo dígitos, formato internacional sin + */
   whatsapp: "56987654321",
   email: "administracion@rgmotorschile.cl",
-  address: "Puerto Montt, Región de Los Lagos",
+  address: "Av. Cardonal / El Tepual (Cruce Ruta 5 Sur), Puerto Montt",
   hours: "Lun a Vie 9:00–19:00 · Sáb 10:00–14:00",
   website: "www.rgmotors.cl",
   instagram: "https://www.instagram.com/_rgmotors/",
