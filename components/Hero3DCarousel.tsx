@@ -101,6 +101,17 @@ export default function Hero3DCarousel({ vehicles = [] }: Hero3DCarouselProps) {
             zIndex = 10;
           }
 
+          const hasRealPhotos = Boolean(
+            item.hasRealPhotos &&
+            item.gallery &&
+            item.gallery.length > 0 &&
+            item.image &&
+            !item.image.includes("placeholder-pending-car")
+          );
+          const displayImage = hasRealPhotos
+            ? asset(item.image)
+            : asset("/images/placeholder-pending-car.svg");
+
           return (
             <div
               key={item.slug}
@@ -127,14 +138,12 @@ export default function Hero3DCarousel({ vehicles = [] }: Hero3DCarouselProps) {
                 <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-ink-900 via-ink-950 to-black">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={asset(item.image || "/images/placeholder-pending-car.svg")}
+                    src={displayImage}
                     alt={`${item.brand} ${item.model}`}
                     loading={idx <= 1 ? "eager" : "lazy"}
                     onError={(e) => {
-                      const fallback = asset("/images/placeholder-pending-car.svg");
-                      if (e.currentTarget.src !== fallback) {
-                        e.currentTarget.src = fallback;
-                      }
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = asset("/images/placeholder-pending-car.svg");
                     }}
                     className={`h-full w-full object-cover transition-transform duration-700 ease-out ${
                       isActive ? "hover:scale-105" : ""
@@ -144,7 +153,7 @@ export default function Hero3DCarousel({ vehicles = [] }: Hero3DCarouselProps) {
 
                   {/* Top Badges */}
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
-                    {item.hasRealPhotos ? (
+                    {hasRealPhotos ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-black/75 px-3 py-1 text-[11px] font-medium text-emerald-300 backdrop-blur-md shadow-sm">
                         <span>📸</span> Fotos Reales
                       </span>

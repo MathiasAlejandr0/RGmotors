@@ -18,6 +18,16 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
   };
 
   const has360 = Boolean(v.spin && v.spin.count > 0);
+  const hasRealPhotos = Boolean(
+    v.hasRealPhotos &&
+    v.gallery &&
+    v.gallery.length > 0 &&
+    v.image &&
+    !v.image.includes("placeholder-pending-car")
+  );
+  const displayImage = hasRealPhotos
+    ? asset(v.image)
+    : asset("/images/placeholder-pending-car.svg");
 
   return (
     <Link
@@ -30,19 +40,17 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
       <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-b from-ink-800 to-ink-950">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={asset(v.image)}
+          src={displayImage}
           alt={`${v.brand} ${v.model}`}
           onError={(e) => {
-            const fallback = asset("/images/placeholder-pending-car.svg");
-            if (e.currentTarget.src !== fallback) {
-              e.currentTarget.src = fallback;
-            }
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = asset("/images/placeholder-pending-car.svg");
           }}
           className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-80" />
 
-        {v.hasRealPhotos ? (
+        {hasRealPhotos ? (
           <span className="absolute left-3.5 top-3.5 flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-emerald-300 backdrop-blur-md shadow-sm z-10">
             <span>📸</span> Fotos Reales de Patio
           </span>

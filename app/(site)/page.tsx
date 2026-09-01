@@ -6,6 +6,7 @@ import VehicleCard from "@/components/VehicleCard";
 import RevealOnScroll from "@/components/RevealOnScroll";
 import Hero3DCarousel from "@/components/Hero3DCarousel";
 import AppleCareTrustSection from "@/components/AppleCareTrustSection";
+import ShowroomMapSection from "@/components/ShowroomMapSection";
 
 export const dynamic = "force-dynamic";
 
@@ -136,6 +137,11 @@ export default async function Home() {
           >
             Ver todos los {vehicles.length} vehículos disponibles →
           </Link>
+        </div>
+
+        {/* Mapa Google Maps de RG Motors Puerto Montt debajo del catálogo */}
+        <div className="mt-14">
+          <ShowroomMapSection />
         </div>
       </section>
 
