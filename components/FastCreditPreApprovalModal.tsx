@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { formatCLP, vehicles as staticVehicles, Vehicle } from "@/lib/vehicles";
 import { formatRut, validateRut, evaluateCreditCapacity } from "@/lib/rut";
@@ -38,6 +38,7 @@ export default function FastCreditPreApprovalModal({
   const [email, setEmail] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vehiclesData, setVehiclesData] = useState<Vehicle[]>(staticVehicles);
   const [result, setResult] = useState<{
     maxFinanced: number;
     totalPurchasingPower: number;
@@ -45,16 +46,27 @@ export default function FastCreditPreApprovalModal({
     id: string;
   } | null>(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      fetch("/api/vehicles")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data && data.vehicles) setVehiclesData(data.vehicles);
+        })
+        .catch(console.error);
+    }
+  }, [isOpen]);
+
   const evaluation = useMemo(() => {
     return evaluateCreditCapacity(income, downPayment, term);
   }, [income, downPayment, term]);
 
   const matchingVehicles = useMemo(() => {
     if (!evaluation) return [];
-    return staticVehicles
+    return vehiclesData
       .filter((v) => v.price <= evaluation.totalPurchasingPower * 1.05)
       .slice(0, 3);
-  }, [evaluation]);
+  }, [evaluation, vehiclesData]);
 
   if (!isOpen) return null;
 

@@ -15,9 +15,22 @@ type SpinInfo = {
 type Status = "idle" | "uploading" | "processing" | "done" | "error";
 
 export default function SpinUploader() {
-  const [slug, setSlug] = useState(vehicles[0]?.slug ?? "");
+  const [vehiclesData, setVehiclesData] = useState<any[]>(vehicles);
+  const [slug, setSlug] = useState(vehiclesData[0]?.slug ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [frames, setFrames] = useState(32);
+
+  useEffect(() => {
+    fetch("/api/vehicles")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.vehicles) {
+          setVehiclesData(data.vehicles);
+          if (data.vehicles.length > 0) setSlug(data.vehicles[0].slug);
+        }
+      })
+      .catch(console.error);
+  }, []);
   const [studio, setStudio] = useState(true);
 
   const [status, setStatus] = useState<Status>("idle");
@@ -120,7 +133,7 @@ export default function SpinUploader() {
           disabled={busy}
           className="mt-1.5 w-full rounded-lg border border-white/10 bg-ink-900 px-3 py-2.5 text-sm outline-none focus:border-brand-500"
         >
-          {vehicles.map((v) => (
+          {vehiclesData.map((v) => (
             <option key={v.slug} value={v.slug}>
               {v.brand} {v.model} · {v.year}
             </option>

@@ -16,8 +16,23 @@ type PhotoItem = {
 type SubTab = "gallery" | "spin" | "video";
 
 export default function PhotoManager({ initialSlug }: { initialSlug?: string }) {
-  const [selectedSlug, setSelectedSlug] = useState<string>(initialSlug || vehicles[0]?.slug || "");
+  const [vehiclesData, setVehiclesData] = useState<Vehicle[]>(vehicles);
+  const [selectedSlug, setSelectedSlug] = useState<string>(initialSlug || vehiclesData[0]?.slug || "");
   const [activeTab, setActiveTab] = useState<SubTab>("gallery");
+
+  useEffect(() => {
+    fetch("/api/vehicles")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.vehicles) {
+          setVehiclesData(data.vehicles);
+          if (!initialSlug && data.vehicles.length > 0) {
+            setSelectedSlug(data.vehicles[0].slug);
+          }
+        }
+      })
+      .catch(console.error);
+  }, [initialSlug]);
   
   // Staged files (pre-upload)
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
@@ -38,7 +53,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const spinInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedVehicle = vehicles.find((v) => v.slug === selectedSlug) || vehicles[0];
+  const selectedVehicle = vehiclesData.find((v) => v.slug === selectedSlug) || vehiclesData[0];
 
   const fetchPhotos = useCallback(async (slug: string) => {
     setIsLoadingPhotos(true);
@@ -238,7 +253,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
             onChange={(e) => setSelectedSlug(e.target.value)}
             className="w-full rounded-xl border border-white/15 bg-ink-900 px-3.5 py-2.5 text-sm font-medium text-white outline-none transition focus:border-brand-500"
           >
-            {vehicles.map((v) => (
+            {vehiclesData.map((v) => (
               <option key={v.slug} value={v.slug}>
                 {v.brand} {v.model} ({v.year})
               </option>

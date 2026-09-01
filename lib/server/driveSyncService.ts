@@ -84,38 +84,38 @@ export async function syncCatalogFromDriveFolders(folderUrls: string[]): Promise
     }
   }
 
-  // Las fotos se obtendrán directamente de Google Drive en tiempo real
-
+  // Only work with vehicles already in the database (from PDF)
   const existingList = await getVehicles();
   let newPhotos = 0;
   let synced = 0;
 
   for (const folder of allFolders) {
-    const photos = await extractPhotosFromFolder(folder.id);
-    if (photos.length === 0) continue;
-
     const cleanFolderName = folder.name.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+    // RULE: Only match if an existing (PDF-verified) vehicle's plate exactly matches the folder name
     const existing = existingList.find((v) => {
       const vPlate = v.plate ? v.plate.toLowerCase().replace(/[^a-z0-9]/g, "") : "";
-      return vPlate === cleanFolderName || v.slug.includes(cleanFolderName);
+      return vPlate === cleanFolderName;
     });
 
     if (!existing) {
-      // Ignorar vehículos que no estén en la base de datos (PDF)
+      // Folder does not correspond to any PDF-verified vehicle → SKIP completely
       continue;
     }
 
+    const photos = await extractPhotosFromFolder(folder.id);
+    if (photos.length === 0) continue;
+
+    // Build gallery using direct Drive thumbnail URLs (no local downloads, no edits)
     const gallery = photos.map(p => `https://drive.google.com/thumbnail?id=${p.fileId}&sz=w1000`);
     newPhotos += photos.length;
 
-    if (gallery.length === 0) continue;
-
+    // Only update the gallery/image fields — preserve ALL other data from the PDF
     const vehicle: Vehicle = {
       ...existing,
       hasRealPhotos: true,
       gallery,
-      image: existing.image?.startsWith("https://drive") && gallery.includes(existing.image) ? existing.image : gallery[0],
+      image: gallery[0],
     };
 
     await saveVehicle(vehicle);
@@ -129,7 +129,7 @@ export async function syncCatalogFromDriveFolders(folderUrls: string[]): Promise
     totalFolders: allFolders.length,
     syncedVehicles: synced,
     newPhotosDownloaded: newPhotos,
-    message: `Sincronización completada: ${synced} vehículos sincronizados desde Google Drive.`,
+    message: `Sincronización completada: ${synced} vehículos con fotos vinculadas desde Google Drive.`,
     vehicles: updatedList,
   };
 }

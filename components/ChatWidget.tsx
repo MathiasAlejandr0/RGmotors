@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { asset } from "@/lib/asset";
-import { vehicles, formatCLP } from "@/lib/vehicles";
+import { vehicles as staticVehicles, formatCLP } from "@/lib/vehicles";
 import { getTrafficSource } from "@/lib/trafficTracking";
 import { COMPANY } from "@/lib/company";
 
@@ -25,6 +25,16 @@ export default function ChatWidget() {
       text: "¡Hola! Soy Vendedor RG Motors 🤖 Cuéntame qué auto buscas (uso, presupuesto, tipo) y te recomiendo opciones de nuestro catálogo.",
     },
   ]);
+  const [vehiclesData, setVehiclesData] = useState<any[]>(staticVehicles);
+  
+  useEffect(() => {
+    fetch("/api/vehicles")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.vehicles) setVehiclesData(data.vehicles);
+      })
+      .catch(console.error);
+  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Sesión anónima para atribuir las señales capturadas a una conversación.
@@ -80,15 +90,15 @@ export default function ChatWidget() {
 
   const answer = (q: string) => {
     const query = q.toLowerCase();
-    let matches = vehicles;
+    let matches = vehiclesData;
 
     if (query.includes("suv")) matches = matches.filter((v) => v.bodyType === "SUV");
     if (query.includes("camioneta") || query.includes("4x4"))
-      matches = vehicles.filter((v) => v.bodyType === "Camioneta");
+      matches = vehiclesData.filter((v) => v.bodyType === "Camioneta");
     if (query.includes("sedán") || query.includes("sedan"))
-      matches = vehicles.filter((v) => v.bodyType === "Sedán");
+      matches = vehiclesData.filter((v) => v.bodyType === "Sedán");
     if (query.includes("económic") || query.includes("barato") || query.includes("ciudad"))
-      matches = [...vehicles].sort((a, b) => a.price - b.price);
+      matches = [...vehiclesData].sort((a, b) => a.price - b.price);
     if (query.includes("diésel") || query.includes("diesel"))
       matches = matches.filter((v) => v.fuel === "Diésel");
     if (query.includes("automátic") || query.includes("automatic"))
@@ -288,7 +298,7 @@ export default function ChatWidget() {
                 {m.cars && (
                   <div className="space-y-2 pl-1">
                     {m.cars.map((slug) => {
-                      const v = vehicles.find((x) => x.slug === slug)!;
+                      const v = vehiclesData.find((x) => x.slug === slug)!;
                       return (
                         <Link
                           key={slug}
