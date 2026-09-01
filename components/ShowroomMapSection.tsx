@@ -3,9 +3,9 @@
 import { COMPANY, whatsappLink } from "@/lib/company";
 
 export default function ShowroomMapSection({ className = "" }: { className?: string }) {
-  // Coordenadas exactas en Av. El Tepual (al costado de Acenor, Ex Banco de Chile), Puerto Montt
-  const lat = -41.46386;
-  const lng = -72.98144;
+  // Coordenadas exactas en Av. El Tepual (sobre el texto de Acenor, Ex Banco de Chile), Puerto Montt
+  const lat = -41.46370;
+  const lng = -72.98220;
   const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
   const wazeUrl = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
 
