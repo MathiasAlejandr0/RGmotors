@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { asset } from "@/lib/asset";
 import { getVehicles } from "@/lib/server/vehiclesStore";
+import { HERO_SHOWCASE_VEHICLES } from "@/lib/vehicles";
 import VehicleCard from "@/components/VehicleCard";
 import RevealOnScroll from "@/components/RevealOnScroll";
 import Hero3DCarousel from "@/components/Hero3DCarousel";
@@ -10,9 +11,14 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const vehicles = await getVehicles();
-  // Solo mostrar en la web pública los vehículos que tengan fotos
-  const publicVehicles = vehicles.filter((v) => v.gallery && v.gallery.length > 0);
-  const featured = publicVehicles.filter((v) => v.featured).slice(0, 6);
+  const availableVehicles = vehicles.filter((v) => (v.status || "Disponible") !== "Borrador");
+  const withPhotos = availableVehicles.filter((v) => v.hasRealPhotos || (v.gallery && v.gallery.length > 0));
+  const publicVehicles = withPhotos.length > 0 ? withPhotos : availableVehicles;
+  const featured = (
+    publicVehicles.filter((v) => v.featured).length > 0
+      ? publicVehicles.filter((v) => v.featured)
+      : publicVehicles
+  ).slice(0, 6);
 
   return (
     <main className="relative overflow-hidden">
@@ -60,7 +66,7 @@ export default async function Home() {
 
           {/* Right 3D Carousel Stage */}
           <div className="animate-fade-up lg:pl-4">
-            <Hero3DCarousel vehicles={vehicles} />
+            <Hero3DCarousel vehicles={publicVehicles} />
           </div>
         </div>
 

@@ -142,6 +142,12 @@ export default function VehicleViewer({
             <img
               src={asset(currentPhoto)}
               alt={`${name} - Foto ${selectedPhotoIdx + 1}`}
+              onError={(e) => {
+                const fallback = asset("/cars/ford-raptor-2023.jpg");
+                if (e.currentTarget.src !== fallback) {
+                  e.currentTarget.src = fallback;
+                }
+              }}
               className="h-full w-full object-contain sm:object-cover transition-all duration-300 bg-black/40"
             />
 

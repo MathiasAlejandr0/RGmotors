@@ -1,22 +1,29 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { asset } from "@/lib/asset";
-import { Vehicle, formatCLP } from "@/lib/vehicles";
+import { Vehicle, formatCLP, HERO_SHOWCASE_VEHICLES } from "@/lib/vehicles";
 
 interface Hero3DCarouselProps {
-  vehicles: Vehicle[];
+  vehicles?: Vehicle[];
 }
 
-export default function Hero3DCarousel({ vehicles }: Hero3DCarouselProps) {
+export default function Hero3DCarousel({ vehicles = [] }: Hero3DCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  // Take top 5 vehicles for the carousel showcase
-  const items = vehicles.slice(0, 5);
+  // Select vehicles to showcase: prioritize ones with real photos, otherwise top available stock
+  const items = useMemo(() => {
+    if (!vehicles || vehicles.length === 0) return [];
+    const withPhotos = vehicles.filter((v) => v.hasRealPhotos || (v.gallery && v.gallery.length > 0));
+    if (withPhotos.length >= 3) {
+      return withPhotos.slice(0, 5);
+    }
+    return vehicles.slice(0, 5);
+  }, [vehicles]);
 
   useEffect(() => {
     if (isPaused || items.length <= 1) return;
@@ -117,25 +124,38 @@ export default function Hero3DCarousel({ vehicles }: Hero3DCarouselProps) {
                 }`}
               >
                 {/* Vehicle Image */}
-                <div className="relative h-full w-full overflow-hidden bg-ink-950">
+                <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-ink-900 via-ink-950 to-black">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={asset(item.image)}
+                    src={asset(item.image || "/images/placeholder-pending-car.svg")}
                     alt={`${item.brand} ${item.model}`}
+                    loading={idx <= 1 ? "eager" : "lazy"}
+                    onError={(e) => {
+                      const fallback = asset("/images/placeholder-pending-car.svg");
+                      if (e.currentTarget.src !== fallback) {
+                        e.currentTarget.src = fallback;
+                      }
+                    }}
                     className={`h-full w-full object-cover transition-transform duration-700 ease-out ${
                       isActive ? "hover:scale-105" : ""
                     }`}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
 
                   {/* Top Badges */}
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/75 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md shadow-sm">
-                      <span>📸</span> Fotos Reales
-                    </span>
+                    {item.hasRealPhotos ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-black/75 px-3 py-1 text-[11px] font-medium text-emerald-300 backdrop-blur-md shadow-sm">
+                        <span>📸</span> Fotos Reales
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-black/75 px-3 py-1 text-[11px] font-medium text-amber-300 backdrop-blur-md shadow-sm">
+                        <span>⏳</span> Fotos en preparación
+                      </span>
+                    )}
 
                     <span className="rounded-full border border-white/20 bg-black/80 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
-                      {formatCLP(item.price)}
+                      {item.price > 0 ? formatCLP(item.price) : "Consultar precio"}
                     </span>
                   </div>
 

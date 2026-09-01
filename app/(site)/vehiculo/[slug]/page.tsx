@@ -48,7 +48,7 @@ export default async function VehiclePage({
   if (!v) notFound();
 
   const allVehicles = await getVehicles().catch(() => vehicles);
-  const publicVehicles = allVehicles.filter(v => v.gallery && v.gallery.length > 0);
+  const publicVehicles = allVehicles.filter(v => (v.status || "Disponible") !== "Borrador");
   const monthly = estimateMonthly(v.price);
 
   return (

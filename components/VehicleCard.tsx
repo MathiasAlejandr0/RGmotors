@@ -32,6 +32,12 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
         <img
           src={asset(v.image)}
           alt={`${v.brand} ${v.model}`}
+          onError={(e) => {
+            const fallback = asset("/images/placeholder-pending-car.svg");
+            if (e.currentTarget.src !== fallback) {
+              e.currentTarget.src = fallback;
+            }
+          }}
           className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-80" />
@@ -59,7 +65,7 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
           <h3 className="text-base font-bold tracking-tight text-white group-hover:text-brand-300 transition-colors">
             {v.brand} {v.model}
           </h3>
-          <span className="text-xs font-semibold text-white/40">{v.year}</span>
+          <span className="text-xs font-semibold text-white/40">{v.plate ? `${v.plate} · ` : ""}{v.year}</span>
         </div>
         <p className="mt-0.5 text-xs text-white/50">{v.version}</p>
 
@@ -79,11 +85,17 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
           <div className="flex items-baseline justify-between">
             <div>
               <p className="text-xl font-extrabold tracking-tight text-white">
-                {formatCLP(v.price)}
+                {v.price > 0 ? formatCLP(v.price) : "Consultar precio"}
               </p>
-              <p className="text-[11px] text-white/45">
-                o cuota desde <span className="text-brand-300 font-medium">{formatCLP(estimateMonthly(v.price))}</span>/mes
-              </p>
+              {v.price > 0 ? (
+                <p className="text-[11px] text-white/45">
+                  o cuota desde <span className="text-brand-300 font-medium">{formatCLP(estimateMonthly(v.price))}</span>/mes
+                </p>
+              ) : (
+                <p className="text-[11px] text-brand-300/80">
+                  Unidad física en evaluación comercial
+                </p>
+              )}
             </div>
           </div>
 
