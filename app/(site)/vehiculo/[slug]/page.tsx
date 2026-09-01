@@ -48,6 +48,7 @@ export default async function VehiclePage({
   if (!v) notFound();
 
   const allVehicles = await getVehicles().catch(() => vehicles);
+  const publicVehicles = allVehicles.filter(v => v.gallery && v.gallery.length > 0);
   const monthly = estimateMonthly(v.price);
 
   return (
@@ -149,7 +150,7 @@ export default async function VehiclePage({
       <section className="mt-12 border-t border-white/[0.08] pt-8">
         <h2 className="mb-6 text-lg font-bold tracking-tight text-white">Vehículos similares disponibles</h2>
         <div className="grid gap-4 sm:grid-cols-3">
-          {allVehicles
+          {publicVehicles
             .filter((x) => x.slug !== v.slug && x.bodyType === v.bodyType)
             .slice(0, 3)
             .map((x) => (

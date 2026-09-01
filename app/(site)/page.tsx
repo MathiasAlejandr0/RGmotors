@@ -10,7 +10,9 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const vehicles = await getVehicles();
-  const featured = vehicles.filter((v) => v.featured).slice(0, 6);
+  // Solo mostrar en la web pública los vehículos que tengan fotos
+  const publicVehicles = vehicles.filter((v) => v.gallery && v.gallery.length > 0);
+  const featured = publicVehicles.filter((v) => v.featured).slice(0, 6);
 
   return (
     <main className="relative overflow-hidden">
