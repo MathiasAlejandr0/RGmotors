@@ -30,6 +30,13 @@ export async function GET(req: NextRequest) {
       list = list.filter((v) => (v.status || "Disponible").toLowerCase() === status.toLowerCase());
     }
 
+    // Admin mode: show all vehicles (even without photos)
+    // Public mode: only show vehicles that have at least one photo
+    const admin = searchParams.get("admin");
+    if (admin !== "true") {
+      list = list.filter((v) => v.gallery && v.gallery.length > 0);
+    }
+
     return NextResponse.json({ vehicles: list, total: list.length });
   } catch (err) {
     return NextResponse.json(

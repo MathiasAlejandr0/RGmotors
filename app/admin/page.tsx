@@ -27,7 +27,7 @@ export default function AdminPage() {
   const [reservationsList, setReservationsList] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("/api/vehicles")
+    fetch("/api/vehicles?admin=true")
       .then((r) => (r.ok ? r.json() : { vehicles: [] }))
       .then((data) => {
         setVehiclesList(data.vehicles || []);

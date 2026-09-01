@@ -97,7 +97,7 @@ export function VehiclesSection({
   const fetchVehicles = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/vehicles");
+      const res = await fetch("/api/vehicles?admin=true");
       if (res.ok) {
         const data = await res.json();
         setVehicleList(data.vehicles || []);

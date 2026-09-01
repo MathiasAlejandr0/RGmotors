@@ -21,7 +21,7 @@ export default function SpinUploader() {
   const [frames, setFrames] = useState(32);
 
   useEffect(() => {
-    fetch("/api/vehicles")
+    fetch("/api/vehicles?admin=true")
       .then((r) => r.json())
       .then((data) => {
         if (data && data.vehicles) {

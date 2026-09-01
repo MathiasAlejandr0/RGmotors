@@ -21,7 +21,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
   const [activeTab, setActiveTab] = useState<SubTab>("gallery");
 
   useEffect(() => {
-    fetch("/api/vehicles")
+    fetch("/api/vehicles?admin=true")
       .then((r) => r.json())
       .then((data) => {
         if (data && data.vehicles) {
