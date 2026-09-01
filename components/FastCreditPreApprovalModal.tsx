@@ -309,6 +309,10 @@ Mi nombre es ${name} (RUT: ${rut}) y solicito financiamiento para ${
             >
               {isSubmitting ? "Enviando simulación…" : "Enviar Simulación de Crédito a Nuestro Equipo"}
             </button>
+
+            <p className="text-[10px] text-white/45 text-center leading-relaxed mt-2">
+              ⚖️ Simulación conforme a Ley N° 19.496 (SERNAC). La pre-aprobación y tasa final están sujetas a evaluación comercial por entidades financieras asociadas. Datos protegidos bajo la Ley N° 19.628.
+            </p>
           </form>
         ) : (
           <div className="space-y-5 text-center py-2 animate-fade-up">

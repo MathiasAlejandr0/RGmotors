@@ -103,8 +103,8 @@ export default function CuotaSimulator({ price }: Props) {
         </div>
       </div>
 
-      <p className="mt-4 text-[10px] leading-relaxed text-white/40 text-center">
-        Simulación referencial sujeta a evaluación de antecedentes comerciales por la entidad crediticia.
+      <p className="mt-4 text-[10px] leading-relaxed text-white/45 text-center border-t border-white/[0.08] pt-3">
+        ⚖️ Simulación referencial conforme a la Ley N° 19.496 (SERNAC). Valores de cuota, CAE y aprobación final sujetos a evaluación comercial y antecedentes crediticios por las entidades financieras asociadas (Santander Consumer, Forum, Tanner, Falabella u otros).
       </p>
     </div>
   );

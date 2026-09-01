@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { vehicles as initialVehicles, formatCLP, Vehicle } from "@/lib/vehicles";
 import FastCreditPreApprovalModal from "@/components/FastCreditPreApprovalModal";
+import SernacDisclaimer from "@/components/SernacDisclaimer";
 
 const MONTHLY_RATE = 0.019;
 
@@ -157,6 +158,11 @@ export default function SimuladorPage() {
               Tu simulación será enviada a nuestro equipo de ventas y te responderemos a la brevedad a tu correo electrónico con las mejores opciones de financiamiento.
             </p>
           </div>
+        </div>
+
+        {/* Descargo legal SERNAC */}
+        <div className="mt-10">
+          <SernacDisclaimer />
         </div>
       </main>
 

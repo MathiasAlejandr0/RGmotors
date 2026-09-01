@@ -16,6 +16,7 @@ import CatalogPdfButton from "@/components/CatalogPdfButton";
 import QuickCategoryFilter, { CategoryPill } from "@/components/QuickCategoryFilter";
 import FastCreditPreApprovalModal from "@/components/FastCreditPreApprovalModal";
 import CarRequestModal from "@/components/CarRequestModal";
+import ShowroomMapSection from "@/components/ShowroomMapSection";
 
 const MAX_PRICE = 30000000;
 
@@ -434,6 +435,11 @@ function CatalogContent() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Ubicación Google Maps de RG Motors Puerto Montt */}
+      <div className="mt-16">
+        <ShowroomMapSection />
       </div>
 
       <FastCreditPreApprovalModal

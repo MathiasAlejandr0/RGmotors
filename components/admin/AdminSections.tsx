@@ -1704,10 +1704,9 @@ export function TestDrivesSection() {
             className="rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-xs font-medium text-white outline-none focus:border-brand-500"
           >
             <option value="all">Todas las sucursales</option>
-            <option value="Las Condes">Las Condes</option>
-            <option value="Providencia">Providencia</option>
-            <option value="Maipú">Maipú</option>
-            <option value="La Florida">La Florida</option>
+            <option value="Sucursal Cardonal (Puerto Montt)">Sucursal Cardonal</option>
+            <option value="Sucursal Salgado (Puerto Montt)">Sucursal Salgado</option>
+            <option value="Sucursal Unidades Chile (Puerto Montt)">Sucursal Unidades Chile</option>
           </select>
 
           <select
