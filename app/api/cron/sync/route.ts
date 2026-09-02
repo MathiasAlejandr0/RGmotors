@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { runAutoSync, getAutoSyncStatus, startAutoSyncScheduler } from "@/lib/server/autoSyncScheduler";
+import { runAutoSync, getAutoSyncStatus } from "@/lib/server/autoSyncScheduler";
+import { syncFromLiveGoogleSheet } from "@/lib/server/googleSheetSyncService";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-// Inicializar el temporizador en la primera invocación del servidor
-startAutoSyncScheduler();
 
 export async function GET() {
   const status = getAutoSyncStatus();
@@ -16,10 +14,14 @@ export async function GET() {
 }
 
 export async function POST() {
-  const result = await runAutoSync();
-  const status = getAutoSyncStatus();
+  console.log("[CronSync] Ejecutando sincronización diaria de Google Sheets e inventario...");
+  const sheetResult = await syncFromLiveGoogleSheet();
+  const driveResult = await runAutoSync();
+
   return NextResponse.json({
-    ...result,
-    currentStatus: status,
+    success: sheetResult.success || driveResult.success,
+    sheetSync: sheetResult,
+    driveSync: driveResult,
+    timestamp: new Date().toISOString(),
   });
 }
