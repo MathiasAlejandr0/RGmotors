@@ -55,12 +55,51 @@ export default function VehicleEditorModal({
   const [highlightInput, setHighlightInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [vehiclePhotos, setVehiclePhotos] = useState<string[]>([]);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState<boolean>(false);
+  const [showManualUrlInput, setShowManualUrlInput] = useState<boolean>(false);
 
   useEffect(() => {
     if (vehicle) {
       setFormData({ ...vehicle });
       setHasSpin(!!vehicle.spin && vehicle.spin.count > 0);
       setSpinCount(vehicle.spin?.count || 36);
+
+      // Cargar todas las fotos disponibles de este vehículo
+      setIsLoadingPhotos(true);
+      const initialList: string[] = [];
+      if (vehicle.image && !vehicle.image.includes("placeholder")) {
+        initialList.push(vehicle.image.split("?")[0]);
+      }
+      if (vehicle.gallery && Array.isArray(vehicle.gallery)) {
+        vehicle.gallery.forEach((g) => {
+          const clean = g.split("?")[0];
+          if (clean && !initialList.includes(clean)) initialList.push(clean);
+        });
+      }
+      setVehiclePhotos(initialList);
+
+      // Consultar endpoint de fotos subidas para este vehículo
+      if (vehicle.slug) {
+        fetch(`/api/photos?slug=${encodeURIComponent(vehicle.slug)}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => {
+            if (data && data.gallery && Array.isArray(data.gallery)) {
+              const fetchedUrls: string[] = data.gallery
+                .map((item: any) => (item.url ? String(item.url).split("?")[0] : ""))
+                .filter(Boolean);
+
+              setVehiclePhotos((prev) => {
+                const merged = Array.from(new Set([...prev, ...fetchedUrls]));
+                return merged;
+              });
+            }
+          })
+          .catch(() => {})
+          .finally(() => setIsLoadingPhotos(false));
+      } else {
+        setIsLoadingPhotos(false);
+      }
     } else {
       setFormData({
         brand: "Toyota",
@@ -85,9 +124,12 @@ export default function VehicleEditorModal({
       });
       setHasSpin(false);
       setSpinCount(36);
+      setVehiclePhotos([]);
+      setIsLoadingPhotos(false);
     }
     setActiveTab("general");
     setErrorMsg("");
+    setShowManualUrlInput(false);
   }, [vehicle, isOpen]);
 
   if (!isOpen) return null;
@@ -122,8 +164,17 @@ export default function VehicleEditorModal({
     setIsSaving(true);
     setErrorMsg("");
 
+    // Asegurar que la portada elegida sea el primer elemento de la galería
+    let updatedGallery = formData.gallery ? [...formData.gallery] : [];
+    if (formData.image) {
+      const cleanImg = formData.image.split("?")[0];
+      updatedGallery = [cleanImg, ...updatedGallery.filter((u) => u.split("?")[0] !== cleanImg)];
+    }
+
     const payload: Partial<Vehicle> = {
       ...formData,
+      gallery: updatedGallery,
+      hasRealPhotos: !!formData.image && !formData.image.includes("placeholder"),
       spin: hasSpin ? { count: spinCount, ext: "jpg" } : undefined,
     };
 
@@ -438,43 +489,161 @@ export default function VehicleEditorModal({
 
           {/* TAB 3: FOTOS & MULTIMEDIA */}
           {activeTab === "media" && (
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-white/60">
-                  Ruta o URL de Imagen de Portada *
-                </label>
-                <input
-                  type="text"
-                  value={formData.image || ""}
-                  onChange={(e) => handleChange("image", e.target.value)}
-                  placeholder="Ej: /cars/toyota-rav4-2022.jpg o URL externa"
-                  required
-                  className="w-full rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-sm text-white focus:border-brand-500 outline-none"
-                />
+            <div className="space-y-5">
+              {/* Header con instrucciones */}
+              <div className="rounded-2xl border border-brand-500/30 bg-brand-500/10 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">📸</span>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">
+                        Selecciona la Foto de Portada para este Vehículo
+                      </h4>
+                      <p className="text-xs text-white/70">
+                        Haz clic en la foto que más te guste para que sea la primera imagen visible en el catálogo y en la página principal.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-brand-500/20 border border-brand-500/30 px-3 py-1 text-[11px] font-bold text-brand-300">
+                    {vehiclePhotos.length} fotos de este auto
+                  </span>
+                </div>
               </div>
 
-              {formData.image && (
-                <div className="rounded-2xl border border-white/10 bg-ink-950 p-4">
-                  <span className="text-xs text-white/50 mb-2 block">Vista previa de portada:</span>
-                  <div className="aspect-video max-w-sm overflow-hidden rounded-xl border border-white/10">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={asset(formData.image)}
-                      alt="Portada auto"
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                    />
+              {/* Selector interactivo de fotos */}
+              {isLoadingPhotos ? (
+                <div className="flex items-center justify-center py-12 text-xs text-white/50">
+                  <span className="animate-spin mr-2">⚙</span> Cargando fotografías del vehículo…
+                </div>
+              ) : vehiclePhotos.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-white/70">
+                      Fotografías disponibles (haz clic para elegir cuál será la portada):
+                    </span>
+                    <span className="text-[11px] text-brand-400 font-medium">
+                      ⭐ Haz clic para cambiar la portada
+                    </span>
                   </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[42vh] overflow-y-auto pr-1">
+                    {vehiclePhotos.map((photoUrl, idx) => {
+                      const isCover =
+                        formData.image?.split("?")[0] === photoUrl.split("?")[0] ||
+                        (!formData.image && idx === 0);
+                      const fileName = photoUrl.split("/").pop() || `Foto ${idx + 1}`;
+
+                      return (
+                        <div
+                          key={photoUrl + idx}
+                          onClick={() => handleChange("image", photoUrl)}
+                          className={`group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer transition-all border-2 ${
+                            isCover
+                              ? "border-brand-500 ring-4 ring-brand-500/40 shadow-xl shadow-brand-500/20 scale-[1.02]"
+                              : "border-white/10 hover:border-brand-400/60 hover:scale-[1.01] bg-ink-950"
+                          }`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={asset(photoUrl)}
+                            alt={fileName}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+
+                          {/* Badge de Portada Actual */}
+                          {isCover ? (
+                            <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+                              <span className="rounded-full bg-brand-500 text-white font-bold text-[10px] px-2.5 py-0.5 shadow-lg flex items-center gap-1">
+                                ⭐ Portada Elegida
+                              </span>
+                              <span className="h-5 w-5 rounded-full bg-brand-500 text-white grid place-items-center text-xs shadow-lg font-bold">
+                                ✓
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2 text-center">
+                              <span className="rounded-xl bg-brand-500/90 backdrop-blur-md px-3 py-1.5 text-[11px] font-bold text-white border border-white/20 shadow-lg flex items-center gap-1">
+                                <span>⭐</span> Elegir como Portada
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Pie con nombre de foto */}
+                          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-2 text-[10px] text-white/80 truncate font-mono">
+                            {fileName}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/20 bg-ink-950/60 p-6 text-center space-y-2">
+                  <p className="text-sm font-semibold text-white/80">
+                    Este vehículo no tiene fotos en su galería todavía
+                  </p>
+                  <p className="text-xs text-white/50">
+                    Puedes ingresar una ruta o enlace directo abajo, o sincronizar sus fotos desde Google Drive.
+                  </p>
                 </div>
               )}
 
-              <div className="rounded-2xl border border-brand-500/20 bg-brand-500/5 p-4 text-xs text-white/70 space-y-1">
-                <p className="font-semibold text-brand-300">💡 Subida masiva de fotos y fotogramas 360°</p>
-                <p>
-                  Una vez guardado el vehículo, podrás usar el <b>Gestor de Fotos</b> y el <b>Generador 360° con Video</b> desde el panel de administración para subir álbumes completos arrastrando los archivos.
-                </p>
+              {/* Vista previa de portada seleccionada & control manual */}
+              <div className="rounded-2xl border border-white/10 bg-ink-950 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                    <span>🖼️</span> Vista previa de portada elegida:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowManualUrlInput(!showManualUrlInput)}
+                    className="text-[11px] text-brand-300 hover:text-brand-200 underline"
+                  >
+                    {showManualUrlInput ? "Ocultar URL manual" : "Editar URL manualmente ✎"}
+                  </button>
+                </div>
+
+                {formData.image && (
+                  <div className="flex flex-wrap items-center gap-4 pt-1">
+                    <div className="aspect-video w-48 shrink-0 overflow-hidden rounded-xl border-2 border-brand-500 shadow-md">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={asset(formData.image)}
+                        alt="Portada seleccionada"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                    <div className="text-xs space-y-1.5 flex-1 min-w-[200px]">
+                      <p className="font-bold text-emerald-400 flex items-center gap-1.5 text-sm">
+                        <span>✓</span> Foto de portada activa
+                      </p>
+                      <p className="text-white/70 text-xs">
+                        Esta es la imagen que los clientes verán primero al entrar al catálogo.
+                      </p>
+                      <p className="text-white/40 text-[10px] font-mono break-all bg-black/40 p-2 rounded-lg border border-white/10">
+                        {formData.image}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {showManualUrlInput && (
+                  <div className="pt-3 border-t border-white/10 space-y-1.5">
+                    <label className="block text-xs font-medium text-white/60">
+                      Ruta o URL de Imagen (Avanzado)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.image || ""}
+                      onChange={(e) => handleChange("image", e.target.value)}
+                      placeholder="Ej: /cars/uploads/... o URL externa"
+                      className="w-full rounded-xl border border-white/15 bg-ink-900 px-3.5 py-2 text-xs text-white focus:border-brand-500 outline-none font-mono"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
