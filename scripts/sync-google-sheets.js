@@ -138,10 +138,13 @@ async function main() {
     currentPlateMap.set(cleanPlate(v.plate), v);
   });
 
-  const sheetsToParse = ['RG MOTORS ', 'UNIDADES CHILE'];
   const sheetVehicles = [];
 
-  for (const name of sheetsToParse) {
+  for (const name of workbook.SheetNames) {
+    const norm = name.trim().toUpperCase();
+    if (norm !== "RG MOTORS" && norm !== "UNIDADES CHILE") {
+      continue;
+    }
     const sheet = workbook.Sheets[name];
     if (!sheet) continue;
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });

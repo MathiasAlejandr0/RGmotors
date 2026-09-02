@@ -136,8 +136,69 @@ export async function syncCatalogFromDriveFolders(folderUrls: string[]): Promise
 
 export async function parseExcelStockBuffer(buffer: Buffer): Promise<any[]> {
   const workbook = XLSX.read(buffer, { type: "buffer" });
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
-  const rows: any[] = XLSX.utils.sheet_to_json(sheet);
-  return rows;
+  const vehicles: any[] = [];
+
+  for (const name of workbook.SheetNames) {
+    const norm = name.trim().toUpperCase();
+    if (norm !== "RG MOTORS" && norm !== "UNIDADES CHILE") {
+      continue;
+    }
+
+    const sheet = workbook.Sheets[name];
+    if (!sheet) continue;
+    const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || r.length < 3) continue;
+
+      const rawPlate = String(r[1] || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+      if (rawPlate.length !== 6 || !/[A-Z]{2,4}[0-9]{2,4}/.test(rawPlate)) continue;
+
+      const rawText = r.join(" ").toUpperCase();
+      const isSold = rawText.includes("VENDIDO") || rawText.includes("ENTREGADO") || rawText.includes("VTA");
+      if (isSold) continue;
+
+      const marca = String(r[2] || "").trim();
+      const modelo = String(r[3] || "").trim().toUpperCase();
+      const color = String(r[4] || "").trim();
+      const year = parseInt(String(r[5]), 10) || 2022;
+
+      // Parse offer price and list price
+      const cleanNum = (val: any) => {
+        if (!val) return 0;
+        const str = String(val).replace(/[^0-9]/g, "");
+        if (!str) return 0;
+        let n = parseInt(str, 10);
+        if (n > 100000000) n = Math.round(n / 100);
+        return n;
+      };
+
+      const offer = cleanNum(r[7]);
+      const list = cleanNum(r[6]);
+      const price = offer > 0 ? offer : list;
+      const listPrice = list > offer && offer > 0 ? list : undefined;
+
+      const kmStr = String(r[8] || "").split(/km/i)[0].replace(/[^0-9]/g, "");
+      const km = kmStr ? parseInt(kmStr, 10) : 0;
+
+      vehicles.push({
+        sheet: norm,
+        plate: `${rawPlate.slice(0, 4)} ${rawPlate.slice(4)}`,
+        rawPlate,
+        brand: marca,
+        model: modelo,
+        color,
+        year,
+        price,
+        listPrice,
+        km,
+        supplier: String(r[9] || "").trim(),
+        location: String(r[12] || "Puerto Montt · Av. El Tepual (Ex Banco de Chile)").trim(),
+      });
+    }
+  }
+
+  return vehicles;
 }
+

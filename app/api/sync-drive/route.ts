@@ -11,7 +11,6 @@ export const dynamic = "force-dynamic";
 startAutoSyncScheduler();
 
 const DEFAULT_DRIVE_URLS = [
-  "https://drive.google.com/drive/folders/1zqX6z_sKWHjHyNoMlS_rtkkF6pK_FqVh?usp=sharing",
   "https://drive.google.com/drive/folders/1VQ6IHTjk5sJYjJckZY1kzeRJAI5d09Od?usp=sharing",
 ];
 
@@ -47,58 +46,61 @@ export async function POST(req: NextRequest) {
       const buffer = Buffer.from(bytes);
       const rows = await parseExcelStockBuffer(buffer);
 
+      const existingVehicles = await getVehicles();
+      const existingMap = new Map(existingVehicles.map(v => [v.plate?.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(), v]));
+
       let imported = 0;
       for (const r of rows) {
-        const marca = r["Marca"] || r["MARCA"] || r["brand"] || "Vehículo";
-        const modelo = r["Modelo"] || r["MODELO"] || r["model"] || r["Nombre"] || "Modelo";
-        const year = Number(r["Año"] || r["AÑO"] || r["year"] || 2021);
-        const precio = Number(r["Precio"] || r["PRECIO"] || r["price"] || r["Valor"] || 11990000);
-        const km = Number(r["Kilometraje"] || r["KM"] || r["km"] || 40000);
-        const patente = r["Patente"] || r["PATENTE"] || r["patente"] || "";
-        const version = r["Versión"] || r["VERSION"] || r["version"] || "Full Equipo";
-        const combustible = r["Combustible"] || r["COMBUSTIBLE"] || "Bencina";
-        const transmision = r["Transmisión"] || r["TRANSMISION"] || "Automática";
-        const tipo = r["Carrocería"] || r["CARROCERIA"] || r["Tipo"] || "SUV";
+        const rawPlate = String(r.rawPlate || r.plate || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+        if (!rawPlate) continue;
 
-        const slug = `${marca.toLowerCase()}-${modelo.toLowerCase()}-${year}`
+        const existing = existingMap.get(rawPlate);
+
+        const slug = existing?.slug || `${r.brand.toLowerCase()}-${r.model.toLowerCase()}-${r.year}-${rawPlate.toLowerCase()}`
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-|-$/g, "");
 
         const vehicle: Vehicle = {
+          ...(existing || {}),
           slug,
-          brand: marca,
-          model: modelo,
-          version,
-          year,
-          price: precio,
-          km,
-          fuel: combustible,
-          transmission: transmision,
-          bodyType: tipo,
-          location: "Puerto Montt, Los Lagos",
-          image: `/cars/real/${slug}-cover.jpg`,
-          engine: "2.0L",
-          power: "150 HP",
-          traction: "4x2",
-          doors: tipo === "Camioneta" ? 4 : 5,
+          plate: r.plate || `${rawPlate.slice(0, 4)} ${rawPlate.slice(4)}`,
+          brand: r.brand || "Vehículo",
+          model: r.model || "Modelo",
+          version: existing?.version || `${r.model} · ${r.color || "Blanco"}`,
+          year: r.year || 2022,
+          price: r.price > 0 ? r.price : (existing?.price || 0),
+          listPrice: r.listPrice || existing?.listPrice,
+          km: r.km > 0 ? r.km : (existing?.km || 0),
+          fuel: existing?.fuel || "Diésel",
+          transmission: existing?.transmission || "Manual",
+          bodyType: existing?.bodyType || "Pickup",
+          location: r.location || existing?.location || "Puerto Montt · Av. El Tepual (Ex Banco de Chile)",
+          image: existing?.image || "/images/placeholder-pending-car.svg",
+          gallery: existing?.gallery || [],
+          hasRealPhotos: existing?.hasRealPhotos || false,
+          supplier: r.supplier || existing?.supplier || "RG Motors",
+          engine: existing?.engine || "2.4L",
+          power: existing?.power || "150 HP",
+          traction: existing?.traction || "4x4",
+          doors: 4,
           owners: 1,
-          featured: true,
-          status: "Disponible",
-          highlights: [
-            patente ? `Patente: ${patente}` : "Inspección aprobada",
-            "Inspección de 150 puntos aprobada",
-            "Garantía RG Motors de 6 meses",
+          featured: r.brand === "Toyota" || r.brand === "Mitsubishi",
+          status: existing?.status || "Disponible",
+          highlights: existing?.highlights || [
+            "Inspección mecánica rigurosa de 150 puntos",
+            "Documentación y transferencia garantizada",
+            "Garantía técnica de 6 meses RG Motors",
           ],
         };
 
         await saveVehicle(vehicle);
-        imported += 1;
+        imported++;
       }
 
       return NextResponse.json({
         success: true,
-        message: `Excel importado con éxito: ${imported} vehículos actualizados en el inventario.`,
-        importedCount: imported,
+        message: `Se importaron/actualizaron ${imported} vehículos exclusivamente de las hojas RG MOTORS y UNIDADES CHILE.`,
+        imported,
       });
     }
 
