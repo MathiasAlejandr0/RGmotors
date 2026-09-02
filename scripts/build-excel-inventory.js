@@ -273,7 +273,7 @@ function parseExcel() {
       traction,
       doors,
       owners: 1,
-      featured: price > 20000000 || model.includes("RAPTOR") || model.includes("HILUX"),
+      featured: (brand === "Toyota" || brand === "Mitsubishi") && price > 0,
       highlights: [
         "Inspección mecánica rigurosa de 150 puntos",
         "Documentación y transferencia garantizada",
@@ -283,14 +283,23 @@ function parseExcel() {
     });
   }
 
-  // Sort by featured and price
-  vehicles.sort((a, b) => {
+  // Sort: Prioritize Toyota and Mitsubishi alternating at the top, then remaining vehicles
+  const toyotas = vehicles.filter((v) => v.brand === "Toyota" && v.price > 0);
+  const mitsus = vehicles.filter((v) => v.brand === "Mitsubishi" && v.price > 0);
+  const heroPicks = [];
+  for (let i = 0; i < Math.max(toyotas.length, mitsus.length); i++) {
+    if (toyotas[i]) heroPicks.push(toyotas[i]);
+    if (mitsus[i]) heroPicks.push(mitsus[i]);
+  }
+  const heroSlugs = new Set(heroPicks.map((v) => v.slug));
+  const remaining = vehicles.filter((v) => !heroSlugs.has(v.slug));
+  remaining.sort((a, b) => {
     if (a.featured && !b.featured) return -1;
     if (!a.featured && b.featured) return 1;
     return b.price - a.price;
   });
 
-  return vehicles;
+  return [...heroPicks, ...remaining];
 }
 
 const vehicles = parseExcel();
@@ -341,7 +350,9 @@ export interface Vehicle {
 
 export const initialVehicles: Vehicle[] = ${JSON.stringify(vehicles, null, 2)};
 
-export const HERO_SHOWCASE_VEHICLES: Vehicle[] = initialVehicles.filter(v => v.featured).slice(0, 6);
+export const HERO_SHOWCASE_VEHICLES: Vehicle[] = initialVehicles
+  .filter((v) => v.brand === "Toyota" || v.brand === "Mitsubishi")
+  .slice(0, 6);
 
 export const vehicles: Vehicle[] = initialVehicles;
 

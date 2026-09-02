@@ -15,13 +15,27 @@ export default function Hero3DCarousel({ vehicles = [] }: Hero3DCarouselProps) {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  // Select vehicles to showcase: prioritize ones with real photos, otherwise top available stock
+  // Select vehicles to showcase in Hero: prioritize Toyota and Mitsubishi
   const items = useMemo(() => {
     if (!vehicles || vehicles.length === 0) return [];
-    const withPhotos = vehicles.filter((v) => v.hasRealPhotos || (v.gallery && v.gallery.length > 0));
-    if (withPhotos.length >= 3) {
-      return withPhotos.slice(0, 5);
+    
+    // Pick Toyota and Mitsubishi (with real photos prioritized, then top priced)
+    const toyotas = vehicles.filter((v) => v.brand.toLowerCase() === "toyota");
+    const mitsus = vehicles.filter((v) => v.brand.toLowerCase() === "mitsubishi");
+
+    // Alternate Toyota and Mitsubishi to showcase both brands prominently
+    const combined: Vehicle[] = [];
+    const maxLen = Math.max(toyotas.length, mitsus.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (toyotas[i]) combined.push(toyotas[i]);
+      if (mitsus[i]) combined.push(mitsus[i]);
+      if (combined.length >= 6) break;
     }
+
+    if (combined.length >= 2) {
+      return combined;
+    }
+
     return vehicles.slice(0, 5);
   }, [vehicles]);
 
