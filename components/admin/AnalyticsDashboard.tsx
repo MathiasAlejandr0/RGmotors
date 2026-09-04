@@ -138,7 +138,7 @@ export default function AnalyticsDashboard() {
 
       {/* KPIs Globales */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon="👥" value={kpis.totalLeads.toLocaleString("es-CL")} label="Leads totales (6 meses)" trend={`+${kpis.momLeadGrowth}% MoM`} />
+        <KpiCard icon="👥" value={kpis.totalLeads.toLocaleString("es-CL")} label="Leads totales" trend={kpis.momLeadGrowth ? `+${kpis.momLeadGrowth}% MoM` : "Sin datos demo"} />
         <KpiCard icon="🔥" value={String(kpis.hotLeads)} label="Leads calientes por contactar" accent="#F97316" />
         <KpiCard icon="🎯" value={`${kpis.conversion}%`} label="Conversión a venta" accent="#22C55E" />
         <KpiCard icon="💰" value={formatCLPShort(kpis.revenue)} label="Ingresos atribuidos" accent="#7C3AED" />
@@ -341,7 +341,7 @@ export default function AnalyticsDashboard() {
         {procurementView === "zero_stock" && (
           <div className="space-y-3">
             <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200">
-              ⚡ <strong>Demanda Inmediata Garantizada:</strong> Estos modelos registran el mayor volumen de búsquedas sin resultados en el catálogo y clientes activos con dinero en mano o crédito aprobado esperando en lista de espera. Si compras una unidad hoy, se vende prácticamente en <strong>24 a 48 horas</strong> a los compradores registrados.
+              ⚡ <strong>Demanda inmediata alta:</strong> Estos modelos registran el mayor volumen de búsquedas sin resultados en el catálogo y clientes activos con dinero en mano o crédito aprobado esperando en lista de espera. Si compras una unidad hoy, se vende prácticamente en <strong>24 a 48 horas</strong> a los compradores registrados.
             </div>
 
             <div className="overflow-x-auto">

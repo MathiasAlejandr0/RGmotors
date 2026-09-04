@@ -1,4 +1,4 @@
-import { copyFileSync } from "node:fs";
+﻿import { copyFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 
 async function main() {
@@ -41,7 +41,6 @@ async function main() {
         "Suspensión FOX Live Valve 2.5",
         "Modo Baja & tracción 4x4 integral",
         "Inspección de 150 puntos aprobada",
-        "Garantía oficial RG Motors",
       ],
     },
     {
@@ -68,7 +67,6 @@ async function main() {
         "Tracción 4x4 con bloqueo diferencial",
         "Equipamiento SRV Full Cuero",
         "Inspección de 150 puntos aprobada",
-        "Garantía RG Motors de 6 meses",
       ],
     },
     {
@@ -95,7 +93,6 @@ async function main() {
         "Edición Dakar High Power 4x4",
         "Super Select 4WD-II",
         "Inspección de 150 puntos aprobada",
-        "Garantía RG Motors de 6 meses",
       ],
     },
     {
@@ -123,7 +120,6 @@ async function main() {
         "Tour 360° con video real del vehículo",
         "Híbrido AWD — bajo consumo",
         "Inspección de 150 puntos aprobada",
-        "Garantía RG Motors de 6 meses",
       ],
     },
     {
@@ -150,7 +146,6 @@ async function main() {
         "Patente: LXBD49",
         "Foto frontal real en automotora",
         "Inspección de 150 puntos aprobada",
-        "Garantía RG Motors de 6 meses",
       ],
       gallery: [
         "/cars/real_stock/rg-lxbd49-0.jpg",
@@ -184,7 +179,6 @@ async function main() {
       highlights: [
         "Patente: CVFF32",
         "Inspección de 150 puntos aprobada",
-        "Garantía RG Motors de 6 meses",
       ],
       gallery: [
         "/cars/real_stock/rg-cvff32-0.jpg",
@@ -216,7 +210,6 @@ async function main() {
         "Patente: DDLJ95",
         "Tracción Integral 4MATIC",
         "Inspección de 150 puntos aprobada",
-        "Garantía RG Motors de 6 meses",
       ],
       gallery: [
         "/cars/real_stock/rg-ddlj95-0.jpg",
@@ -248,7 +241,6 @@ async function main() {
         "Patente: DXTZ99",
         "Camioneta 4x4 lista para faena y ciudad",
         "Inspección de 150 puntos aprobada",
-        "Garantía RG Motors de 6 meses",
       ],
       gallery: [
         "/cars/real_stock/rg-dxtz99-1.jpg",
@@ -280,7 +272,6 @@ async function main() {
         "Patente: HJCW79",
         "Symmetrical AWD",
         "Inspección de 150 puntos aprobada",
-        "Garantía RG Motors de 6 meses",
       ],
       gallery: [
         "/cars/real_stock/rg-hjcw79-0.jpg",
@@ -312,7 +303,6 @@ async function main() {
         "Patente: JSPB25",
         "Excelente rendimiento y confort",
         "Inspección de 150 puntos aprobada",
-        "Garantía RG Motors de 6 meses",
       ],
       gallery: [
         "/cars/real_stock/rg-jspb25-1.jpg",
@@ -343,7 +333,6 @@ async function main() {
         "Patente: KXDZ62",
         "Capacidad 7 Pasajeros (3 Filas)",
         "Inspección de 150 puntos aprobada",
-        "Garantía RG Motors de 6 meses",
       ],
       gallery: [
         "/cars/real_stock/rg-kxdz62-1.jpg",
@@ -370,7 +359,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: JGRF99", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: JGRF99", "Inspección aprobada"],
     },
     {
       slug: "auto-jzkb82",
@@ -392,7 +381,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: JZKB82", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: JZKB82", "Inspección aprobada"],
     },
     {
       slug: "auto-kbbj67",
@@ -414,7 +403,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: KBBJ67", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: KBBJ67", "Inspección aprobada"],
     },
     {
       slug: "auto-kfls48",
@@ -436,7 +425,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: KFLS48", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: KFLS48", "Inspección aprobada"],
     },
     {
       slug: "auto-kwrg63",
@@ -458,7 +447,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: KWRG63", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: KWRG63", "Inspección aprobada"],
     },
     {
       slug: "auto-kxxj56",
@@ -480,7 +469,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: KXXJ56", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: KXXJ56", "Inspección aprobada"],
     },
     {
       slug: "auto-kzwl56",
@@ -502,7 +491,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: KZWL56", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: KZWL56", "Inspección aprobada"],
     },
     {
       slug: "auto-lbxc37",
@@ -524,7 +513,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: LBXC37", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: LBXC37", "Inspección aprobada"],
     },
     {
       slug: "auto-lfgk64",
@@ -546,7 +535,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: LFGK64", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: LFGK64", "Inspección aprobada"],
     },
     {
       slug: "auto-lglk16",
@@ -568,7 +557,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: LGLK16", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: LGLK16", "Inspección aprobada"],
     },
     {
       slug: "auto-lpbr18",
@@ -590,7 +579,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: LPBR18", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: LPBR18", "Inspección aprobada"],
     },
     {
       slug: "auto-lppw35",
@@ -612,7 +601,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: LPPW35", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: LPPW35", "Inspección aprobada"],
     },
     {
       slug: "auto-ltyf61",
@@ -634,7 +623,7 @@ async function main() {
       owners: 1,
       featured: false,
       status: "Disponible",
-      highlights: ["Patente: LTYF61", "Inspección aprobada", "Garantía 6 meses"],
+      highlights: ["Patente: LTYF61", "Inspección aprobada"],
     },
   ];
 

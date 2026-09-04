@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatCLP } from "@/lib/vehicles";
 import { getTrafficSource } from "@/lib/trafficTracking";
+import { whatsappLink } from "@/lib/company";
 
 type Props = {
   isOpen: boolean;
@@ -80,7 +81,7 @@ export default function CarRequestModal({ isOpen, onClose }: Props) {
 
   const waMsg = `Hola RG Motors, no encontré el auto que busco en el catálogo y quiero pedirlo con su servicio de Personal Shopper:
 Busco un ${brand} ${model} (año ${minYear}+) con presupuesto de hasta ${formatCLP(maxBudget)}. Mi nombre es ${name}.`;
-  const waUrl = `https://wa.me/56987654321?text=${encodeURIComponent(waMsg)}`;
+  const waUrl = whatsappLink(waMsg);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md overflow-y-auto">

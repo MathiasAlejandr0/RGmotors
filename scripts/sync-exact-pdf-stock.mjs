@@ -1,4 +1,4 @@
-import fs from "node:fs";
+﻿import fs from "node:fs";
 import path from "node:path";
 
 const ALL_REAL_STOCK = [
@@ -683,7 +683,6 @@ function buildRealStockCatalog() {
       highlights: [
         "Inspección mecánica de 150 puntos aprobada",
         "Documentación y transferibilidad inmediata al día",
-        "Garantía técnica RG Motors de 6 meses",
         "Opción de financiamiento con pie desde 20%"
       ]
     });

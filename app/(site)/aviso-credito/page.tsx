@@ -1,0 +1,94 @@
+import { COMPANY } from "@/lib/company";
+import type { Metadata } from "next";
+import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Aviso de Crédito | RG Motors",
+  description:
+    "Descargo legal sobre simulaciones de crédito automotriz referenciales (Autofin / SERNAC).",
+};
+
+export default function AvisoCreditoPage() {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <div className="mb-8 border-b border-white/[0.08] pb-6">
+        <h1 className="text-3xl font-extrabold tracking-tight text-white">Aviso de Crédito</h1>
+        <p className="mt-2 text-sm text-white/50">
+          Simulaciones referenciales · Ley N° 19.496 (SERNAC)
+        </p>
+      </div>
+
+      <article className="apple-glass-card space-y-6 rounded-3xl p-6 text-sm leading-relaxed text-white/70 sm:p-8">
+        <section className="space-y-2">
+          <h2 className="text-base font-bold text-white">1. Simulador propio RG Motors</h2>
+          <p>
+            En <Link href="/simulador" className="text-brand-300 hover:underline">/simulador</Link>{" "}
+            usamos una calculadora propia. El crédito lo otorga <strong className="text-white">Autofin</strong>;
+            RG Motors vende el vehículo. La cuota se calcula con la misma lógica de referencia
+            del mercado Autofin (pie desde 20%, hasta 48 cuotas, tasa referencial, cuota fija).
+          </p>
+          <p>
+            <strong className="text-white">
+              La simulación puede coincidir o el valor de referencia puede aumentar
+            </strong>{" "}
+            al evaluar en sucursal (perfil del cliente, seguros, campaña). No es oferta
+            vinculante ni pre-aprobación. Los datos del cliente se almacenan en RG Motors
+            para contacto y análisis; no se envían al portal público de Autofin.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-base font-bold text-white">2. Evaluación de la financiera</h2>
+          <p>
+            La tasa, el pie mínimo, el plazo, los gastos operacionales y la aprobación
+            final dependen de la evaluación comercial y crediticia de Autofin (u otra
+            entidad), del historial del solicitante y de las condiciones vigentes al
+            momento de la operación.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-base font-bold text-white">3. Protección al consumidor</h2>
+          <p>
+            Conforme a la Ley N° 19.496 sobre Protección de los Derechos de los
+            Consumidores, tienes derecho a información veraz y oportuna. Ante dudas o
+            reclamos puedes contactarnos o acudir a SERNAC (
+            <a
+              href="https://www.sernac.cl"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-300 hover:underline"
+            >
+              www.sernac.cl
+            </a>
+            ).
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-base font-bold text-white">4. Rol de {COMPANY.name}</h2>
+          <p>
+            {COMPANY.name} actúa como intermediario comercial de vehículos. El crédito, si
+            se otorga, es un contrato entre el cliente y la financiera. Te recomendamos
+            revisar siempre la documentación oficial antes de firmar.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-base font-bold text-white">5. Más información</h2>
+          <p>
+            Simulador:{" "}
+            <Link href="/simulador" className="text-brand-300 hover:underline">
+              /simulador
+            </Link>
+            . Contacto:{" "}
+            <a href={`mailto:${COMPANY.email}`} className="text-brand-300 hover:underline">
+              {COMPANY.email}
+            </a>
+            . Última actualización: septiembre 2026.
+          </p>
+        </section>
+      </article>
+    </main>
+  );
+}

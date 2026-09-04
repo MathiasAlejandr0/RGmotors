@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+﻿import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 
 // Mapeo detallado de vehículos reales identificados en las carpetas por Patente
@@ -58,7 +58,6 @@ async function main() {
       "Tour 360° con video real del vehículo",
       "Híbrido AWD — bajo consumo",
       "Inspección de 150 puntos aprobada",
-      "Garantía RG Motors de 6 meses",
     ],
   });
 
@@ -107,7 +106,6 @@ async function main() {
         `Patente: ${s.plate}`,
         "Inspección de 150 puntos aprobada",
         "Documentación y Autofact al día",
-        "Garantía RG Motors de 6 meses",
       ],
       gallery: allPhotos.filter((p) => p !== coverPhoto),
     });

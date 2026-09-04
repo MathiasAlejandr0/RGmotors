@@ -1,4 +1,4 @@
-import fs from "node:fs";
+﻿import fs from "node:fs";
 import path from "node:path";
 
 // Mapping of specific folder names to their real vehicle specs
@@ -867,7 +867,6 @@ async function main() {
         highlights: [
           "Inspección mecánica de 150 puntos aprobada",
           "Documentación y transferibilidad inmediata al día",
-          "Garantía técnica RG Motors de 6 meses",
           "Opción de financiamiento con pie desde 20%"
         ]
       });
@@ -916,7 +915,6 @@ async function main() {
       highlights: [
         "Inspección mecánica de 150 puntos aprobada",
         "Documentación y transferibilidad inmediata al día",
-        "Garantía técnica RG Motors de 6 meses",
         "Opción de financiamiento con pie desde 20%"
       ]
     });
@@ -964,7 +962,7 @@ async function main() {
       highlights: [
         "Inspección mecánica de 150 puntos aprobada",
         "Documentación y transferibilidad inmediata al día",
-        "Garantía técnica RG Motors de 6 meses"
+        "Financiamiento Autofin disponible"
       ]
     });
   }

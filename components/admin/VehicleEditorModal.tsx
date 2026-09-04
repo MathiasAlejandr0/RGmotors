@@ -14,7 +14,7 @@ type Props = {
 const DEFAULT_HIGHLIGHTS = [
   "Inspección de 150 puntos aprobada",
   "Mantenciones al día en taller certificado",
-  "Garantía RG Motors de 6 meses",
+  "Documentación y transferencia al día",
   "Sin choques ni observaciones de historial",
 ];
 

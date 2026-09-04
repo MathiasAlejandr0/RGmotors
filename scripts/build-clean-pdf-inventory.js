@@ -1,4 +1,4 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 function cleanPlate(p) {
@@ -337,8 +337,7 @@ for (const [plate, raw] of uniqueMap.entries()) {
     featured: price > 20000000 || model.includes("RAPTOR") || model.includes("HILUX"),
     highlights: [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   });

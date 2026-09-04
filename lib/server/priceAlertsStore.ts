@@ -16,37 +16,10 @@ export type PriceAlert = {
 
 const FILENAME = "price_alerts.json";
 
-const SEED_ALERTS: PriceAlert[] = [
-  {
-    id: "ALT-201",
-    vehicleSlug: "toyota-hilux-2022-kzwl56",
-    vehicleName: "Toyota Hilux 2.8 SRV 4x4",
-    currentPrice: 24990000,
-    targetPrice: 23500000,
-    clientName: "Gonzalo Pinto",
-    phone: "+56 9 9123 8841",
-    email: "gonzalo.pinto@gmail.com",
-    date: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
-    status: "Activa",
-    score: 80,
-  },
-  {
-    id: "ALT-202",
-    vehicleSlug: "mitsubishi-l200-2021-jgrf99",
-    vehicleName: "Mitsubishi L200 Dakar 4x4",
-    currentPrice: 21990000,
-    targetPrice: 20500000,
-    clientName: "Andrea Muñoz",
-    phone: "+56 9 6554 1120",
-    email: "andrea.m@hotmail.com",
-    date: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
-    status: "Activa",
-    score: 80,
-  },
-];
+const SEED_ALERTS: PriceAlert[] = [];
 
 export async function getPriceAlerts(): Promise<PriceAlert[]> {
-  const list = await readJson<PriceAlert[]>(FILENAME, SEED_ALERTS);
+  const list = await readJson<PriceAlert[]>(FILENAME, []);
   list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   return list;
 }

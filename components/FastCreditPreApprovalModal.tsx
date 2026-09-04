@@ -6,6 +6,7 @@ import { formatCLP, vehicles as staticVehicles, Vehicle } from "@/lib/vehicles";
 import { formatRut, validateRut, evaluateCreditCapacity } from "@/lib/rut";
 import { asset } from "@/lib/asset";
 import { getTrafficSource } from "@/lib/trafficTracking";
+import { whatsappLink } from "@/lib/company";
 
 type Props = {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export default function FastCreditPreApprovalModal({
   const [email, setEmail] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [vehiclesData, setVehiclesData] = useState<Vehicle[]>(staticVehicles);
   const [result, setResult] = useState<{
     maxFinanced: number;
@@ -96,6 +98,7 @@ export default function FastCreditPreApprovalModal({
     }
 
     setIsSubmitting(true);
+    setSubmitError("");
 
     try {
       const res = await fetch("/api/credits", {
@@ -120,22 +123,21 @@ export default function FastCreditPreApprovalModal({
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.credit?.id) {
+        setSubmitError(data.error || "No se pudo enviar la simulación. Intenta nuevamente.");
+        return;
+      }
+
       setResult({
         maxFinanced: evaluation.maxFinanced,
         totalPurchasingPower: evaluation.totalPurchasingPower,
         maxMonthlyQuota: evaluation.maxMonthlyQuota,
-        id: data.credit?.id || `SIM-${Date.now().toString().slice(-4)}`,
+        id: data.credit.id,
       });
       setStep(2);
     } catch {
-      setResult({
-        maxFinanced: evaluation.maxFinanced,
-        totalPurchasingPower: evaluation.totalPurchasingPower,
-        maxMonthlyQuota: evaluation.maxMonthlyQuota,
-        id: `SIM-${Date.now().toString().slice(-4)}`,
-      });
-      setStep(2);
+      setSubmitError("Error de conexión. Intenta nuevamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -145,7 +147,7 @@ export default function FastCreditPreApprovalModal({
 Mi nombre es ${name} (RUT: ${rut}) y solicito financiamiento para ${
     targetVehicle ? `el ${targetVehicle.brand} ${targetVehicle.model}` : "comprar un vehículo"
   } con pie de ${formatCLP(downPayment)} en ${term} cuotas. Mi correo es ${email}. ¿Me pueden asesorar?`;
-  const waCertUrl = `https://wa.me/56987654321?text=${encodeURIComponent(waCertMsg)}`;
+  const waCertUrl = whatsappLink(waCertMsg);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md overflow-y-auto">
@@ -302,6 +304,12 @@ Mi nombre es ${name} (RUT: ${rut}) y solicito financiamiento para ${
               </div>
             </div>
 
+            {submitError && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2 text-xs text-red-300">
+                {submitError}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isSubmitting}
@@ -311,7 +319,7 @@ Mi nombre es ${name} (RUT: ${rut}) y solicito financiamiento para ${
             </button>
 
             <p className="text-[10px] text-white/45 text-center leading-relaxed mt-2">
-              ⚖️ Simulación conforme a Ley N° 19.496 (SERNAC). La pre-aprobación y tasa final están sujetas a evaluación comercial por entidades financieras asociadas. Datos protegidos bajo la Ley N° 19.628.
+              ⚖️ Simulación referencial conforme a Ley N° 19.496 (SERNAC). No constituye pre-aprobación ni oferta vinculante; está sujeta a evaluación comercial de Autofin u otras entidades asociadas. Datos protegidos bajo la Ley N° 19.628.
             </p>
           </form>
         ) : (
@@ -322,11 +330,11 @@ Mi nombre es ${name} (RUT: ${rut}) y solicito financiamiento para ${
 
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-brand-300">
-                Simulación Registrada N° {result?.id}
+                Simulación enviada N° {result?.id}
               </span>
-              <h2 className="text-2xl font-extrabold text-white mt-1">¡Simulación Enviada con Éxito!</h2>
+              <h2 className="text-2xl font-extrabold text-white mt-1">Simulación enviada</h2>
               <p className="text-xs text-white/60 mt-1.5 max-w-md mx-auto leading-relaxed">
-                Hemos recibido tu solicitud, <b>{name}</b>. Nuestro equipo comercial evaluará tus antecedentes con las entidades financieras y te responderemos a la brevedad a tu correo <b>{email}</b>.
+                Recibimos tu simulación, <b>{name}</b>. Está sujeta a evaluación Autofin (u otra financiera asociada). Te responderemos a la brevedad a <b>{email}</b>.
               </p>
             </div>
 

@@ -19,43 +19,10 @@ export type CarRequest = {
 
 const FILENAME = "car_requests.json";
 
-const SEED_REQUESTS: CarRequest[] = [
-  {
-    id: "REQ-101",
-    clientName: "Rodrigo Morales",
-    phone: "+56 9 8412 9901",
-    email: "rodrigo.morales@gmail.com",
-    brand: "Toyota",
-    model: "Hilux 4x4",
-    maxBudget: 22000000,
-    minYear: 2021,
-    fuel: "Diésel",
-    transmission: "Automática",
-    notes: "Busco versión SRV o GR-S con menos de 60.000 km para faena y familia.",
-    status: "En búsqueda",
-    date: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-    score: 90,
-  },
-  {
-    id: "REQ-102",
-    clientName: "Francisca Valenzuela",
-    phone: "+56 9 7311 4452",
-    email: "francisca.v@outlook.com",
-    brand: "Subaru",
-    model: "Forester",
-    maxBudget: 17500000,
-    minYear: 2020,
-    fuel: "Gasolina",
-    transmission: "Automática",
-    notes: "Ideal con techo panorámico y cámara de retroceso.",
-    status: "Pendiente",
-    date: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
-    score: 85,
-  },
-];
+const SEED_REQUESTS: CarRequest[] = [];
 
 export async function getCarRequests(): Promise<CarRequest[]> {
-  const list = await readJson<CarRequest[]>(FILENAME, SEED_REQUESTS);
+  const list = await readJson<CarRequest[]>(FILENAME, []);
   list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   return list;
 }

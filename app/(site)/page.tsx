@@ -34,14 +34,14 @@ export default async function Home() {
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-400" />
               </span>
               <span className="text-xs font-semibold text-brand-200 tracking-wide">
-                Calidad Garantizada · Inspección 150 Puntos
+                Inspección 150 puntos · Fotos reales
               </span>
             </div>
 
             <h1 className="mt-5 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-white leading-[1.1]">
               Tu próximo vehículo,{" "}
               <span className="bg-gradient-to-r from-brand-200 via-white to-brand-300 bg-clip-text text-transparent drop-shadow-sm">
-                garantizado y con financiamiento a tu medida.
+                inspeccionado y con financiamiento a tu medida.
               </span>
             </h1>
 
@@ -90,9 +90,9 @@ export default async function Home() {
               text="Exteriores, interiores y motor"
             />
             <Pillar
-              icon="🛡️"
-              title="Garantía & Respaldo"
-              text="Inspección mecánica 150 puntos"
+              icon="🔧"
+              title="Inspección 150 puntos"
+              text="Revisión mecánica antes de publicar"
             />
           </div>
         </div>

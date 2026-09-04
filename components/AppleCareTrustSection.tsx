@@ -3,24 +3,24 @@
 import Link from "next/link";
 
 export default function AppleCareTrustSection() {
-  const guarantees = [
+  const pillars = [
     {
-      icon: "🛡️",
-      title: "Garantía Mecánica & Cobertura",
-      badge: "6 Meses de Respaldo",
-      desc: "Todos nuestros autos son sometidos a un exhaustivo chequeo de 150 puntos y cuentan con garantía mecánica para tu total tranquilidad.",
+      icon: "🔧",
+      title: "Inspección mecánica 150 puntos",
+      badge: "Usados seleccionados",
+      desc: "Revisamos cada unidad antes de publicarla. Los vehículos usados se venden en el estado inspeccionado; RG Motors no ofrece garantía mecánica postventa.",
     },
     {
       icon: "📄",
       title: "Certificación Legal & Autofact",
-      badge: "Documentación Limpia",
+      badge: "Documentación al día",
       desc: "Cada vehículo cuenta con informe de dominio vigente, kilometraje auditado por escáner y cero anotaciones, deudas o multas pendientes.",
     },
     {
       icon: "🚚",
-      title: "Entrega VIP en Showroom",
-      badge: "Servicio Premium",
-      desc: "Coordinamos la entrega de tu auto nuevo en nuestro showroom de Puerto Montt con atención personalizada y transferencia ágil.",
+      title: "Entrega en showroom",
+      badge: "Puerto Montt",
+      desc: "Coordinamos la entrega en nuestro showroom de Puerto Montt con atención personalizada y transferencia ágil.",
     },
   ];
 
@@ -30,7 +30,7 @@ export default function AppleCareTrustSection() {
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3.5 py-1 text-xs font-semibold text-brand-300">
-              ⚡ Compromiso de Calidad & Respaldo RG Motors
+              Transparencia RG Motors · Vehículos usados
             </span>
             <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl text-white">
               Transparencia total en cada etapa de tu compra
@@ -45,7 +45,7 @@ export default function AppleCareTrustSection() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          {guarantees.map((g) => (
+          {pillars.map((g) => (
             <div
               key={g.title}
               className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md transition-transform duration-300 hover:-translate-y-1"

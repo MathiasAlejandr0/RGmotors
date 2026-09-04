@@ -19,43 +19,10 @@ export type TradeInRequest = {
 
 const FILENAME = "trade-ins.json";
 
-const SEED_TRADE_INS: TradeInRequest[] = [
-  {
-    id: "TI-1001",
-    clientName: "Patricio Araya",
-    phone: "+56 9 8765 4321",
-    email: "patricio.araya@gmail.com",
-    brand: "Hyundai",
-    model: "Tucson 2.0",
-    year: 2017,
-    km: 84000,
-    targetVehicleSlug: "toyota-hilux-2022-kzwl56",
-    estimatedAppraisal: 11500000,
-    status: "Pendiente",
-    notes: "Auto único dueño, mantenciones al día en concesionario. Quiere renovar por camioneta 4x4.",
-    date: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
-    score: 92,
-  },
-  {
-    id: "TI-1002",
-    clientName: "Carolina Valdés",
-    phone: "+56 9 7890 1234",
-    email: "carolina.valdes@empresa.cl",
-    brand: "Chevrolet",
-    model: "Tracker LTZ",
-    year: 2019,
-    km: 52000,
-    targetVehicleSlug: "mitsubishi-l200-2021-jgrf99",
-    estimatedAppraisal: 10800000,
-    status: "Contactado",
-    notes: "Buen estado, requiere tasación presencial para cerrar compra de la L200.",
-    date: new Date(Date.now() - 20 * 3600 * 1000).toISOString(),
-    score: 88,
-  },
-];
+const SEED_TRADE_INS: TradeInRequest[] = [];
 
 export async function getTradeInRequests(): Promise<TradeInRequest[]> {
-  const list = await readJson<TradeInRequest[]>(FILENAME, SEED_TRADE_INS);
+  const list = await readJson<TradeInRequest[]>(FILENAME, []);
   list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   return list;
 }

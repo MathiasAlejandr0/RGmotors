@@ -466,7 +466,7 @@ export function ReservationsSection() {
           </p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-4">
-          <p className="text-xs text-white/50">Monto total en garantía</p>
+          <p className="text-xs text-white/50">Monto total en reservas</p>
           <p className="mt-1 text-2xl font-bold text-brand-300">{formatCLP(totalAmount)}</p>
         </div>
       </div>
@@ -703,6 +703,94 @@ export function CreditsSection() {
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+/**
+ * SECCIÓN 3b: EVENTOS DE SIMULACIÓN (DATA SCIENCE)
+ */
+export function SimulationsSection() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/simulations")
+      .then((r) => (r.ok ? r.json() : { simulations: [] }))
+      .then((data) => setRows(data.simulations || []))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const leads = rows.filter((r) => r.eventType === "lead_submit");
+  const calcs = rows.filter((r) => r.eventType === "view_calc");
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-4">
+          <p className="text-xs text-white/50">Eventos totales</p>
+          <p className="mt-1 text-2xl font-bold text-white">{rows.length}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-4">
+          <p className="text-xs text-white/50">Cálculos (anon/sesión)</p>
+          <p className="mt-1 text-2xl font-bold text-brand-300">{calcs.length}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-4">
+          <p className="text-xs text-white/50">Leads con contacto</p>
+          <p className="mt-1 text-2xl font-bold text-emerald-400">{leads.length}</p>
+        </div>
+      </div>
+
+      <Panel title="Simulaciones capturadas (ciencia de datos)">
+        {loading ? (
+          <div className="grid h-32 place-items-center text-xs text-white/40">Cargando…</div>
+        ) : rows.length === 0 ? (
+          <div className="p-8 text-center text-xs text-white/40">
+            Aún no hay simulaciones. Cada ajuste de cuota y cada lead quedan en{" "}
+            <code className="text-white/60">simulations.json</code> / KV.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] text-left text-xs">
+              <thead className="text-white/40">
+                <tr className="border-b border-white/10">
+                  <th className="pb-2.5 font-medium">Fecha</th>
+                  <th className="pb-2.5 font-medium">Tipo</th>
+                  <th className="pb-2.5 font-medium">Cliente</th>
+                  <th className="pb-2.5 font-medium">Auto</th>
+                  <th className="pb-2.5 font-medium">Pie / Plazo</th>
+                  <th className="pb-2.5 font-medium">Cuota</th>
+                  <th className="pb-2.5 font-medium">Contacto</th>
+                </tr>
+              </thead>
+              <tbody className="text-white/80">
+                {rows.slice(0, 200).map((r) => (
+                  <tr key={r.id} className="border-b border-white/5">
+                    <td className="py-2.5 whitespace-nowrap">
+                      {new Date(r.createdAt).toLocaleString("es-CL")}
+                    </td>
+                    <td className="py-2.5">
+                      {r.eventType === "lead_submit" ? "Lead" : "Cálculo"}
+                    </td>
+                    <td className="py-2.5">{r.clientName || "—"}</td>
+                    <td className="py-2.5">{r.vehicleSlug || "—"}</td>
+                    <td className="py-2.5">
+                      {r.downPct}% · {r.termMonths}m
+                    </td>
+                    <td className="py-2.5 font-semibold text-brand-300">
+                      {formatCLP(r.monthlyPayment || 0)}
+                    </td>
+                    <td className="py-2.5">
+                      {[r.phone, r.email].filter(Boolean).join(" · ") || "—"}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -1081,7 +1169,7 @@ export function LeadScoringSection() {
       detail: c.rut ? `RUT: ${c.rut} · Renta: ${formatCLP(c.income || 0)}` : `Pie ${c.downPct}%`,
       score: c.score || 95,
       date: c.date,
-      hotText: "🔥 ¡Cupo pre-aprobado! Contactar prioritario",
+      hotText: "Alta intención de financiamiento — contactar prioritario",
     })),
     ...tradeIns.map((t) => ({
       id: t.id,
@@ -1901,6 +1989,7 @@ export function CrmHubSection({
     { id: "testdrives", label: "Pruebas de Manejo", icon: "🚗" },
     { id: "reservas", label: "Reservas Online", icon: "★" },
     { id: "creditos", label: "Créditos & RUT", icon: "💳" },
+    { id: "simulaciones", label: "Simulaciones DS", icon: "📈" },
     { id: "tasaciones", label: "Tasaciones / Retomas", icon: "💎" },
     { id: "pedidos", label: "Autos a Pedido & Alertas", icon: "🎯" },
     { id: "clientes", label: "Base de Clientes", icon: "👥" },
@@ -1932,6 +2021,7 @@ export function CrmHubSection({
       {activeTab === "testdrives" && <TestDrivesSection />}
       {activeTab === "reservas" && <ReservationsSection />}
       {activeTab === "creditos" && <CreditsSection />}
+      {activeTab === "simulaciones" && <SimulationsSection />}
       {activeTab === "tasaciones" && <TradeInsSection />}
       {activeTab === "pedidos" && (
         <div className="space-y-6">

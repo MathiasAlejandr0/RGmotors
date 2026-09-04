@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { readJson, writeJson } from "@/lib/server/db";
+import { clientKey, rateLimit } from "@/lib/server/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,23 +18,17 @@ type CapturedLead = {
   name?: string;
   contact?: string;
   messages?: number;
-  trafficSource?: any;
+  trafficSource?: unknown;
 };
 
-const DATA_DIR = join(process.cwd(), "data");
-const FILE = join(DATA_DIR, "leads.json");
+const FILENAME = "leads.json";
 
 async function readAll(): Promise<CapturedLead[]> {
-  try {
-    return JSON.parse(await readFile(FILE, "utf8"));
-  } catch {
-    return [];
-  }
+  return readJson<CapturedLead[]>(FILENAME, []);
 }
 
 async function writeAll(list: CapturedLead[]) {
-  await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(FILE, JSON.stringify(list, null, 2));
+  await writeJson(FILENAME, list);
 }
 
 /** Devuelve los leads capturados (más recientes primero). */
@@ -49,6 +43,11 @@ export async function GET() {
  * misma conversación no crea múltiples leads: enriquece el existente.
  */
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(clientKey(req, "track"), 40, 60_000);
+  if (!rl.ok) {
+    return Response.json({ error: "Demasiadas peticiones." }, { status: 429 });
+  }
+
   let body: Partial<CapturedLead> & { sessionId?: string };
   try {
     body = await req.json();

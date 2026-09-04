@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         : [
             "Inspección de 150 puntos aprobada",
             "Mantenciones al día",
-            "Garantía RG Motors de 6 meses",
+            "Documentación y transferencia al día",
           ],
       spin: body.spin && body.spin.count ? body.spin : undefined,
     };

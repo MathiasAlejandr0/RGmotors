@@ -6,10 +6,13 @@ import { getTrafficSource } from "@/lib/trafficTracking";
 
 export default function ContactForm() {
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
 
   if (sent) {
     return (
@@ -17,10 +20,10 @@ export default function ContactForm() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-2xl text-emerald-400 font-bold shadow-glow">
           ✓
         </div>
-        <h2 className="mt-4 text-xl font-bold tracking-tight text-emerald-400">¡Mensaje enviado con éxito!</h2>
+        <h2 className="mt-4 text-xl font-bold tracking-tight text-emerald-400">¡Mensaje enviado!</h2>
         <p className="mt-2 text-xs leading-relaxed text-white/70 max-w-md mx-auto">
-          Gracias{name ? `, ${name}` : ""}. Un asesor especialista de RG Motors te contactará
-          pronto al {phone || email || "medio indicado"}.
+          Gracias{name ? `, ${name}` : ""}. Un asesor de RG Motors te contactará pronto al{" "}
+          {phone || email}.
         </p>
         <a
           href={whatsappLink("Hola RG Motors, quiero más información sobre un vehículo.")}
@@ -28,7 +31,7 @@ export default function ContactForm() {
           rel="noopener noreferrer"
           className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-xs font-semibold text-white transition hover:brightness-110 shadow-sm"
         >
-          <span>💬</span> Contactar directamente por WhatsApp
+          Contactar por WhatsApp
         </a>
         <button
           onClick={() => setSent(false)}
@@ -45,36 +48,64 @@ export default function ContactForm() {
       className="apple-glass-card rounded-3xl p-7 space-y-5"
       onSubmit={async (e) => {
         e.preventDefault();
-        setSent(true);
-        const traffic = getTrafficSource();
+        setLoading(true);
+        setError("");
         try {
-          await fetch("/api/track", {
+          const res = await fetch("/api/contact", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              sessionId: `contact_${Date.now()}`,
               name,
-              contact: phone || email,
-              intents: ["formulario-contacto", `canal-${traffic.source}`, message.slice(0, 50)],
+              phone,
+              email,
+              message,
+              website: honeypot,
+              trafficSource: getTrafficSource(),
             }),
           });
-        } catch {}
+          const data = await res.json();
+          if (!res.ok) {
+            setError(data.error || "No se pudo enviar. Intenta de nuevo.");
+            return;
+          }
+          setSent(true);
+        } catch {
+          setError("Error de conexión. Intenta nuevamente o escríbenos por WhatsApp.");
+        } finally {
+          setLoading(false);
+        }
       }}
     >
+      {/* Honeypot */}
+      <input
+        type="text"
+        name="website"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+        className="hidden"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden
+      />
+
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+          {error}
+        </div>
+      )}
+
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Nombre completo" value={name} onChange={setName} placeholder="Ej. Carlos Silva" required />
         <Field label="Teléfono de contacto" value={phone} onChange={setPhone} placeholder="+56 9 1234 5678" required />
       </div>
-      <div>
-        <Field
-          label="Correo electrónico"
-          value={email}
-          onChange={setEmail}
-          placeholder="tucorreo@ejemplo.com"
-          type="email"
-          required
-        />
-      </div>
+      <Field
+        label="Correo electrónico"
+        value={email}
+        onChange={setEmail}
+        placeholder="tucorreo@ejemplo.com"
+        type="email"
+        required
+      />
       <div>
         <label className="text-xs font-semibold text-white/70">Mensaje o consulta</label>
         <textarea
@@ -88,12 +119,14 @@ export default function ContactForm() {
       </div>
       <button
         type="submit"
-        className="apple-btn-primary w-full rounded-full py-3.5 text-xs font-semibold text-white shadow-glow sm:w-auto sm:px-8"
+        disabled={loading}
+        className="apple-btn-primary w-full rounded-full py-3.5 text-xs font-semibold text-white shadow-glow sm:w-auto sm:px-8 disabled:opacity-50"
       >
-        Enviar mensaje
+        {loading ? "Enviando…" : "Enviar mensaje"}
       </button>
       <p className="text-[10px] text-white/35">
-        Al enviar este formulario autorizas a RG Motors a comunicarse contigo. Horario de atención: {COMPANY.hours}.
+        Al enviar autorizas a RG Motors a contactarte. Horario: {COMPANY.hours}. Datos protegidos
+        bajo Ley 19.628.
       </p>
     </form>
   );
@@ -128,4 +161,3 @@ function Field({
     </div>
   );
 }
-

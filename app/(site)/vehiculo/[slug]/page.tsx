@@ -29,7 +29,7 @@ export async function generateMetadata({
 
   return {
     title: `${v.brand} ${v.model} ${v.year} — ${formatCLP(v.price)} | RG Motors`,
-    description: `${v.brand} ${v.model} ${v.version} año ${v.year} con ${v.km.toLocaleString("es-CL")} km. Inspección de 150 puntos y garantía RG Motors. Fotografías reales y simulación online.`,
+    description: `${v.brand} ${v.model} ${v.version} año ${v.year} con ${v.km.toLocaleString("es-CL")} km. Inspección de 150 puntos, fotografías reales y simulación de crédito online.`,
     openGraph: {
       title: `${v.brand} ${v.model} ${v.year} | RG Motors`,
       description: `Precio: ${formatCLP(v.price)} · ${v.km.toLocaleString("es-CL")} km · ${v.fuel} · ${v.transmission}`,
@@ -136,13 +136,13 @@ export default async function VehiclePage({
             <VehicleActionButtons vehicle={v} />
 
             <div className="border-t border-white/10 pt-4 grid grid-cols-2 gap-2 text-center text-[11px] text-white/60">
-              <p>🛡️ Garantía de 6 meses</p>
+              <p>🔧 Inspección 150 puntos</p>
               <p>📄 Documentación al día</p>
             </div>
           </div>
 
           {/* Credit Simulator */}
-          <CuotaSimulator price={v.price} />
+          <CuotaSimulator price={v.price} vehicleYear={v.year} vehicleSlug={v.slug} />
         </div>
       </div>
 

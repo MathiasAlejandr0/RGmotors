@@ -5,29 +5,23 @@ import Link from "next/link";
 import { asset } from "@/lib/asset";
 import { Vehicle, formatCLP } from "@/lib/vehicles";
 import { getTrafficSource } from "@/lib/trafficTracking";
+import { whatsappLink } from "@/lib/company";
 
 const RESERVE_AMOUNT = 200000;
 
-const METHODS = [
-  { id: "webpay", name: "WebPay Plus", desc: "Débito o crédito seguro", icon: "💳" },
-  { id: "transfer", name: "Transferencia Bancaria", desc: "Pago directo inmediato", icon: "🏦" },
-  { id: "mercadopago", name: "Mercado Pago", desc: "Saldo o tarjetas en cuotas", icon: "🟦" },
-  { id: "flow", name: "Flow", desc: "Múltiples medios de pago", icon: "🌊" },
-  { id: "onepay", name: "OnePay Transbank", desc: "Pago rápido mediante QR", icon: "📱" },
-];
-
 export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
-  const [method, setMethod] = useState("webpay");
   const [clientName, setClientName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [notes, setNotes] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot
   const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const pay = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientName || !phone) {
-      setErrorMsg("Por favor ingresa tu nombre y número de contacto para emitir el certificado.");
+    if (!clientName.trim() || !phone.trim() || !email.trim()) {
+      setErrorMsg("Por favor ingresa nombre, teléfono y correo.");
       return;
     }
 
@@ -35,35 +29,40 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
     setErrorMsg("");
 
     try {
-      // Registrar reserva real en el backend
-      await fetch("/api/reservations", {
+      const res = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clientName,
-          phone,
-          email,
+          clientName: clientName.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
           vehicleSlug: v.slug,
           amount: RESERVE_AMOUNT,
-          method,
-          status: "Pagada",
+          method: "solicitud-web",
+          status: "Pendiente",
           trafficSource: getTrafficSource(),
-          notes: "Reserva realizada desde flujo online web.",
+          notes: notes.trim() || "Solicitud de reserva desde el sitio web (sin pago online).",
+          website,
         }),
       });
 
-      // Actualizar estado del vehículo a "En reserva"
-      await fetch(`/api/vehicles/${v.slug}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "En reserva" }),
-      }).catch(() => {});
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorMsg(data.error || "No se pudo enviar la solicitud. Intenta nuevamente.");
+        setStatus("idle");
+        return;
+      }
 
-      setTimeout(() => setStatus("done"), 1200);
+      setStatus("done");
     } catch {
-      setStatus("done"); // fallback graceful
+      setErrorMsg("Error de conexión. Intenta nuevamente.");
+      setStatus("idle");
     }
   };
+
+  const waUrl = whatsappLink(
+    `Hola RG Motors, envié una solicitud de reserva para el ${v.brand} ${v.model} ${v.year}. Mi nombre es ${clientName || "..."}. Quiero coordinar el abono.`
+  );
 
   if (status === "done") {
     return (
@@ -72,22 +71,29 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
           ✓
         </div>
         <h2 className="mt-4 text-2xl font-bold tracking-tight text-emerald-400">
-          ¡Reserva online confirmada!
+          Solicitud de reserva enviada
         </h2>
         <p className="mt-2 text-xs leading-relaxed text-white/70">
-          Hola <b>{clientName || "Cliente"}</b>, reservaste exitosamente el <b>{v.brand} {v.model} {v.year}</b>. Te hemos enviado el comprobante digital
-          y certificado de bloqueo al WhatsApp/correo registrado.
+          Hola <b>{clientName}</b>, recibimos tu interés en el{" "}
+          <b>
+            {v.brand} {v.model} {v.year}
+          </b>
+          . Nuestro equipo te contactará a la brevedad para confirmar disponibilidad.
         </p>
         <div className="mt-4 rounded-2xl border border-white/10 bg-black/40 p-4 text-xs text-white/70">
-          El abono de <span className="font-bold text-white">{formatCLP(RESERVE_AMOUNT)}</span> se abonará directamente al pie comercial. El vehículo ha quedado congelado exclusivamente para ti por 48 horas.
+          El abono referencial de{" "}
+          <span className="font-bold text-white">{formatCLP(RESERVE_AMOUNT)}</span> se
+          coordina en tienda o por WhatsApp. No se realizó ningún cargo online.
         </div>
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            href="/cuenta"
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="apple-btn-primary rounded-full px-8 py-3 text-xs font-semibold text-white shadow-glow"
           >
-            Ir a mi panel de cliente
-          </Link>
+            Continuar por WhatsApp
+          </a>
           <Link
             href="/catalogo"
             className="apple-btn-secondary rounded-full px-6 py-3 text-xs font-semibold text-white"
@@ -100,152 +106,121 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
   }
 
   return (
-    <form onSubmit={pay} className="grid gap-8 lg:grid-cols-3 items-start">
-      {/* Vehicle summary */}
+    <form onSubmit={submit} className="grid gap-8 lg:grid-cols-3 items-start">
       <div className="apple-glass-card rounded-3xl p-6 space-y-4">
-        <h2 className="text-base font-bold text-white">Vehículo a reservar</h2>
+        <h2 className="text-base font-bold text-white">Vehículo de interés</h2>
         <div className="aspect-[16/10] overflow-hidden rounded-2xl border border-white/10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={asset(v.image)}
-            alt={v.model}
-            className="h-full w-full object-cover"
-          />
+          <img src={asset(v.image)} alt={v.model} className="h-full w-full object-cover" />
         </div>
         <div>
-          <p className="text-sm font-bold text-white">{v.brand} {v.model}</p>
-          <p className="text-xs text-white/50">{v.version} · Año {v.year}</p>
+          <p className="text-sm font-bold text-white">
+            {v.brand} {v.model}
+          </p>
+          <p className="text-xs text-white/50">
+            {v.version} · Año {v.year}
+          </p>
           <p className="mt-2 text-2xl font-extrabold text-brand-300">{formatCLP(v.price)}</p>
         </div>
         <div className="space-y-1.5 text-xs text-white/60 border-t border-white/10 pt-3">
-          <p>✓ {v.km.toLocaleString("es-CL")} km certificados</p>
-          <p>✓ {v.fuel} · Transmisión {v.transmission}</p>
-          <p>✓ Garantía RG Motors de 6 meses incluida</p>
+          <p>✓ {v.km.toLocaleString("es-CL")} km</p>
+          <p>
+            ✓ {v.fuel} · Transmisión {v.transmission}
+          </p>
         </div>
       </div>
 
-      {/* Payment methods & Client info */}
-      <div className="apple-glass-card rounded-3xl p-6 space-y-4">
-        <h2 className="text-base font-bold text-white">Tus Datos & Pago</h2>
-        
+      <div className="apple-glass-card rounded-3xl p-6 space-y-4 lg:col-span-2">
+        <h2 className="text-base font-bold text-white">Solicitud de reserva</h2>
+        <p className="text-xs text-white/50">
+          Déjanos tus datos y te contactamos para coordinar el abono en tienda o WhatsApp.
+          Por ahora no hay pago online.
+        </p>
+
         {errorMsg && (
           <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-300">
             {errorMsg}
           </div>
         )}
 
-        <div className="space-y-2.5">
-          <div>
+        {/* Honeypot */}
+        <input
+          type="text"
+          name="website"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          autoComplete="off"
+          tabIndex={-1}
+          aria-hidden="true"
+          className="absolute -left-[9999px] h-0 w-0 opacity-0"
+        />
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sm:col-span-2">
             <label className="block text-[11px] text-white/60 mb-1">Nombre completo *</label>
             <input
               type="text"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              placeholder="Ej: Matías González"
+              placeholder="Ej: Juan Pérez"
               required
               className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-xs text-white outline-none focus:border-brand-500"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-[11px] text-white/60 mb-1">WhatsApp / Celular *</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+56 9 ..."
-                required
-                className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-xs text-white outline-none focus:border-brand-500"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] text-white/60 mb-1">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="correo@ejemplo.com"
-                className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-xs text-white outline-none focus:border-brand-500"
-              />
-            </div>
+          <div>
+            <label className="block text-[11px] text-white/60 mb-1">WhatsApp / Celular *</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+56 9 ..."
+              required
+              className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-xs text-white outline-none focus:border-brand-500"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] text-white/60 mb-1">Email *</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="correo@ejemplo.com"
+              required
+              className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-xs text-white outline-none focus:border-brand-500"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] text-white/60 mb-1">Notas (opcional)</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Horario preferido, consultas, etc."
+              className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-xs text-white outline-none focus:border-brand-500"
+            />
           </div>
         </div>
 
-        <p className="text-xs font-bold text-white/70 uppercase tracking-wide pt-2">Método de pago de reserva</p>
-        <div className="space-y-2">
-          {METHODS.map((m) => (
-            <button
-              type="button"
-              key={m.id}
-              onClick={() => setMethod(m.id)}
-              className={`flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition-all duration-200 ${
-                method === m.id
-                  ? "border-brand-500 bg-brand-500/10 shadow-glow"
-                  : "border-white/10 bg-white/[0.03] hover:border-white/20"
-              }`}
-            >
-              <span className="text-xl">{m.icon}</span>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-white">{m.name}</p>
-                <p className="text-[10px] text-white/50">{m.desc}</p>
-              </div>
-              <span
-                className={`flex h-4 w-4 items-center justify-center rounded-full border ${
-                  method === m.id ? "border-brand-500 bg-brand-500" : "border-white/30"
-                }`}
-              >
-                {method === m.id && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
-              </span>
-            </button>
-          ))}
+        <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-xs text-white/60">
+          Abono referencial:{" "}
+          <span className="font-bold text-brand-300">{formatCLP(RESERVE_AMOUNT)}</span> —
+          se coordina al confirmar la solicitud.
         </div>
-      </div>
-
-      {/* Checkout summary */}
-      <div className="apple-glass-card relative overflow-hidden rounded-3xl p-6 border-brand-500/30 bg-gradient-to-br from-brand-500/15 via-ink-900/90 to-black space-y-4">
-        <h2 className="text-base font-bold text-white">Resumen de la reserva</h2>
-        
-        <div className="space-y-3 border-y border-white/10 py-4 text-xs">
-          <div className="flex justify-between items-center">
-            <span className="text-white/60">Vehículo seleccionado</span>
-            <span className="font-bold text-white text-sm">{v.brand} {v.model}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-white/60">Monto de abono reserva</span>
-            <span className="font-bold text-brand-300 text-sm">{formatCLP(RESERVE_AMOUNT)}</span>
-          </div>
-        </div>
-
-        <ul className="space-y-2 text-xs text-white/70">
-          <li className="flex items-center gap-2">
-            <span className="text-emerald-400 font-bold">✓</span> 100% abonado al pie final
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="text-emerald-400 font-bold">✓</span> Devolución 100% garantizada
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="text-emerald-400 font-bold">✓</span> Bloqueo de catálogo por 48 hrs
-          </li>
-        </ul>
 
         <button
           type="submit"
           disabled={status === "processing"}
-          className="apple-btn-primary mt-4 flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-semibold text-white shadow-glow disabled:opacity-60"
+          className="apple-btn-primary flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-semibold text-white shadow-glow disabled:opacity-60"
         >
           {status === "processing" ? (
             <>
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Procesando pago seguro…
+              Enviando solicitud…
             </>
           ) : (
-            "Pagar reserva y congelar vehículo"
+            "Enviar solicitud de reserva"
           )}
         </button>
-
-        <p className="text-center text-[10px] text-white/40">
-          🔒 Transacción encriptada con tecnología SSL de 256 bits.
-        </p>
       </div>
     </form>
   );

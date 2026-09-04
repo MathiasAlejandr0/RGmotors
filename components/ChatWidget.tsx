@@ -22,7 +22,7 @@ export default function ChatWidget() {
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: "ai",
-      text: "¡Hola! Soy Vendedor RG Motors 🤖 Cuéntame qué auto buscas (uso, presupuesto, tipo) y te recomiendo opciones de nuestro catálogo.",
+      text: "¡Hola! Soy el asistente del catálogo RG Motors. Cuéntame qué auto buscas (uso, presupuesto, tipo) y te muestro opciones disponibles. No soy una IA generativa: busco en nuestro inventario.",
     },
   ]);
   const [vehiclesData, setVehiclesData] = useState<any[]>(staticVehicles);
@@ -195,7 +195,7 @@ export default function ChatWidget() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-1">
               <span className="text-xs font-bold text-white group-hover:text-brand-300 transition-colors">
-                Vendedor RG Motors
+                Asistente catálogo
               </span>
               <span className="text-[9px] text-emerald-400">● En línea</span>
             </div>
@@ -224,7 +224,7 @@ export default function ChatWidget() {
           if (!open) setShowTeaser(false);
         }}
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-2xl text-white shadow-glow transition-all duration-300 hover:scale-105 active:scale-95 border border-white/20 backdrop-blur-xl"
-        aria-label="Chat con Vendedor RG Motors"
+        aria-label="Chat del catálogo RG Motors"
       >
         {open ? "✕" : "💬"}
       </button>
@@ -240,7 +240,7 @@ export default function ChatWidget() {
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-ink-950 bg-emerald-400" />
               </div>
               <div>
-                <p className="text-xs font-bold tracking-tight text-white">Vendedor RG Motors</p>
+                <p className="text-xs font-bold tracking-tight text-white">Asistente catálogo</p>
                 <p className="text-[10px] text-emerald-400">● En línea para ayudarte</p>
               </div>
             </div>

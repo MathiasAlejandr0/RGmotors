@@ -9,8 +9,8 @@ export default function SiteFooter() {
         <div className="space-y-3">
           <Logo size={50} />
           <p className="max-w-xs text-xs leading-relaxed text-white/45">
-            Automotora líder en Puerto Montt. Vehículos seleccionados con
-            inspección de 150 puntos, crédito online y total transparencia.
+            Automotora en Puerto Montt. Vehículos seleccionados, crédito referencial
+            online y atención transparente.
           </p>
         </div>
 
@@ -37,6 +37,9 @@ export default function SiteFooter() {
                 Atención vía WhatsApp
               </a>
             </li>
+            <li><Link href="/privacidad" className="hover:text-white transition-colors">Política de privacidad</Link></li>
+            <li><Link href="/terminos" className="hover:text-white transition-colors">Términos de uso</Link></li>
+            <li><Link href="/aviso-credito" className="hover:text-white transition-colors">Aviso de crédito</Link></li>
           </ul>
         </div>
 
@@ -83,7 +86,11 @@ export default function SiteFooter() {
       <div className="border-t border-white/[0.08]">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-6 sm:px-6 text-xs text-white/40">
           <span>© {new Date().getFullYear()} RG Motors · Todos los derechos reservados</span>
-          <span className="text-[11px] text-white/30">Primera experiencia automotriz 360° de Chile</span>
+          <nav className="flex flex-wrap gap-3 text-[11px] text-white/35">
+            <Link href="/privacidad" className="hover:text-white/70 transition-colors">Privacidad</Link>
+            <Link href="/terminos" className="hover:text-white/70 transition-colors">Términos</Link>
+            <Link href="/aviso-credito" className="hover:text-white/70 transition-colors">Aviso de crédito</Link>
+          </nav>
         </div>
       </div>
     </footer>

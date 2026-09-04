@@ -288,7 +288,7 @@ function CatalogContent() {
             Catálogo de Vehículos
           </h1>
           <p className="mt-1 text-sm text-white/50">
-            Explora y filtra nuestra selección de autos con garantía e inspección técnica.
+            Explora y filtra nuestra selección de vehículos usados con inspección técnica.
           </p>
         </div>
         <CatalogPdfButton vehicles={filtered} filterSummary={filterSummary} />

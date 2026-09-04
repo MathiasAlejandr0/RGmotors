@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCreditApplications, addCreditApplication } from "@/lib/server/creditsStore";
-import { COMPANY } from "@/lib/company";
+import { notifyTeam } from "@/lib/server/notify";
+import { clientKey, rateLimit } from "@/lib/server/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +19,14 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(clientKey(req, "credits"), 8, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Demasiados envíos. Intenta en un minuto." },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await req.json();
     if (!body.clientName || !body.email || !body.phone) {
@@ -42,22 +51,27 @@ export async function POST(req: NextRequest) {
       maxApprovedAmount: body.maxApprovedAmount ? Number(body.maxApprovedAmount) : undefined,
       status: "En evaluación",
       trafficSource: body.trafficSource,
-      notes: body.notes ? String(body.notes).trim() : `Simulación de crédito para ${body.clientName} (RUT: ${body.rut || "No especificado"}).`,
+      notes: body.notes
+        ? String(body.notes).trim()
+        : `Simulación de crédito para ${body.clientName} (RUT: ${body.rut || "No especificado"}).`,
     });
 
-    // Log de notificación al correo de la automotora
-    console.log(`[EMAIL NOTIFICATION] Nueva simulación de crédito enviada a ${COMPANY.email}:`, {
-      id: credit.id,
-      cliente: credit.clientName,
-      rut: credit.rut,
-      email: credit.email,
-      telefono: credit.phone,
-      vehiculo: credit.vehicleSlug,
-      renta: credit.income,
-      pie: credit.downPayment,
-      cuotaEstimada: credit.monthlyEstimate,
-      plazo: credit.term,
-      fecha: credit.date,
+    await notifyTeam({
+      type: "credit",
+      title: `Nueva simulación de crédito: ${credit.clientName}`,
+      body: `${credit.clientName} (RUT: ${credit.rut || "n/d"}) solicitó simulación. Vehículo: ${credit.vehicleSlug}. Pie: ${credit.downPayment ?? "n/d"}. Plazo: ${credit.term} meses. Cuota est.: ${credit.monthlyEstimate}. Contacto: ${credit.email} / ${credit.phone}.`,
+      meta: {
+        id: credit.id,
+        clientName: credit.clientName,
+        rut: credit.rut,
+        email: credit.email,
+        phone: credit.phone,
+        vehicleSlug: credit.vehicleSlug,
+        income: credit.income,
+        downPayment: credit.downPayment,
+        monthlyEstimate: credit.monthlyEstimate,
+        term: credit.term,
+      },
     });
 
     return NextResponse.json({

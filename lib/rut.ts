@@ -1,3 +1,5 @@
+import { AUTOFIN_DEFAULT_MONTHLY_RATE, frenchMonthlyPayment } from "@/lib/finance/autofin";
+
 /**
  * Validador y formateador de RUT chileno.
  */
@@ -12,7 +14,6 @@ export function formatRut(rut: string): string {
   const dv = clean.slice(-1);
   const body = clean.slice(0, -1);
 
-  // Formatear con puntos
   let formattedBody = "";
   for (let i = body.length - 1, j = 1; i >= 0; i--, j++) {
     formattedBody = body[i] + formattedBody;
@@ -49,23 +50,28 @@ export function validateRut(rut: string): boolean {
 }
 
 /**
- * Calcula el monto máximo de crédito pre-aprobado y la cuota recomendada.
- * En la banca automotriz chilena, la carga financiera máxima recomendada es el 30% - 35% de la renta líquida.
+ * Capacidad referencial (carga ~35% renta). Usa la misma tasa Autofin del sitio.
+ * No es pre-aprobación bancaria.
  */
-export function evaluateCreditCapacity(income: number, downPayment: number = 0, termMonths: number = 48) {
-  const maxMonthlyQuota = Math.round(income * 0.35); // 35% carga financiera máx
-  const monthlyRate = 0.019; // 1.9% mensual
+export function evaluateCreditCapacity(
+  income: number,
+  downPayment: number = 0,
+  termMonths: number = 48,
+) {
+  const maxMonthlyQuota = Math.round(income * 0.35);
+  const monthlyRate = AUTOFIN_DEFAULT_MONTHLY_RATE;
+  const term = Math.min(48, Math.max(6, termMonths));
 
-  // Monto financiable: cuota / factor
-  // factor = (i) / (1 - (1+i)^-term)
-  const factor = (monthlyRate) / (1 - Math.pow(1 + monthlyRate, -termMonths));
+  const factor = monthlyRate / (1 - Math.pow(1 + monthlyRate, -term));
   const maxFinanced = Math.round(maxMonthlyQuota / factor);
   const totalPurchasingPower = maxFinanced + downPayment;
+  const sampleQuota = frenchMonthlyPayment(maxFinanced, monthlyRate, term);
 
   return {
     maxMonthlyQuota,
     maxFinanced,
     totalPurchasingPower,
-    recommendedTerm: termMonths,
+    recommendedTerm: term,
+    sampleQuota,
   };
 }

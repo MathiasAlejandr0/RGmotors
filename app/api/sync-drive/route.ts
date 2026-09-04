@@ -88,8 +88,7 @@ export async function POST(req: NextRequest) {
           status: existing?.status || "Disponible",
           highlights: existing?.highlights || [
             "Inspección mecánica rigurosa de 150 puntos",
-            "Documentación y transferencia garantizada",
-            "Garantía técnica de 6 meses RG Motors",
+            "Documentación y transferencia al día",
           ],
         };
 

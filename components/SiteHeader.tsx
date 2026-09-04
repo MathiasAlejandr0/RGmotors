@@ -6,7 +6,6 @@ import { useState } from "react";
 import Logo from "./Logo";
 import { COMPANY } from "@/lib/company";
 import TradeInModal from "./TradeInModal";
-import FastCreditPreApprovalModal from "./FastCreditPreApprovalModal";
 import CarRequestModal from "./CarRequestModal";
 
 const NAV_LINKS = [
@@ -21,7 +20,6 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tradeInOpen, setTradeInOpen] = useState(false);
-  const [creditSimulationOpen, setCreditSimulationOpen] = useState(false);
   const [carRequestOpen, setCarRequestOpen] = useState(false);
 
   const isActive = (href: string) =>
@@ -113,12 +111,12 @@ export default function SiteHeader() {
               🔄 Tasar Auto
             </button>
 
-            <button
-              onClick={() => setCreditSimulationOpen(true)}
+            <Link
+              href="/simulador"
               className="apple-btn-primary hidden sm:inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-glow transition-all hover:scale-105 active:scale-95"
             >
               <span>⚡</span> Simular Crédito
-            </button>
+            </Link>
 
             {/* Mobile Hamburger Menu Button */}
             <button
@@ -151,15 +149,13 @@ export default function SiteHeader() {
               ))}
 
               <div className="my-2 border-t border-white/10 pt-2 flex flex-col gap-2">
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setCreditSimulationOpen(true);
-                  }}
+                <Link
+                  href="/simulador"
+                  onClick={() => setMobileMenuOpen(false)}
                   className="apple-btn-primary flex items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold text-white shadow-glow text-center"
                 >
-                  <span>⚡</span> Simular crédito automotriz
-                </button>
+                  <span>⚡</span> Simular crédito Autofin
+                </Link>
 
                 <button
                   onClick={() => {
@@ -218,7 +214,6 @@ export default function SiteHeader() {
 
       {/* Action Modals */}
       <TradeInModal isOpen={tradeInOpen} onClose={() => setTradeInOpen(false)} />
-      <FastCreditPreApprovalModal isOpen={creditSimulationOpen} onClose={() => setCreditSimulationOpen(false)} />
       <CarRequestModal isOpen={carRequestOpen} onClose={() => setCarRequestOpen(false)} />
     </>
   );

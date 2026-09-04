@@ -8,7 +8,7 @@ export type Reservation = {
   vehicleSlug: string;
   amount: number;
   method: string;
-  status: "Pagada" | "En proceso" | "Entregado" | "Cancelada";
+  status: "Pendiente" | "Pagada" | "En proceso" | "Entregado" | "Cancelada";
   date: string;
   trafficSource?: any;
   notes?: string;

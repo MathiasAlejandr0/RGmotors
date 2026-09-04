@@ -1,4 +1,4 @@
-import fs from "node:fs";
+﻿import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import decode from "heic-decode";
@@ -987,7 +987,6 @@ async function processAll() {
       highlights: [
         "Inspección mecánica de 150 puntos aprobada",
         "Documentación y transferibilidad inmediata al día",
-        "Garantía técnica RG Motors de 6 meses",
         "Opción de financiamiento con pie desde 20%",
       ],
     };

@@ -1,4 +1,4 @@
-import https from "node:https";
+﻿import https from "node:https";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createWriteStream } from "node:fs";
 import { join } from "node:path";
@@ -155,7 +155,6 @@ async function main() {
       highlights: [
         "Inspección de 150 puntos aprobada",
         "Documentación y Autofact al día",
-        "Garantía RG Motors de 6 meses",
         "Financiamiento y crédito disponible",
       ],
       gallery: gallery.length > 0 ? gallery : undefined,

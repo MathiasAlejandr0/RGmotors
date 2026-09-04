@@ -4,9 +4,9 @@
 
 # RG Motors — Plataforma de Autos Usados
 
-**E-commerce automotriz de nueva generación para Chile.**
-Catálogo inteligente, financiamiento en línea, reserva con pago parcial, comparador,
-**tours 360° propios** y asistente con IA — con una estética *dark, premium y tecnológica*.
+**Plataforma web de automotora para Chile.**
+Catálogo, simulación de crédito referencial Autofin, solicitud de reserva,
+comparador y panel admin — estética *dark, premium*.
 
 <br/>
 
@@ -20,17 +20,26 @@ Catálogo inteligente, financiamiento en línea, reserva con pago parcial, compa
 
 ---
 
+## 📊 Estado real del stack
+
+- **App**: Next.js (App Router) + React + TypeScript + Tailwind.
+- **Persistencia**: archivos JSON locales y/o **Vercel KV** (`lib/server/db.ts`). **No** usa Supabase en esta versión.
+- **Pagos**: **sin pasarelas** (WebPay / Mercado Pago / etc.). La reserva web es una **solicitud** (`Pendiente`); el abono se coordina en tienda o WhatsApp.
+- **360°**: componentes existentes, pero **no forman parte del alcance de este release** comercial.
+- **Admin**: autenticación por middleware + cookie firmada (`/admin/login`). Usuario/clave por defecto: `admin` / `rgmotors2026`. En el **primer ingreso** obliga a cambiar usuario y contraseña por unos más fuertes. Variables útiles: `ADMIN_SESSION_SECRET`, `CRON_SECRET`, `KV_REST_API_*`.
+- **Leads**: contacto, crédito, reserva, trade-in, etc. se persisten y notifican al equipo (`lib/server/notify.ts` → log + bandeja interna; conectar SMTP/Resend después).
+- **Legales**: `/privacidad`, `/terminos`, `/aviso-credito`.
+
+---
+
 ## ✨ Sobre el proyecto
 
-RG Motors es una automotora de vehículos de segunda mano. Esta plataforma fue diseñada
-para **diferenciarse del mercado chileno** con funciones que las páginas tradicionales
-no ofrecen: giro **360° del auto**, **simulación de crédito en tiempo real** y
-**reserva online** con pago parcial — todo dentro de una experiencia visual de nivel
-premium inspirada en marcas como BMW, Tesla, Porsche y Rivian.
+RG Motors es una automotora de vehículos de segunda mano en Puerto Montt.
+Esta plataforma ofrece catálogo, simulación de crédito referencial, solicitud de
+reserva, comparador y panel de administración — con estética dark premium.
 
-> 💡 El **tour 360°** es una función más dentro de la ficha del auto (una pestaña),
-> no el eje de toda la página. Está construido con tecnología **propia y gratuita**
-> (Three.js + secuencia de fotos), **sin licencias de pago** como CarCutter.
+> Los tours 360° (Three.js / fotos) existen en el código como capacidad técnica,
+> pero **no están habilitados como promesa comercial** en este release.
 
 ---
 
@@ -38,38 +47,13 @@ premium inspirada en marcas como BMW, Tesla, Porsche y Rivian.
 
 | | Función | Descripción |
 |---|---------|-------------|
-| 🔄 | **Giro 360° del auto** | Visor propio de fotos reales (arrastrar para girar, auto-rotación, pantalla completa) + modelo 3D interactivo de respaldo. |
-| 🏠 | **Tour interior** | Panorama inmersivo del habitáculo con puntos destacados (Conductor / Trasera). |
-| 💳 | **Crédito en tiempo real** | Simulador de cuota, CAE y costo total con pie y plazo configurables. |
-| 📅 | **Reserva online** | Reserva del vehículo pagando una parte del valor (WebPay, transferencia, Mercado Pago, Flow, OnePay). |
+| 💳 | **Crédito referencial** | Simulador Autofin (pie/plazo/CAE) + envío de simulación al equipo. |
+| 📅 | **Solicitud de reserva** | Formulario web sin pago online; el abono se coordina después. |
 | 🚗 | **Prueba de manejo** | Agenda por sucursal, día, hora y ejecutivo. |
 | 🔍 | **Catálogo con filtros** | Marca, tipo, precio, año, combustible, transmisión y orden. |
 | ⚖️ | **Comparador** | Compara hasta 3 vehículos lado a lado. |
-| 🤖 | **Asistente IA** | Widget flotante "RG AI" que recomienda autos del catálogo. |
-| 📊 | **Dashboards** | Panel de cliente (reservas, créditos, favoritos) y de administrador (KPIs, ventas). |
-
----
-
-## 🔄 Visor 360° propio (sin costo)
-
-El corazón innovador de la plataforma. Tres tecnologías, todas gratuitas:
-
-- **Por fotos reales** — [`components/PhotoSpin360.tsx`](components/PhotoSpin360.tsx)
-  Muestra una secuencia de fotos (24–36) dando la vuelta al auto. El usuario **arrastra
-  para girar**. Ejemplo montado: **Mazda CX-5** con 24 fotogramas de estudio.
-- **Modelo 3D interactivo** — [`components/Showroom3D.tsx`](components/Showroom3D.tsx)
-  Auto 3D con Three.js: girar, zoom, **cambio de color en vivo**, hotspots y cyclorama de estudio.
-- **Tour interior** — [`components/InteriorTour.tsx`](components/InteriorTour.tsx)
-  Panorama equirectangular del interior con puntos interactivos.
-
-### Cómo cargar el 360° por fotos de un auto real
-
-1. Toma **24–36 fotos** dando una vuelta completa al vehículo (misma distancia y altura).
-2. Renómbralas en orden: `001.jpg`, `002.jpg`, … y déjalas en `public/cars/spin/<slug>/`.
-3. En [`lib/vehicles.ts`](lib/vehicles.ts) agrega `spin: { count: 24 }` a ese vehículo.
-
-La pestaña **Tour 360°** de la ficha lo mostrará automáticamente.
-Ver guía completa en [`public/cars/spin/README.md`](public/cars/spin/README.md).
+| 🤖 | **Asistente** | Widget de ayuda que recomienda autos del catálogo. |
+| 📊 | **Admin** | Inventario, CRM y analítica sobre datos reales (sin KPIs inventados). |
 
 ---
 
@@ -93,13 +77,11 @@ Paleta inspirada en marcas premium — regla **80 / 15 / 5** (oscuros / blancos 
 
 ---
 
-## 🛠️ Stack tecnológico & Arquitectura Cloud ($0/mes)
+## 🛠️ Stack tecnológico
 
-- **Frontend & Web**: **Next.js 16** (App Router, SSR/SSG) · **React 19** · **TypeScript** · **Tailwind CSS**
-- **3D & Tours 360°**: **Three.js** · **HTML5 Canvas API** (sin licencias de pago externas)
-- **Base de Datos & Auth**: **Supabase (PostgreSQL - Free Tier)** (soporta catálogo de 400+ vehículos con búsqueda y filtros instantáneos)
-- **Almacenamiento Multimedia**: **Cloudflare R2 (Free Tier)** (10 GB gratis para +2.000 fotos y 400 videos con **$0 costo por transferencia/tráfico**)
-- **Hosting**: **Vercel (Hobby Free)** vinculado a dominio corporativo `.cl`
+- **Frontend**: **Next.js** (App Router) · **React** · **TypeScript** · **Tailwind CSS**
+- **Persistencia**: JSON + **Vercel KV** (opcional). Sin Supabase en este release.
+- **Hosting**: **Vercel**
 
 ---
 
@@ -117,8 +99,6 @@ npm run build
 npm start
 ```
 
-> Demo del 360°: `http://localhost:3000/vehiculo/mazda-cx5-2021` → pestaña **Tour 360°**.
-
 ### Scripts disponibles
 
 | Script | Descripción |
@@ -126,8 +106,8 @@ npm start
 | `npm run dev` | Servidor de desarrollo |
 | `npm run build` | Compila para producción |
 | `npm run lint` | Linter |
-| `npm run demo:frames` | Genera frames 360° de demostración |
-| `node scripts/build-cx5-spin.mjs` | Monta el giro 360° del Mazda CX-5 |
+| `npm run demo:frames` | Genera frames 360° de demostración (opcional) |
+| `node scripts/build-cx5-spin.mjs` | Monta el giro 360° del Mazda CX-5 (opcional) |
 | `node scripts/process-logo.mjs` | Procesa el logo (fondo transparente) |
 
 ---
@@ -136,38 +116,34 @@ npm start
 
 ```
 app/
-  (site)/                    # Páginas públicas (header, footer y chat IA)
+  (site)/                    # Páginas públicas (header, footer)
     page.tsx                 # Home
     catalogo/  comparador/  simulador/  contacto/
-    vehiculo/[slug]/         # Ficha del auto (galería + 360° + crédito)
-    reserva/[slug]/          # Reserva online con pago parcial
+    privacidad/  terminos/  aviso-credito/
+    vehiculo/[slug]/         # Ficha del auto
+    reserva/[slug]/          # Solicitud de reserva (sin pago)
     prueba-manejo/[slug]/    # Agenda de prueba de manejo
-  cuenta/                    # Dashboard del cliente
-  admin/                     # Dashboard del administrador
+  cuenta/                    # Portal cliente (próximamente)
+  admin/                     # Panel administrador
 components/
   SiteHeader · SiteFooter · ChatWidget · Logo
-  VehicleCard · VehicleViewer
-  Showroom3D · InteriorTour · PhotoSpin360      # Visores 360°
-  CuotaSimulator · ReserveFlow · TestDriveForm
-documentos/                  # Documentación de proyecto y solicitudes formales
+  VehicleCard · ReserveFlow · TestDriveForm
 lib/
-  vehicles.ts                # Datos de vehículos y utilidades
-public/
-  cars/                      # Imágenes y fotos 360° del inventario
-  logo.png · logo-alt.png
-scripts/                     # Generación de assets (frames, logo)
+  company.ts · vehicles.ts · analytics.ts
+  finance/autofin.ts
+  server/db.ts · notify · rateLimit · *Store
 ```
 
 ---
 
 ## 🗺️ Roadmap
 
-- [x] Arquitectura de nube optimizada a **Costo $0/mes** (Vercel + Supabase Free + Cloudflare R2 Free).
-- [ ] Conexión de Base de datos real (**Supabase Postgres**) para inventario, reservas y usuarios.
-- [ ] Panel admin conectado a Supabase Auth y subida directa de fotos/videos a **Cloudflare R2**.
-- [ ] Pago real con **Transbank WebPay Plus**.
-- [ ] Pre-calificación de crédito con financiera/bureau e informe **Autofact**.
-- [ ] Giro 360° por fotos reales para todo el inventario.
+- [x] Persistencia JSON / Vercel KV y admin con auth middleware.
+- [x] Solicitud de reserva sin pasarela de pago.
+- [ ] Pasarela real (Transbank WebPay Plus u otra).
+- [ ] Portal de cliente activo.
+- [ ] Tours 360° habilitados comercialmente para el inventario.
+- [ ] Notificaciones email (Resend/SMTP) sobre `notifyTeam`.
 
 ---
 

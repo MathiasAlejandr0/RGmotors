@@ -6,9 +6,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://rgmotors.cl"),
-  title: "RG Motors — Vehículos Seleccionados y Calidad Garantizada",
+  title: "RG Motors — Vehículos Seleccionados en Puerto Montt",
   description:
-    "Compra tu próximo auto o camioneta en Puerto Montt, Los Lagos. Stock 100% verificado, fotos reales de cada unidad, simulación de crédito automotriz y garantía RG Motors.",
+    "Compra tu próximo auto o camioneta en Puerto Montt, Los Lagos. Stock verificado, fotos reales de cada unidad y simulación de crédito automotriz con Autofin.",
   keywords: [
     "autos usados",
     "camionetas 4x4",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "RG Motors — Vehículos Seleccionados en Puerto Montt",
     description:
-      "Automotora líder en Puerto Montt. Catálogo de camionetas y autos con fotografías reales, financiamiento y garantía de 6 meses.",
+      "Automotora en Puerto Montt. Catálogo de camionetas y autos usados con fotografías reales e financiamiento Autofin.",
     type: "website",
     locale: "es_CL",
     images: [{ url: "/logo.png", width: 512, height: 512, alt: "RG Motors" }],

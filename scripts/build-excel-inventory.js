@@ -1,4 +1,4 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 const XLSX = require("xlsx");
 
@@ -276,8 +276,7 @@ function parseExcel() {
       featured: (brand === "Toyota" || brand === "Mitsubishi") && price > 0,
       highlights: [
         "Inspección mecánica rigurosa de 150 puntos",
-        "Documentación y transferencia garantizada",
-        "Garantía técnica de 6 meses RG Motors",
+        "Documentación y transferencia al día",
         "Financiamiento y retoma de vehículos en parte de pago"
       ]
     });

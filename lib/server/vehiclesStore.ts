@@ -3,9 +3,19 @@ import { Vehicle, vehicles as initialVehicles } from "@/lib/vehicles";
 
 const FILENAME = "vehicles.json";
 
+/** RG Motors no ofrece garantía en usados: filtrar textos heredados. */
+function stripWarrantyClaims(vehicle: Vehicle): Vehicle {
+  if (!vehicle.highlights?.length) return vehicle;
+  const cleaned = vehicle.highlights.filter(
+    (h) => !/garant[ií]a/i.test(h) || /no ofrece garantía/i.test(h),
+  );
+  if (cleaned.length === vehicle.highlights.length) return vehicle;
+  return { ...vehicle, highlights: cleaned };
+}
+
 export async function getVehicles(): Promise<Vehicle[]> {
   const list = await readJson<Vehicle[]>(FILENAME, initialVehicles);
-  return list;
+  return list.map(stripWarrantyClaims);
 }
 
 export async function getVehicleBySlug(slug: string): Promise<Vehicle | null> {

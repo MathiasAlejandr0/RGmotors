@@ -28,15 +28,15 @@ export type SystemSettings = {
 const DEFAULT_SETTINGS: SystemSettings = {
   company: { ...COMPANY },
   preferences: {
-    showSpin360: true,
+    showSpin360: false,
     enableChatbot: true,
     showCuotaSimulator: true,
     enableOnlineReservation: true,
-    aiStudioMode: true,
+    aiStudioMode: false,
     reserveAmount: 200000,
     defaultDownPct: 20,
     defaultTermMonths: 48,
-    monthlyInterestRate: 0.019,
+    monthlyInterestRate: 0.0185,
   },
 };
 

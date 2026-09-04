@@ -1,4 +1,4 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const list1 = JSON.parse(fs.readFileSync("scratch/parsed_pdf1.json", "utf8"));
@@ -251,7 +251,6 @@ for (const [plate, raw] of plateMap.entries()) {
     highlights: [
       "Inspección mecánica rigurosa aprobada",
       "Documentación y transferencia inmediata",
-      "Garantía técnica de 6 meses",
       "Financiamiento automotriz disponible"
     ]
   });

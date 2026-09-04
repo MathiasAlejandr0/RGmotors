@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatCLP } from "@/lib/vehicles";
 import { getTrafficSource } from "@/lib/trafficTracking";
+import { whatsappLink } from "@/lib/company";
 
 type Props = {
   isOpen: boolean;
@@ -72,11 +73,10 @@ export default function TradeInModal({
     }
   };
 
-  const cleanPhone = phone.replace(/[^0-9]/g, "");
   const waMsg = `Hola RG Motors, quiero entregar mi auto en parte de pago: ${brand} ${model} año ${year} (${km.toLocaleString("es-CL")} km)${
     targetVehicleName ? ` para comprar el ${targetVehicleName}` : ""
   }. Mi nombre es ${name}.`;
-  const waUrl = `https://wa.me/56987654321?text=${encodeURIComponent(waMsg)}`;
+  const waUrl = whatsappLink(waMsg);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md overflow-y-auto">

@@ -11,12 +11,16 @@ export default function SernacDisclaimer({ className = "" }: { className?: strin
       </div>
 
       <p className="text-[11px] text-white/60">
-        Las simulaciones de crédito, valores de cuota mensual, tasas de interés referenciales (estimadas entre 1,2% y 2,4% mensual),
-        Carga Anual Equivalente (CAE) y Costo Total del Crédito (CTC) exhibidos en esta plataforma son de carácter exclusivamente ilustrativo y no constituyen una oferta formal ni aprobación vinculante.
+        Las simulaciones de crédito de este sitio son referenciales. Usan la misma lógica de
+        mercado que partners Autofin (pie desde 20%, hasta 48 cuotas, tasa referencial). La
+        cuota o el costo total <b className="text-white/70">puede coincidir o aumentar</b> al
+        formalizar con Autofin en sucursal (evaluación, seguros, campaña).
       </p>
 
       <p className="text-[11px] text-white/60">
-        La aprobación final, tasa de interés aplicable, costos asociados (seguro de desgravamen, gastos notariales e inscripción) y plazo definitivo están sujetos a la evaluación crediticia, verificación de ingresos y políticas de riesgo de las instituciones financieras asociadas reguladas por la CMF (Comisión para el Mercado Financiero), tales como Santander Consumer, Forum Servicios Financieros, Tanner, Autofin o Banco Falabella.
+        El crédito lo otorga Autofin. RG Motors comercializa el vehículo y captura tus datos
+        solo para contacto y análisis propios. Solicita siempre la información formal (FIEL)
+        antes de firmar.
       </p>
 
       <div className="flex flex-wrap items-center justify-between border-t border-white/10 pt-2 text-[10px] text-white/40">

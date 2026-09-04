@@ -321,7 +321,7 @@ function VehiclePage({
             <Text style={s.monthly}>o {formatCLP(monthly)}/mes (pie 20% · 48 cuotas)</Text>
             <View style={s.badgeRow}>
               {v.featured ? <Text style={s.badgeFeat}>Destacado</Text> : null}
-              <Text style={s.badge}>Garantía 6 meses</Text>
+              <Text style={s.badge}>Inspección 150 pts</Text>
             </View>
           </View>
 
@@ -330,7 +330,7 @@ function VehiclePage({
             {(v.highlights || [
               "Inspección de 150 puntos aprobada",
               "Documentación y Autofact al día",
-              "Garantía RG Motors de 6 meses",
+              "Financiamiento Autofin disponible",
             ]).map((h: string) => (
               <View key={h} style={s.hlItem}>
                 <Text style={s.hlDot}>✓</Text>
@@ -373,8 +373,8 @@ export function CatalogPdfDoc({
           <Text style={s.coverEyebrow}>RG Motors</Text>
           <Text style={s.coverTitle}>Catálogo de vehículos</Text>
           <Text style={s.coverSub}>
-            Autos usados certificados con inspección de 150 puntos, historial
-            verificado, garantía y financiamiento en línea. Cada página siguiente
+            Autos usados seleccionados con inspección de 150 puntos, historial
+            verificado y financiamiento en línea. Cada página siguiente
             presenta un vehículo con sus fotos y especificaciones.
           </Text>
           <View style={s.coverMetaRow}>
@@ -384,8 +384,8 @@ export function CatalogPdfDoc({
           </View>
           <View style={s.coverTrust}>
             <Text style={s.coverTrustItem}>✓ Inspección 150 puntos</Text>
-            <Text style={s.coverTrustItem}>✓ Garantía 6 meses</Text>
-            <Text style={s.coverTrustItem}>✓ Crédito en línea</Text>
+            <Text style={s.coverTrustItem}>✓ Fotos reales</Text>
+            <Text style={s.coverTrustItem}>✓ Crédito Autofin</Text>
           </View>
         </View>
         <Text style={s.coverFoot}>

@@ -1,17 +1,14 @@
 /**
- * Motor de analítica de RG Motors (inteligencia de negocio).
- *
- * Genera un dataset DETERMINISTA de leads/clientes (mismo resultado en servidor
- * y cliente, sin desajustes de hidratación) y expone funciones de ciencia de
- * datos: KPIs, embudo de conversión, scoring de leads, segmentación tipo RFM,
- * demanda vs. stock, apetito de financiamiento, atribución de canal, tendencia
- * de ventas con proyección y recomendaciones accionables.
- *
- * Nota: los datos son sintéticos (demo). La arquitectura está lista para
- * enchufar datos reales: basta reemplazar `generateLeads()` por la consulta a
- * la base de datos / eventos reales.
+ * Motor de analítica de RG Motors.
+ * Trabaja solo con leads reales entregados por API/caller.
+ * No genera datasets sintéticos en producción.
  */
 import { vehicles, type Vehicle } from "@/lib/vehicles";
+
+/** Demo/synthetic analytics disabled — use real leads from /api/track etc. */
+export function isDemoAnalytics() {
+  return false;
+}
 
 // Ancla temporal fija -> los "meses" del dashboard son estables y deterministas.
 export const ANCHOR = new Date("2026-07-15T12:00:00Z");
@@ -50,7 +47,7 @@ export type Lead = {
   segment: string;
 };
 
-// ---- PRNG determinista (mulberry32) ---------------------------------------
+// ---- PRNG (solo helpers internos; no se usan para inventar leads) -----------
 function mulberry32(seed: number) {
   return function () {
     let t = (seed += 0x6d2b79f5);
@@ -60,158 +57,12 @@ function mulberry32(seed: number) {
   };
 }
 
-const FIRST = [
-  "Matías", "Carla", "Pedro", "Ana", "José", "Francisca", "Diego", "Valentina",
-  "Cristián", "Camila", "Rodrigo", "Javiera", "Felipe", "Antonia", "Sebastián",
-  "Constanza", "Ignacio", "Daniela", "Tomás", "Fernanda", "Nicolás", "Paula",
-  "Andrés", "Catalina", "Vicente", "Isidora", "Benjamín", "Josefa", "Gabriel", "Emilia",
-];
-const LAST = [
-  "González", "Muñoz", "Rojas", "Díaz", "Pérez", "Soto", "Contreras", "Silva",
-  "Martínez", "Sepúlveda", "Morales", "Rodríguez", "López", "Fuentes", "Torres",
-  "Araya", "Flores", "Espinoza", "Castillo", "Tapia", "Reyes", "Gutiérrez", "Vega",
-];
-const REGIONS = [
-  ["Región Metropolitana", 0.52],
-  ["Valparaíso", 0.14],
-  ["Biobío", 0.1],
-  ["Maule", 0.07],
-  ["La Araucanía", 0.06],
-  ["O'Higgins", 0.06],
-  ["Coquimbo", 0.05],
-] as const;
-const AGE_BANDS = [
-  ["18-25", 0.14],
-  ["26-35", 0.34],
-  ["36-45", 0.28],
-  ["46-55", 0.16],
-  ["56+", 0.08],
-] as const;
-const SOURCES: [Source, number][] = [
-  ["Orgánico", 0.26],
-  ["Google Ads", 0.2],
-  ["Instagram", 0.19],
-  ["Chatbot", 0.15],
-  ["Facebook", 0.12],
-  ["Referido", 0.08],
-];
-const BODY_WEIGHTS: [BodyType, number][] = [
-  ["SUV", 0.42],
-  ["Camioneta", 0.24],
-  ["Sedán", 0.2],
-  ["Hatchback", 0.14],
-];
-
-function pickWeighted<T>(rnd: () => number, items: readonly (readonly [T, number])[]): T {
-  const r = rnd();
-  let acc = 0;
-  for (const [val, w] of items) {
-    acc += w as number;
-    if (r <= acc) return val as T;
-  }
-  return items[items.length - 1][0] as T;
-}
-
-function randint(rnd: () => number, min: number, max: number) {
-  return Math.floor(rnd() * (max - min + 1)) + min;
-}
-
-const BRANDS_BY_BODY: Record<BodyType, string[]> = {
-  SUV: ["Toyota", "Mazda", "Hyundai", "Kia"],
-  Camioneta: ["Toyota", "Ford"],
-  Sedán: ["Chevrolet", "Nissan"],
-  Hatchback: ["Suzuki"],
-};
-
-function budgetFor(rnd: () => number, body: BodyType): number {
-  const base: Record<BodyType, [number, number]> = {
-    SUV: [12, 22],
-    Camioneta: [16, 28],
-    Sedán: [7, 13],
-    Hatchback: [8, 13],
-  };
-  const [lo, hi] = base[body];
-  const m = lo + rnd() * (hi - lo);
-  return Math.round(m * 1_000_000);
-}
-
-// ---- Generación del dataset -----------------------------------------------
-let _cache: Lead[] | null = null;
-
+/** @deprecated No genera leads sintéticos. Usa leads reales desde la API. */
 export function generateLeads(): Lead[] {
-  if (_cache) return _cache;
-  const rnd = mulberry32(20260730);
-  const N = 520;
-  const leads: Lead[] = [];
-
-  for (let i = 0; i < N; i++) {
-    const source = pickWeighted(rnd, SOURCES);
-    const interestBody = pickWeighted(rnd, BODY_WEIGHTS);
-    const brands = BRANDS_BY_BODY[interestBody];
-    const interestBrand = brands[randint(rnd, 0, brands.length - 1)];
-    const budget = budgetFor(rnd, interestBody);
-    const region = pickWeighted(rnd, REGIONS);
-    const ageBand = pickWeighted(rnd, AGE_BANDS);
-
-    // Recencia sesgada a los últimos días (más leads recientes).
-    const createdDaysAgo = Math.floor(Math.pow(rnd(), 1.6) * 180);
-
-    // Financiamiento: más probable en presupuestos bajos/medios.
-    const wantsFinancing = rnd() < (budget < 15_000_000 ? 0.72 : 0.44);
-
-    // Comportamiento en el sitio.
-    const engaged = rnd();
-    const views = randint(rnd, 1, 3) + Math.round(engaged * 10);
-    const creditSims = wantsFinancing ? randint(rnd, 0, 4) : randint(rnd, 0, 1);
-    const testDrive = rnd() < engaged * 0.45;
-    const reserved = testDrive && rnd() < 0.5;
-    const purchased = reserved && rnd() < 0.62;
-
-    const lastActivityDaysAgo = Math.max(
-      0,
-      createdDaysAgo - randint(rnd, 0, Math.min(createdDaysAgo, 20))
-    );
-
-    const partial: Omit<Lead, "score" | "segment"> = {
-      id: `L${String(1000 + i)}`,
-      name: `${FIRST[randint(rnd, 0, FIRST.length - 1)]} ${LAST[randint(rnd, 0, LAST.length - 1)]}`,
-      phone: `+56 9 ${randint(rnd, 4000, 9999)} ${randint(rnd, 1000, 9999)}`,
-      email: "",
-      region,
-      ageBand,
-      source,
-      createdDaysAgo,
-      lastActivityDaysAgo,
-      interestBody,
-      interestBrand,
-      budget,
-      wantsFinancing,
-      views,
-      creditSims,
-      testDrive,
-      reserved,
-      purchased,
-    };
-    const score = leadScore(partial);
-    const segment = segmentOf(partial, score);
-    const email = emailFrom(partial.name, i);
-    leads.push({ ...partial, email, score, segment });
-  }
-
-  _cache = leads;
-  return leads;
+  return [];
 }
 
-function emailFrom(name: string, i: number) {
-  const clean = name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z ]/g, "")
-    .split(" ");
-  const domains = ["gmail.com", "hotmail.com", "outlook.com", "gmail.com"];
-  return `${clean[0]}.${clean[1] ?? "cl"}${i % 7}@${domains[i % domains.length]}`;
-}
+void mulberry32; // keep helper available if demo mode is re-enabled later
 
 // ---- Scoring de leads (0-100) ---------------------------------------------
 export function leadScore(l: Omit<Lead, "score" | "segment">): number {
@@ -275,6 +126,20 @@ export type Kpis = {
 
 export function computeKpis(leads: Lead[]): Kpis {
   const total = leads.length;
+  if (total === 0) {
+    return {
+      totalLeads: 0,
+      leads30d: 0,
+      hotLeads: 0,
+      conversion: 0,
+      reservationRate: 0,
+      creditRate: 0,
+      avgTicket: 0,
+      revenue: 0,
+      avgScore: 0,
+      momLeadGrowth: 0,
+    };
+  }
   const purchased = leads.filter((l) => l.purchased);
   const revenue = purchased.reduce((a, l) => a + estClose(l), 0);
   const leads30d = leads.filter((l) => l.createdDaysAgo <= 30).length;
@@ -322,6 +187,7 @@ export function funnel(leads: Lead[]) {
 
 // ---- Segmentos -------------------------------------------------------------
 export function segments(leads: Lead[]) {
+  if (!leads.length) return [];
   const map = new Map<string, Lead[]>();
   for (const l of leads) {
     if (!map.has(l.segment)) map.set(l.segment, []);
@@ -380,27 +246,22 @@ export function demandVsStock(leads: Lead[]) {
 // ---- Apetito de financiamiento ---------------------------------------------
 export function financing(leads: Lead[]) {
   const wants = leads.filter((l) => l.wantsFinancing);
-  const rnd = mulberry32(7); // aprobación sintética estable
-  let approved = 0;
-  for (const l of wants) {
-    const p = l.budget < 12_000_000 ? 0.62 : l.budget < 18_000_000 ? 0.74 : 0.85;
-    if (rnd() < p) approved++;
-  }
   return {
     wantsPct: pct(wants.length, leads.length),
-    approvalRate: pct(approved, wants.length),
+    approvalRate: 0, // sin datos reales de aprobación
     avgDown: 20,
     terms: [
-      { label: "24 cuotas", pct: 14 },
-      { label: "36 cuotas", pct: 27 },
-      { label: "48 cuotas", pct: 38 },
-      { label: "60 cuotas", pct: 21 },
+      { label: "24 cuotas", pct: 0 },
+      { label: "36 cuotas", pct: 0 },
+      { label: "48 cuotas", pct: 0 },
+      { label: "60 cuotas", pct: 0 },
     ],
   };
 }
 
 // ---- Atribución de canal ---------------------------------------------------
 export function channels(leads: Lead[]) {
+  if (!leads.length) return [];
   const map = new Map<Source, Lead[]>();
   for (const l of leads) {
     if (!map.has(l.source)) map.set(l.source, []);
@@ -454,6 +315,16 @@ export function salesTrend(leads: Lead[]) {
 
 // ---- Recomendaciones accionables ------------------------------------------
 export function recommendations(leads: Lead[]): { icon: string; title: string; detail: string; tone: "opp" | "warn" | "good" }[] {
+  if (!leads.length) {
+    return [
+      {
+        icon: "ℹ️",
+        title: "Sin leads analíticos aún",
+        detail: "Los KPIs se llenarán con datos reales del sitio (chat, formularios, CRM).",
+        tone: "good",
+      },
+    ];
+  }
   const recs: { icon: string; title: string; detail: string; tone: "opp" | "warn" | "good" }[] = [];
   const hot = leads.filter((l) => scoreBand(l.score) === "hot" && !l.purchased);
   const hotStale = hot.filter((l) => l.lastActivityDaysAgo > 3);
@@ -485,12 +356,14 @@ export function recommendations(leads: Lead[]): { icon: string; title: string; d
     });
   }
   const fin = financing(leads);
-  recs.push({
-    icon: "💳",
-    title: `${fin.wantsPct}% de los leads pide financiamiento`,
-    detail: `La aprobación estimada es ${fin.approvalRate}%. Priorizar convenios con financieras y pre-aprobación acelera el cierre.`,
-    tone: "opp",
-  });
+  if (fin.wantsPct > 0) {
+    recs.push({
+      icon: "💳",
+      title: `${fin.wantsPct}% de los leads pide financiamiento`,
+      detail: `Priorizar convenios con financieras acelera el cierre.`,
+      tone: "opp",
+    });
+  }
   const tr = salesTrend(leads);
   if (tr.slope > 0) {
     recs.push({
@@ -543,114 +416,26 @@ const BRAND_COLORS: Record<string, string> = {
   Kia: "#EC4899",
   Volkswagen: "#6366F1",
 };
+void BRAND_COLORS;
 
 export function topSellingModelsAndProcurement(
   leads: Lead[],
   catalogVehicles: Vehicle[] = vehicles
 ): ProcurementOpportunity[] {
-  const modelStats: {
-    brand: string;
-    model: string;
-    bodyType: BodyType;
-    basePrice: number;
-    salesCount: number;
-    activeLeads: number;
-    avgDaysToSell: number;
-  }[] = [
-    { brand: "Toyota", model: "RAV4", bodyType: "SUV", basePrice: 18990000, salesCount: 19, activeLeads: 26, avgDaysToSell: 7 },
-    { brand: "Toyota", model: "Hilux", bodyType: "Camioneta", basePrice: 22490000, salesCount: 16, activeLeads: 21, avgDaysToSell: 9 },
-    { brand: "Mazda", model: "CX-5", bodyType: "SUV", basePrice: 16490000, salesCount: 14, activeLeads: 18, avgDaysToSell: 11 },
-    { brand: "Suzuki", model: "Swift", bodyType: "Hatchback", basePrice: 8990000, salesCount: 13, activeLeads: 17, avgDaysToSell: 10 },
-    { brand: "Ford", model: "Ranger", bodyType: "Camioneta", basePrice: 20990000, salesCount: 12, activeLeads: 15, avgDaysToSell: 12 },
-    { brand: "Hyundai", model: "Tucson", bodyType: "SUV", basePrice: 15990000, salesCount: 11, activeLeads: 14, avgDaysToSell: 13 },
-    { brand: "Kia", model: "Sportage", bodyType: "SUV", basePrice: 15490000, salesCount: 8, activeLeads: 10, avgDaysToSell: 16 },
-    { brand: "Chevrolet", model: "Tracker", bodyType: "SUV", basePrice: 12990000, salesCount: 7, activeLeads: 9, avgDaysToSell: 22 },
-    { brand: "Nissan", model: "Versa", bodyType: "Sedán", basePrice: 9490000, salesCount: 6, activeLeads: 8, avgDaysToSell: 21 },
-    { brand: "Chevrolet", model: "Onix", bodyType: "Sedán", basePrice: 8490000, salesCount: 5, activeLeads: 6, avgDaysToSell: 28 },
-  ];
-
-  return modelStats.map((item, index) => {
-    const currentStock = catalogVehicles.filter(
-      (v) => v.brand.toLowerCase() === item.brand.toLowerCase() && v.model.toLowerCase().includes(item.model.toLowerCase())
-    ).length;
-
-    // Calcular recomendación inteligente para el dueño
-    let recommendation: ProcurementOpportunity["recommendation"];
-    let turnoverSpeed: ProcurementOpportunity["turnoverSpeed"];
-    let recommendationReason: string;
-    let badgeColor: string;
-
-    if (item.avgDaysToSell <= 9 && currentStock <= 1) {
-      recommendation = "Comprar Urgente";
-      turnoverSpeed = "Ultra Rápida (<10d)";
-      recommendationReason = `Demanda crítica: ${item.activeLeads} clientes esperando y solo ${currentStock} en stock. Se vende en ~${item.avgDaysToSell} días.`;
-      badgeColor = "#EF4444"; // Rojo fuego
-    } else if (item.avgDaysToSell <= 15 && currentStock <= 2) {
-      recommendation = "Alta Rotación";
-      turnoverSpeed = "Rápida (10-20d)";
-      recommendationReason = `Rotación asegurada en ~${item.avgDaysToSell} días. Ideal para comprar en tasaciones y retomas.`;
-      badgeColor = "#F97316"; // Naranja
-    } else if (currentStock >= 3) {
-      recommendation = "Pausar Compras";
-      turnoverSpeed = item.avgDaysToSell > 30 ? "Lenta (>35d)" : "Normal (20-35d)";
-      recommendationReason = `Stock suficiente (${currentStock} u). No sobre-comprar hasta agotar inventario actual.`;
-      badgeColor = "#8A9099"; // Gris
-    } else {
-      recommendation = "Stock Óptimo";
-      turnoverSpeed = "Normal (20-35d)";
-      recommendationReason = `Flujo constante y equilibrado. Mantener entre 1 y 2 unidades.`;
-      badgeColor = "#22C55E"; // Verde
-    }
-
-    const targetBuyPrice = Math.round(item.basePrice * 0.82); // Margen de retoma ~18%
-    const estGrossMargin = item.basePrice - targetBuyPrice;
-    const estMarginPct = Math.round((estGrossMargin / item.basePrice) * 100);
-
-    return {
-      rank: index + 1,
-      brand: item.brand,
-      model: item.model,
-      bodyType: item.bodyType,
-      salesCount: item.salesCount,
-      activeLeads: item.activeLeads,
-      currentStock,
-      avgDaysToSell: item.avgDaysToSell,
-      avgRetailPrice: item.basePrice,
-      targetBuyPrice,
-      estGrossMargin,
-      estMarginPct,
-      turnoverSpeed,
-      recommendation,
-      recommendationReason,
-      badgeColor,
-    };
-  });
+  if (!isDemoAnalytics()) {
+    void leads;
+    void catalogVehicles;
+    return [];
+  }
+  return [];
 }
 
 export function brandMarketShare(leads: Lead[]): BrandMarketShare[] {
-  const brandCounts: Record<string, { sales: number; leads: number; totalBudget: number }> = {
-    Toyota: { sales: 35, leads: 130, totalBudget: 35 * 20_000_000 },
-    Mazda: { sales: 22, leads: 88, totalBudget: 22 * 16_500_000 },
-    Ford: { sales: 18, leads: 64, totalBudget: 18 * 21_000_000 },
-    Hyundai: { sales: 16, leads: 59, totalBudget: 16 * 15_000_000 },
-    Suzuki: { sales: 15, leads: 54, totalBudget: 15 * 9_000_000 },
-    Chevrolet: { sales: 12, leads: 48, totalBudget: 12 * 10_500_000 },
-    Nissan: { sales: 10, leads: 42, totalBudget: 10 * 11_000_000 },
-    Kia: { sales: 9, leads: 35, totalBudget: 9 * 14_500_000 },
-  };
-
-  const totalSales = Object.values(brandCounts).reduce((acc, curr) => acc + curr.sales, 0);
-
-  return Object.entries(brandCounts)
-    .map(([brand, data]) => ({
-      brand,
-      salesCount: data.sales,
-      leadsCount: data.leads,
-      sharePct: Math.round((data.sales / totalSales) * 100),
-      avgTicket: Math.round(data.totalBudget / data.sales),
-      color: BRAND_COLORS[brand] || "#3B82F6",
-    }))
-    .sort((a, b) => b.salesCount - a.salesCount);
+  if (!isDemoAnalytics()) {
+    void leads;
+    return [];
+  }
+  return [];
 }
 
 // ---- Autos Más Buscados SIN STOCK (Demanda Insatisfecha / Venta Asegurada) ----
@@ -672,131 +457,11 @@ export type UnmetDemandVehicle = {
 };
 
 export function unmetDemandZeroStock(catalogVehicles: Vehicle[] = vehicles): UnmetDemandVehicle[] {
-  const missingDemandList: UnmetDemandVehicle[] = [
-    {
-      id: "mitsubishi-l200",
-      brand: "Mitsubishi",
-      model: "L200 Diésel 4x4",
-      yearRange: "2020 - 2023",
-      bodyType: "Camioneta",
-      waitlistBuyers: 14,
-      searchVolume30d: 218,
-      avgBudget: 19500000,
-      targetAcquisitionPrice: 16000000,
-      estGrossProfit: 3500000,
-      timeToSellHours: "< 24 hrs",
-      urgencyScore: 98,
-      urgencyLevel: "CRÍTICA (Comprar Ya)",
-      buyerProfiles: [
-        { name: "Gonzalo Valdés", phone: "+56 9 8451 2291", budget: 19800000, status: "Crédito pre-aprobado" },
-        { name: "Transportes Sur Ltda", phone: "+56 9 7312 9944", budget: 20000000, status: "Pago al contado" },
-        { name: "Felipe Morales", phone: "+56 9 9234 1182", budget: 19200000, status: "Retoma + Efectivo" },
-      ],
-    },
-    {
-      id: "subaru-forester",
-      brand: "Subaru",
-      model: "Forester AWD",
-      yearRange: "2019 - 2023",
-      bodyType: "SUV",
-      waitlistBuyers: 11,
-      searchVolume30d: 174,
-      avgBudget: 17800000,
-      targetAcquisitionPrice: 14600000,
-      estGrossProfit: 3200000,
-      timeToSellHours: "< 48 hrs",
-      urgencyScore: 94,
-      urgencyLevel: "CRÍTICA (Comprar Ya)",
-      buyerProfiles: [
-        { name: "Claudia Henríquez", phone: "+56 9 9123 7766", budget: 18000000, status: "Evaluada en 60s" },
-        { name: "Esteban Rivas", phone: "+56 9 6543 8812", budget: 17500000, status: "Al contado" },
-      ],
-    },
-    {
-      id: "suzuki-jimny",
-      brand: "Suzuki",
-      model: "Jimny 1.5 4x4",
-      yearRange: "2021 - 2024",
-      bodyType: "SUV",
-      waitlistBuyers: 9,
-      searchVolume30d: 152,
-      avgBudget: 13990000,
-      targetAcquisitionPrice: 11500000,
-      estGrossProfit: 2490000,
-      timeToSellHours: "< 24 hrs",
-      urgencyScore: 96,
-      urgencyLevel: "CRÍTICA (Comprar Ya)",
-      buyerProfiles: [
-        { name: "Matías Soto", phone: "+56 9 8765 4321", budget: 14200000, status: "Pie 40% + Crédito" },
-        { name: "Andrea Pizarro", phone: "+56 9 9345 6789", budget: 13800000, status: "Esperando en Las Condes" },
-      ],
-    },
-    {
-      id: "toyota-yaris-cross",
-      brand: "Toyota",
-      model: "Yaris Cross Híbrido",
-      yearRange: "2022 - 2024",
-      bodyType: "SUV",
-      waitlistBuyers: 8,
-      searchVolume30d: 138,
-      avgBudget: 16490000,
-      targetAcquisitionPrice: 13600000,
-      estGrossProfit: 2890000,
-      timeToSellHours: "< 48 hrs",
-      urgencyScore: 91,
-      urgencyLevel: "ALTA (Venta 48h)",
-      buyerProfiles: [
-        { name: "Rodrigo San Martín", phone: "+56 9 7890 1234", budget: 16800000, status: "Crédito aprobado" },
-      ],
-    },
-    {
-      id: "peugeot-2008",
-      brand: "Peugeot",
-      model: "2008 Allure HDi Diésel",
-      yearRange: "2021 - 2023",
-      bodyType: "SUV",
-      waitlistBuyers: 7,
-      searchVolume30d: 112,
-      avgBudget: 14990000,
-      targetAcquisitionPrice: 12300000,
-      estGrossProfit: 2690000,
-      timeToSellHours: "< 72 hrs",
-      urgencyScore: 86,
-      urgencyLevel: "ALTA (Venta 48h)",
-      buyerProfiles: [
-        { name: "Ignacio Vega", phone: "+56 9 6123 4567", budget: 15000000, status: "Pre-aprobado" },
-      ],
-    },
-    {
-      id: "honda-crv",
-      brand: "Honda",
-      model: "CR-V EX / Touring",
-      yearRange: "2018 - 2022",
-      bodyType: "SUV",
-      waitlistBuyers: 5,
-      searchVolume30d: 95,
-      avgBudget: 18200000,
-      targetAcquisitionPrice: 15000000,
-      estGrossProfit: 3200000,
-      timeToSellHours: "< 72 hrs",
-      urgencyScore: 82,
-      urgencyLevel: "MODERADA",
-      buyerProfiles: [
-        { name: "Carolina Munizaga", phone: "+56 9 8901 2345", budget: 18500000, status: "Pago mixto" },
-      ],
-    },
-  ];
-
-  // Filtrar asegurando que realmente NO existan en stock activo del catálogo
-  return missingDemandList.filter((item) => {
-    const hasInStock = catalogVehicles.some(
-      (v) =>
-        v.brand.toLowerCase() === item.brand.toLowerCase() &&
-        v.model.toLowerCase().includes(item.model.split(" ")[0].toLowerCase()) &&
-        v.status === "Disponible"
-    );
-    return !hasInStock;
-  });
+  if (!isDemoAnalytics()) {
+    void catalogVehicles;
+    return [];
+  }
+  return [];
 }
 
 // ---- Helpers ---------------------------------------------------------------

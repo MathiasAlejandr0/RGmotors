@@ -1,4 +1,6 @@
-// 100% Authentic RG Motors Stock from Excel Inventory (RG MOTORS + UNIDADES CHILE)
+﻿// 100% Authentic RG Motors Stock from Excel Inventory (RG MOTORS + UNIDADES CHILE)
+import { estimateMonthlyAutofin } from "@/lib/finance/autofin";
+
 export interface VehicleSpin {
   count: number;
   pattern?: string;
@@ -76,8 +78,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -122,8 +123,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -166,8 +166,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -210,8 +209,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -256,8 +254,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -301,8 +298,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -344,8 +340,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -378,8 +373,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -422,8 +416,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -467,8 +460,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -513,8 +505,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -557,8 +548,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -602,8 +592,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -646,8 +635,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": true,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -691,8 +679,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -736,8 +723,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -781,8 +767,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -822,8 +807,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -867,8 +851,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -911,8 +894,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -958,8 +940,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1002,8 +983,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1048,8 +1028,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1092,8 +1071,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1136,8 +1114,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1182,8 +1159,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1216,8 +1192,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1262,8 +1237,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1307,8 +1281,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1352,8 +1325,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1396,8 +1368,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1430,8 +1401,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1476,8 +1446,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1521,8 +1490,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1567,8 +1535,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1613,8 +1580,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1659,8 +1625,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1705,8 +1670,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1751,8 +1715,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1784,8 +1747,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1830,8 +1792,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1876,8 +1837,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1918,8 +1878,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1962,8 +1921,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -1996,8 +1954,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2030,8 +1987,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2076,8 +2032,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2121,8 +2076,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2167,8 +2121,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2213,8 +2166,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2258,8 +2210,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2304,8 +2255,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2338,8 +2288,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2371,8 +2320,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2417,8 +2365,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2462,8 +2409,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2506,8 +2452,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2551,8 +2496,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2596,8 +2540,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2641,8 +2584,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2674,8 +2616,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2719,8 +2660,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2752,8 +2692,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2795,8 +2734,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2828,8 +2766,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2861,8 +2798,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2894,8 +2830,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2934,8 +2869,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -2967,8 +2901,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -3000,8 +2933,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -3045,8 +2977,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -3078,8 +3009,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -3111,8 +3041,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -3144,8 +3073,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   },
@@ -3177,8 +3105,7 @@ export const initialVehicles: Vehicle[] = [
     "featured": false,
     "highlights": [
       "Inspección mecánica rigurosa de 150 puntos",
-      "Documentación y transferencia garantizada",
-      "Garantía técnica de 6 meses RG Motors",
+      "Documentación y transferencia al día",
       "Financiamiento y retoma de vehículos en parte de pago"
     ]
   }
@@ -3208,11 +3135,7 @@ export function formatKm(km: number): string {
 }
 
 export function estimateMonthly(price: number, termMonths = 48, piePercent = 0.2): number {
-  if (!price || price <= 0) return 0;
-  const financed = price * (1 - piePercent);
-  const monthlyRate = 0.0129; // ~1.29% mensual
-  const factor = (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / (Math.pow(1 + monthlyRate, termMonths) - 1);
-  return Math.round(financed * factor);
+  return estimateMonthlyAutofin(price, termMonths, piePercent);
 }
 
 export function spinFramesOf(v: Vehicle): string[] {
