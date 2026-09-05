@@ -7,7 +7,11 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const s = await getSettings();
-    return NextResponse.json(s);
+    return NextResponse.json(s, {
+      headers: {
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
+      },
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error al obtener configuración." },

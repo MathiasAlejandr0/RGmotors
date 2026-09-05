@@ -21,44 +21,64 @@ export default function VehicleViewer({
 }) {
   const [frames, setFrames] = useState<string[]>(spinFrames);
   const [galleryImages, setGalleryImages] = useState<string[]>(
-    gallery.length > 0 ? gallery : [image]
+    gallery.length > 0 ? gallery : [image],
   );
   const [selectedPhotoIdx, setSelectedPhotoIdx] = useState(0);
-  const hasSpin = frames.length > 0;
+  const [spinEnabled, setSpinEnabled] = useState(true);
+  const hasSpin = spinEnabled && frames.length > 0;
   const [tab, setTab] = useState<Tab>(hasSpin ? "exterior" : "fotos");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const prefs = data.preferences || data.settings?.preferences;
+        if (prefs && typeof prefs.showSpin360 === "boolean") {
+          setSpinEnabled(prefs.showSpin360);
+          if (!prefs.showSpin360) setTab("fotos");
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!slug) return;
     let cancelled = false;
 
-    // Cargar fotogramas 360 si existen
-    fetch(asset(`/cars/spin/${slug}/manifest.json`), { cache: "no-store" })
+    // Manifest 360 (CDN-friendly)
+    fetch(asset(`/cars/spin/${slug}/manifest.json`))
       .then((r) => (r.ok ? r.json() : null))
       .then((m) => {
         if (cancelled || !m || !m.count) return;
+        if (Array.isArray(m.frames) && m.frames.length > 0) {
+          setFrames(m.frames);
+          return;
+        }
         const bust = m.updatedAt
           ? `?v=${encodeURIComponent(m.updatedAt)}`
           : `?v=${Date.now()}`;
         const newFrames = Array.from(
           { length: m.count },
           (_, i) =>
-            asset(
-              `/cars/spin/${slug}/${String(i + 1).padStart(3, "0")}.jpg`
-            ) + bust
+            asset(`/cars/spin/${slug}/${String(i + 1).padStart(3, "0")}.jpg`) +
+            bust,
         );
         setFrames(newFrames);
       })
       .catch(() => {});
 
-    // Load more organic photos if available from API (merging with existing gallery)
-    fetch(`/api/photos?slug=${encodeURIComponent(slug)}`, { cache: "no-store" })
+    fetch(`/api/photos?slug=${encodeURIComponent(slug)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data) return;
         if (data.gallery && data.gallery.length > 0) {
           const urls = data.gallery.map((g: { url: string }) => g.url);
-          const all = Array.from(new Set([...galleryImages, ...urls]));
-          setGalleryImages(all);
+          setGalleryImages((prev) => Array.from(new Set([...prev, ...urls])));
         }
       })
       .catch(() => {});
@@ -68,23 +88,27 @@ export default function VehicleViewer({
     };
   }, [slug, image]);
 
+  useEffect(() => {
+    if (hasSpin && tab === "exterior") return;
+    if (!hasSpin && tab === "exterior") setTab("fotos");
+  }, [hasSpin, tab]);
+
   const currentPhoto = galleryImages[selectedPhotoIdx] || image;
 
   const handlePrevPhoto = () => {
     setSelectedPhotoIdx((prev) =>
-      prev === 0 ? galleryImages.length - 1 : prev - 1
+      prev === 0 ? galleryImages.length - 1 : prev - 1,
     );
   };
 
   const handleNextPhoto = () => {
     setSelectedPhotoIdx((prev) =>
-      prev === galleryImages.length - 1 ? 0 : prev + 1
+      prev === galleryImages.length - 1 ? 0 : prev + 1,
     );
   };
 
   return (
     <div className="space-y-3">
-      {/* Header controls: Only show 360 tab toggle if spin exists */}
       {hasSpin ? (
         <div className="flex items-center justify-between gap-3">
           <div className="inline-flex items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.04] p-1.5 backdrop-blur-xl shadow-sm">
@@ -96,7 +120,6 @@ export default function VehicleViewer({
                   : "text-white/60 hover:bg-white/10 hover:text-white"
               }`}
             >
-              <span>🖼️</span>
               <span>Galería de Fotos ({galleryImages.length})</span>
             </button>
             <button
@@ -107,22 +130,20 @@ export default function VehicleViewer({
                   : "text-white/60 hover:bg-white/10 hover:text-white"
               }`}
             >
-              <span>🔄</span>
               <span>Tour 360°</span>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </button>
           </div>
 
           <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-medium text-brand-300/80 bg-brand-500/10 border border-brand-500/20 px-3 py-1.5 rounded-full">
-            <span>✨</span> Interactivo disponible
+            Interactivo disponible
           </span>
         </div>
       ) : (
         <div className="flex items-center justify-between">
           <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 backdrop-blur-md">
-            <span className="text-sm">📸</span>
             <span className="text-xs font-semibold text-white">
-              Galería de Fotos Reales · {selectedPhotoIdx + 1} de {galleryImages.length}
+              Galería · {selectedPhotoIdx + 1} de {galleryImages.length}
             </span>
           </div>
 
@@ -132,7 +153,6 @@ export default function VehicleViewer({
         </div>
       )}
 
-      {/* Main Image / Viewer Frame */}
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-white/15 bg-[#080b11] shadow-2xl sm:aspect-[16/10] group">
         {tab === "exterior" && hasSpin ? (
           <PhotoSpin360 frames={frames} className="h-full w-full" autoPlay={false} />
@@ -142,8 +162,10 @@ export default function VehicleViewer({
             <img
               src={asset(currentPhoto)}
               alt={`${name} - Foto ${selectedPhotoIdx + 1}`}
+              loading="eager"
+              decoding="async"
               onError={(e) => {
-                const fallback = asset("/cars/ford-raptor-2023.jpg");
+                const fallback = asset("/images/placeholder-pending-car.svg");
                 if (e.currentTarget.src !== fallback) {
                   e.currentTarget.src = fallback;
                 }
@@ -151,7 +173,6 @@ export default function VehicleViewer({
               className="h-full w-full object-contain sm:object-cover transition-all duration-300 bg-black/40"
             />
 
-            {/* Navigation Arrows for Gallery */}
             {galleryImages.length > 1 && (
               <>
                 <button
@@ -170,33 +191,29 @@ export default function VehicleViewer({
                 </button>
               </>
             )}
-
-            {/* Photo Counter Pill */}
-            <div className="absolute bottom-4 left-4 rounded-full border border-white/20 bg-black/75 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md z-10">
-              Foto {selectedPhotoIdx + 1} / {galleryImages.length}
-            </div>
           </div>
         )}
       </div>
 
-      {/* Thumbnail Strip */}
-      {galleryImages.length > 1 && tab === "fotos" && (
-        <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scrollbar-thin scrollbar-thumb-white/20">
-          {galleryImages.map((img, idx) => (
+      {tab === "fotos" && galleryImages.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          {galleryImages.map((src, i) => (
             <button
-              key={idx}
-              onClick={() => setSelectedPhotoIdx(idx)}
-              className={`relative h-16 w-20 flex-shrink-0 overflow-hidden rounded-xl border transition-all duration-200 ${
-                selectedPhotoIdx === idx
-                  ? "border-brand-400 ring-2 ring-brand-400/50 scale-105"
-                  : "border-white/15 opacity-60 hover:opacity-100 hover:border-white/40"
+              key={`${src}-${i}`}
+              type="button"
+              onClick={() => setSelectedPhotoIdx(i)}
+              className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-xl border transition ${
+                i === selectedPhotoIdx
+                  ? "border-brand-400 ring-1 ring-brand-400/40"
+                  : "border-white/10 opacity-70 hover:opacity-100"
               }`}
-              aria-label={`Ver foto ${idx + 1}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={asset(img)}
+                src={asset(src)}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-cover"
               />
             </button>

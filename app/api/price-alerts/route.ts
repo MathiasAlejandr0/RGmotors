@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPriceAlerts, addPriceAlert } from "@/lib/server/priceAlertsStore";
+import { notifyTeam } from "@/lib/server/notify";
+import {
+  guardPublicLeadPost,
+  isValidChilePhone,
+  isValidEmail,
+} from "@/lib/server/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,30 +16,52 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await guardPublicLeadPost(req, "price-alerts", 8);
+  if (!guard.ok) return guard.response;
+  const body = guard.body;
+
   try {
-    const body = await req.json();
-    if (!body.vehicleSlug || !body.vehicleName || !body.phone || !body.clientName) {
+    const vehicleSlug = String(body.vehicleSlug || "").trim();
+    const vehicleName = String(body.vehicleName || "").trim();
+    const phone = String(body.phone || "").trim();
+    const clientName = String(body.clientName || "").trim();
+    const email = body.email ? String(body.email).trim() : undefined;
+
+    if (!vehicleSlug || !vehicleName || !phone || !clientName) {
       return NextResponse.json(
         { error: "Faltan datos obligatorios para la alerta de precio." },
-        { status: 400 }
+        { status: 400 },
       );
+    }
+    if (!isValidChilePhone(phone)) {
+      return NextResponse.json({ error: "Teléfono inválido." }, { status: 400 });
+    }
+    if (email && !isValidEmail(email)) {
+      return NextResponse.json({ error: "Correo electrónico inválido." }, { status: 400 });
     }
 
     const item = await addPriceAlert({
-      vehicleSlug: String(body.vehicleSlug).trim(),
-      vehicleName: String(body.vehicleName).trim(),
+      vehicleSlug,
+      vehicleName,
       currentPrice: Number(body.currentPrice || 0),
       targetPrice: body.targetPrice ? Number(body.targetPrice) : undefined,
-      clientName: String(body.clientName).trim(),
-      phone: String(body.phone).trim(),
-      email: body.email ? String(body.email).trim() : undefined,
+      clientName,
+      phone,
+      email,
+    });
+
+    await notifyTeam({
+      type: "price-alert",
+      title: `Alerta precio: ${vehicleName}`,
+      body: `${clientName} · ${phone}`,
+      meta: { id: item.id, vehicleSlug },
     });
 
     return NextResponse.json({ success: true, alert: item });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error al registrar alerta de precio." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

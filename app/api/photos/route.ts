@@ -3,6 +3,8 @@ import { mkdir, writeFile, readdir, unlink, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { getVehicleBySlug, getVehicles, saveVehicle } from "@/lib/server/vehiclesStore";
+import { storeMediaFile } from "@/lib/server/mediaStorage";
+import { isBlobReady } from "@/lib/server/storageHealth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,13 +23,13 @@ export async function GET(req: NextRequest) {
   const uploadDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "uploads", slug);
   const spinDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "spin", slug);
 
-  let gallery: Array<{ name: string; url: string; size: number; isCover?: boolean }> = [];
+  const gallery: Array<{ name: string; url: string; size: number; isCover?: boolean }> = [];
   let spinCount = 0;
 
   const vehicle = await getVehicleBySlug(slug);
   const currentCover = vehicle?.image || "";
 
-  // 1. Fotos en carpeta de uploads
+  // 1. Fotos en carpeta de uploads (local)
   if (existsSync(uploadDir)) {
     try {
       const files = await readdir(uploadDir);
@@ -46,6 +48,19 @@ export async function GET(req: NextRequest) {
       }
     } catch {
       /* noop */
+    }
+  }
+
+  // 1b. Galería desde metadata (Blob CDN / Drive) si no hay archivos locales
+  if (gallery.length === 0 && vehicle?.gallery?.length) {
+    for (const url of vehicle.gallery) {
+      const name = url.split("?")[0].split("/").pop() || url;
+      gallery.push({
+        name,
+        url,
+        size: 0,
+        isCover: currentCover === url || currentCover.includes(name),
+      });
     }
   }
 
@@ -80,6 +95,10 @@ export async function GET(req: NextRequest) {
     spinCount,
     coverImage: currentCover,
     orderedGalleryUrls: vehicle?.gallery || gallery.map(g => `/cars/uploads/${slug}/${g.name}`),
+  }, {
+    headers: {
+      "Cache-Control": "public, s-maxage=120, stale-while-revalidate=600",
+    },
   });
 }
 
@@ -110,20 +129,23 @@ export async function POST(req: NextRequest) {
 
   try {
     if (type === "spin") {
-      const spinDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "spin", slug);
-      await mkdir(spinDir, { recursive: true });
-
-      const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+      const sorted = [...files].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true }),
+      );
+      const publicUrls: string[] = [];
 
       for (let i = 0; i < sorted.length; i++) {
         const file = sorted[i];
         const num = String(i + 1).padStart(3, "0");
-        const ext = file.name.split(".").pop() || "jpg";
-        const dest = join(spinDir, `${num}.${ext}`);
-        
-        const bytes = await file.arrayBuffer();
-        await writeFile(dest, Buffer.from(bytes));
-        savedFiles.push(`/cars/spin/${slug}/${num}.${ext}`);
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/gi, "") || "jpg";
+        const relativePath = `cars/spin/${slug}/${num}.${ext}`;
+        const stored = await storeMediaFile({
+          bytes: Buffer.from(await file.arrayBuffer()),
+          relativePath,
+          contentType: file.type || undefined,
+        });
+        publicUrls.push(stored.url);
+        savedFiles.push(stored.relativePath);
       }
 
       const manifest = {
@@ -131,22 +153,43 @@ export async function POST(req: NextRequest) {
         count: sorted.length,
         updatedAt: new Date().toISOString(),
         manualUpload: true,
+        storage: isBlobReady() ? "blob" : "local",
+        frames: publicUrls,
       };
-      await writeFile(join(spinDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
+      const manifestStored = await storeMediaFile({
+        bytes: Buffer.from(JSON.stringify(manifest, null, 2), "utf8"),
+        relativePath: `cars/spin/${slug}/manifest.json`,
+        contentType: "application/json",
+      });
+      // Copia local del manifest para fetch relativo en dev
+      if (manifestStored.storage === "local") {
+        /* storeMediaFile ya escribió local */
+      } else {
+        try {
+          const spinDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "spin", slug);
+          await mkdir(spinDir, { recursive: true });
+          await writeFile(join(spinDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
+        } catch {
+          /* noop */
+        }
+      }
 
-      // Actualizar vehículo con spin
       const v = await getVehicleBySlug(slug);
       if (v) {
         await saveVehicle({
           ...v,
-          spin: { count: sorted.length, pattern: `/cars/spin/${slug}/{index}.jpg`, ext: "jpg" }
+          spin: {
+            count: sorted.length,
+            pattern: publicUrls[0]?.includes("blob.vercel")
+              ? publicUrls[0].replace(/001\.[a-z]+$/i, "{index}.jpg")
+              : `/cars/spin/${slug}/{index}.jpg`,
+            ext: "jpg",
+          },
         });
       }
-
     } else {
       // Subida de fotos de galería o portada
-      const uploadDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "uploads", slug);
-      await mkdir(uploadDir, { recursive: true });
+      const newPaths: string[] = [];
 
       for (const file of files) {
         if (!(file instanceof File)) continue;
@@ -159,21 +202,24 @@ export async function POST(req: NextRequest) {
 
         const prefix = type === "cover" ? "cover_" : "";
         const filename = `${prefix}${Date.now()}_${baseName}.${ext}`;
-        const buffer = Buffer.from(await file.arrayBuffer());
-        await writeFile(join(uploadDir, filename), buffer);
+        const relativePath = `cars/uploads/${slug}/${filename}`;
+        const stored = await storeMediaFile({
+          bytes: Buffer.from(await file.arrayBuffer()),
+          relativePath,
+          contentType: file.type || undefined,
+        });
         savedFiles.push(filename);
+        newPaths.push(stored.url.startsWith("http") ? stored.url : stored.relativePath);
       }
 
-      // Sincronizar automáticamente con la base de datos de vehículos
       const v = await getVehicleBySlug(slug);
       if (v) {
         const currentGallery = v.gallery ? [...v.gallery] : [];
-        const newPaths = savedFiles.map(f => `/cars/uploads/${slug}/${f}`);
         const updatedGallery = [...currentGallery, ...newPaths];
 
         let updatedImage = v.image;
         if (type === "cover" || !updatedImage || updatedImage.includes("placeholder")) {
-          updatedImage = newPaths[0] || `/cars/uploads/${slug}/${savedFiles[0]}`;
+          updatedImage = newPaths[0] || updatedImage;
         }
 
         await saveVehicle({
@@ -189,12 +235,13 @@ export async function POST(req: NextRequest) {
       success: true,
       count: savedFiles.length,
       saved: savedFiles,
+      storage: isBlobReady() ? "blob" : "local",
       message: `Se ${savedFiles.length === 1 ? "subió 1 foto" : `subieron ${savedFiles.length} fotos`} con éxito.`,
     });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error al guardar archivos en el servidor." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

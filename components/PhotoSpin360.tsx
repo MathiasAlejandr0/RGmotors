@@ -123,10 +123,9 @@ export default function PhotoSpin360({
     return () => ro.disconnect();
   }, [draw]);
 
-  // Preload de fotogramas originales
+  // Preload progresivo: primero frame activo + vecinos, luego el resto en cola
   useEffect(() => {
     let cancelled = false;
-    let count = 0;
     imgsRef.current = new Array(total).fill(null);
     setReady(false);
     setLoaded(0);
@@ -135,29 +134,74 @@ export default function PhotoSpin360({
     indexRef.current = start;
     setIndex(start);
 
-    frames.forEach((src, i) => {
-      const img = new Image();
-      img.decoding = "async";
-      img.onload = () => {
-        if (cancelled) return;
-        imgsRef.current[i] = img;
-        count += 1;
-        setLoaded(count);
-        if (count === total) {
-          setReady(true);
-          draw(indexRef.current);
-        } else if (i === start) {
-          draw(start);
+    if (total === 0) {
+      setReady(true);
+      return;
+    }
+
+    let loadedCount = 0;
+    const markLoaded = (i: number, img: HTMLImageElement | null) => {
+      if (cancelled) return;
+      if (img) imgsRef.current[i] = img;
+      loadedCount += 1;
+      setLoaded(loadedCount);
+      if (i === start && img) {
+        setReady(true);
+        draw(start);
+      } else if (loadedCount === total) {
+        setReady(true);
+        draw(indexRef.current);
+      }
+    };
+
+    const loadOne = (i: number) =>
+      new Promise<void>((resolve) => {
+        if (cancelled || !frames[i]) {
+          markLoaded(i, null);
+          resolve();
+          return;
         }
-      };
-      img.onerror = () => {
-        if (cancelled) return;
-        count += 1;
-        setLoaded(count);
-        if (count === total) setReady(true);
-      };
-      img.src = src;
-    });
+        const img = new Image();
+        img.decoding = "async";
+        img.onload = () => {
+          markLoaded(i, img);
+          resolve();
+        };
+        img.onerror = () => {
+          markLoaded(i, null);
+          resolve();
+        };
+        img.src = frames[i]!;
+      });
+
+    const order: number[] = [];
+    const seen = new Set<number>();
+    const push = (i: number) => {
+      const idx = ((i % total) + total) % total;
+      if (!seen.has(idx)) {
+        seen.add(idx);
+        order.push(idx);
+      }
+    };
+    // Ventana inicial alrededor del frame de inicio
+    push(start);
+    for (let d = 1; d <= 4; d++) {
+      push(start + d);
+      push(start - d);
+    }
+    for (let i = 0; i < total; i++) push(i);
+
+    void (async () => {
+      const CONCURRENCY = 4;
+      let cursor = 0;
+      const workers = Array.from({ length: Math.min(CONCURRENCY, order.length) }, async () => {
+        while (!cancelled && cursor < order.length) {
+          const i = order[cursor++]!;
+          await loadOne(i);
+        }
+      });
+      await Promise.all(workers);
+    })();
 
     return () => {
       cancelled = true;

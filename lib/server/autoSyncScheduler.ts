@@ -9,7 +9,6 @@ const SYNC_INTERVAL_MS = 60 * 60 * 1000;
 
 let isSyncing = false;
 let lastSyncTime: Date | null = null;
-let timerStarted = false;
 
 export async function runAutoSync(): Promise<{ success: boolean; message: string }> {
   if (isSyncing) {

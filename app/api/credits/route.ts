@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCreditApplications, addCreditApplication } from "@/lib/server/creditsStore";
 import { notifyTeam } from "@/lib/server/notify";
-import { clientKey, rateLimit } from "@/lib/server/rateLimit";
+import {
+  guardPublicLeadPost,
+  isValidChilePhone,
+  isValidEmail,
+  optionalValidRut,
+} from "@/lib/server/security";
+import { formatRut } from "@/lib/rut";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,34 +19,44 @@ export async function GET() {
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error al obtener créditos." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function POST(req: NextRequest) {
-  const rl = rateLimit(clientKey(req, "credits"), 8, 60_000);
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: "Demasiados envíos. Intenta en un minuto." },
-      { status: 429 }
-    );
-  }
+  const guard = await guardPublicLeadPost(req, "credits", 8);
+  if (!guard.ok) return guard.response;
+  const body = guard.body;
 
   try {
-    const body = await req.json();
-    if (!body.clientName || !body.email || !body.phone) {
+    const clientName = String(body.clientName || "").trim();
+    const email = String(body.email || "").trim();
+    const phone = String(body.phone || "").trim();
+    const rutRaw = body.rut ? String(body.rut).trim() : undefined;
+
+    if (!clientName || !email || !phone) {
       return NextResponse.json(
         { error: "Por favor completa tu nombre, correo electrónico y teléfono." },
-        { status: 400 }
+        { status: 400 },
       );
+    }
+    if (!isValidEmail(email)) {
+      return NextResponse.json({ error: "Correo electrónico inválido." }, { status: 400 });
+    }
+    if (!isValidChilePhone(phone)) {
+      return NextResponse.json({ error: "Teléfono inválido." }, { status: 400 });
+    }
+    const rutErr = optionalValidRut(rutRaw);
+    if (rutErr) {
+      return NextResponse.json({ error: rutErr }, { status: 400 });
     }
 
     const credit = await addCreditApplication({
-      clientName: String(body.clientName).trim(),
-      rut: body.rut ? String(body.rut).trim() : undefined,
-      email: String(body.email).trim(),
-      phone: String(body.phone).trim(),
+      clientName,
+      rut: rutRaw ? formatRut(rutRaw) : undefined,
+      email,
+      phone,
       vehicleSlug: String(body.vehicleSlug || "simulacion-general").trim(),
       downPct: Number(body.downPct || 20),
       downPayment: body.downPayment ? Number(body.downPayment) : undefined,
@@ -52,14 +68,14 @@ export async function POST(req: NextRequest) {
       status: "En evaluación",
       trafficSource: body.trafficSource,
       notes: body.notes
-        ? String(body.notes).trim()
-        : `Simulación de crédito para ${body.clientName} (RUT: ${body.rut || "No especificado"}).`,
+        ? String(body.notes).trim().slice(0, 1000)
+        : `Simulación de crédito para ${clientName} (RUT: ${rutRaw || "No especificado"}).`,
     });
 
     await notifyTeam({
       type: "credit",
       title: `Nueva simulación de crédito: ${credit.clientName}`,
-      body: `${credit.clientName} (RUT: ${credit.rut || "n/d"}) solicitó simulación. Vehículo: ${credit.vehicleSlug}. Pie: ${credit.downPayment ?? "n/d"}. Plazo: ${credit.term} meses. Cuota est.: ${credit.monthlyEstimate}. Contacto: ${credit.email} / ${credit.phone}.`,
+      body: `${credit.clientName} (RUT: ${credit.rut || "n/d"}) solicitó simulación. Vehículo: ${credit.vehicleSlug}. Contacto: ${credit.email} / ${credit.phone}.`,
       meta: {
         id: credit.id,
         clientName: credit.clientName,
@@ -67,22 +83,18 @@ export async function POST(req: NextRequest) {
         email: credit.email,
         phone: credit.phone,
         vehicleSlug: credit.vehicleSlug,
-        income: credit.income,
-        downPayment: credit.downPayment,
-        monthlyEstimate: credit.monthlyEstimate,
-        term: credit.term,
       },
     });
 
     return NextResponse.json({
       success: true,
       credit,
-      message: `Simulación de crédito recibida con éxito. Te responderemos a la brevedad a tu correo (${credit.email}).`,
+      message: `Simulación recibida. Te contactaremos a ${credit.email}. Esto no es una pre-aprobación bancaria ni un pago online.`,
     });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error al procesar la simulación de crédito." },
-      { status: 500 }
+      { error: err instanceof Error ? err.message : "Error al procesar crédito." },
+      { status: 500 },
     );
   }
 }

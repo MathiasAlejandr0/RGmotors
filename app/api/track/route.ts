@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { readJson, writeJson } from "@/lib/server/db";
-import { clientKey, rateLimit } from "@/lib/server/rateLimit";
+import { guardPublicLeadPost } from "@/lib/server/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,31 +31,21 @@ async function writeAll(list: CapturedLead[]) {
   await writeJson(FILENAME, list);
 }
 
-/** Devuelve los leads capturados (más recientes primero). */
 export async function GET() {
   const list = await readAll();
   list.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
-  return Response.json({ leads: list });
+  return NextResponse.json({ leads: list });
 }
 
-/**
- * Registra/actualiza un lead del chatbot. Hace upsert por sessionId, así una
- * misma conversación no crea múltiples leads: enriquece el existente.
- */
 export async function POST(req: NextRequest) {
-  const rl = rateLimit(clientKey(req, "track"), 40, 60_000);
-  if (!rl.ok) {
-    return Response.json({ error: "Demasiadas peticiones." }, { status: 429 });
-  }
+  const guard = await guardPublicLeadPost(req, "track", 40);
+  if (!guard.ok) return guard.response;
+  const body = guard.body;
 
-  let body: Partial<CapturedLead> & { sessionId?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "JSON inválido" }, { status: 400 });
-  }
   const sessionId = String(body.sessionId || "").slice(0, 64);
-  if (!sessionId) return Response.json({ error: "Falta sessionId" }, { status: 400 });
+  if (!sessionId) {
+    return NextResponse.json({ error: "Falta sessionId" }, { status: 400 });
+  }
 
   const list = await readAll();
   const now = new Date().toISOString();
@@ -66,35 +56,40 @@ export async function POST(req: NextRequest) {
 
   if (existing) {
     existing.updatedAt = now;
-    if (body.budget != null) existing.budget = body.budget;
-    if (body.bodyType) existing.bodyType = body.bodyType;
-    if (body.financing != null) existing.financing = body.financing;
-    if (body.name) existing.name = body.name;
-    if (body.contact) existing.contact = body.contact;
+    if (body.budget != null) existing.budget = Number(body.budget);
+    if (body.bodyType) existing.bodyType = String(body.bodyType).slice(0, 40);
+    if (body.financing != null) existing.financing = Boolean(body.financing);
+    if (body.name) existing.name = String(body.name).slice(0, 80);
+    if (body.contact) existing.contact = String(body.contact).slice(0, 120);
     if (body.trafficSource) existing.trafficSource = body.trafficSource;
-    existing.intents = mergeArr(existing.intents, body.intents);
-    existing.models = mergeArr(existing.models, body.models);
-    existing.messages = (existing.messages ?? 0) + (body.messages ?? 1);
+    existing.intents = mergeArr(
+      existing.intents,
+      Array.isArray(body.intents) ? body.intents.map(String) : undefined,
+    ).slice(0, 20);
+    existing.models = mergeArr(
+      existing.models,
+      Array.isArray(body.models) ? body.models.map(String) : undefined,
+    ).slice(0, 20);
+    existing.messages = (existing.messages ?? 0) + Number(body.messages ?? 1);
   } else {
     list.push({
       id: `C${Date.now().toString(36)}`,
       sessionId,
       createdAt: now,
       updatedAt: now,
-      budget: body.budget,
-      bodyType: body.bodyType,
-      financing: body.financing,
-      intents: body.intents ?? [],
-      models: body.models ?? [],
-      name: body.name,
-      contact: body.contact,
-      messages: body.messages ?? 1,
+      budget: body.budget != null ? Number(body.budget) : undefined,
+      bodyType: body.bodyType ? String(body.bodyType).slice(0, 40) : undefined,
+      financing: body.financing != null ? Boolean(body.financing) : undefined,
+      intents: Array.isArray(body.intents) ? body.intents.map(String).slice(0, 20) : [],
+      models: Array.isArray(body.models) ? body.models.map(String).slice(0, 20) : [],
+      name: body.name ? String(body.name).slice(0, 80) : undefined,
+      contact: body.contact ? String(body.contact).slice(0, 120) : undefined,
+      messages: Number(body.messages ?? 1),
       trafficSource: body.trafficSource,
     });
   }
 
-  // Mantener acotado (últimos 500).
   const trimmed = list.slice(-500);
   await writeAll(trimmed);
-  return Response.json({ ok: true });
+  return NextResponse.json({ ok: true });
 }

@@ -81,16 +81,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, mustChange: false, username: newUsername.trim() });
     }
 
-    // login
-    const rl = rateLimit(clientKey(request, "auth-login"), 15, 60_000);
+    // login — límite estricto anti fuerza bruta
+    const rl = rateLimit(clientKey(request, "auth-login"), 8, 60_000);
     if (!rl.ok) {
       return NextResponse.json({ error: "Demasiados intentos. Espera un minuto." }, { status: 429 });
     }
 
-    const username = String(body.username || "admin").trim();
+    const username = String(body.username || "").trim();
     const password = String(body.password || "");
-    if (!password) {
-      return NextResponse.json({ error: "Ingresa la contraseña" }, { status: 400 });
+    if (!username || !password) {
+      return NextResponse.json({ error: "Ingresa usuario y contraseña" }, { status: 400 });
     }
 
     const result = await validateAdminLogin(username, password);

@@ -3,27 +3,27 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import os from "node:os";
 import { kv } from "@vercel/kv";
+import { isKvReady, isVercelProduction, logStorageHealthOnce } from "@/lib/server/storageHealth";
 
 // Usamos data local si es escribible, o tmpdir en entornos serverless/Vercel
 const LOCAL_DIR = join(process.cwd(), "data");
 const TMP_DIR = os.tmpdir() + "/rgmotors_data";
 
-
-
 function getPossiblePaths(filename: string) {
   return [join(LOCAL_DIR, filename), join(TMP_DIR, filename)];
 }
 
-const useKV = () => Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+const isKvConfigured = () => isKvReady();
 
 /**
  * Lee un archivo JSON de forma segura.
  * Si el archivo no existe, devuelve `fallback` y lo almacena.
  */
 export async function readJson<T>(filename: string, fallback: T): Promise<T> {
+  logStorageHealthOnce();
 
   // 1. Intentar leer desde Vercel KV primero si está habilitado
-  if (useKV()) {
+  if (isKvConfigured()) {
     try {
       const data = await kv.get<T>(filename);
       if (data !== null) {
@@ -32,6 +32,10 @@ export async function readJson<T>(filename: string, fallback: T): Promise<T> {
     } catch (error) {
       console.warn(`Error leyendo ${filename} de Vercel KV:`, error);
     }
+  } else if (isVercelProduction()) {
+    console.error(
+      `[RG Storage] Lectura de ${filename} sin KV en producción — datos pueden ser inconsistentes.`,
+    );
   }
 
   // 2. Fallback a archivos locales
@@ -42,12 +46,12 @@ export async function readJson<T>(filename: string, fallback: T): Promise<T> {
       if (existsSync(p)) {
         const content = await readFile(p, "utf8");
         const parsed = JSON.parse(content) as T;
-        
+
         // Sincronizar hacia KV si está habilitado pero no lo tenía
-        if (useKV()) {
-           await kv.set(filename, parsed).catch(()=>console.warn("Error migrando a KV"));
+        if (isKvConfigured()) {
+          await kv.set(filename, parsed).catch(() => console.warn("Error migrando a KV"));
         }
-        
+
         return parsed;
       }
     } catch {
@@ -64,9 +68,17 @@ export async function readJson<T>(filename: string, fallback: T): Promise<T> {
  * Escribe un archivo JSON de forma segura.
  */
 export async function writeJson<T>(filename: string, data: T): Promise<boolean> {
+  logStorageHealthOnce();
+
+  if (isVercelProduction() && !isKvConfigured()) {
+    console.error(
+      `[RG Storage] Rechazando escritura de ${filename}: KV obligatorio en Vercel Production.`,
+    );
+    return false;
+  }
 
   let kvSuccess = false;
-  if (useKV()) {
+  if (isKvConfigured()) {
     try {
       await kv.set(filename, data);
       kvSuccess = true;

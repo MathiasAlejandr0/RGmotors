@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getVehicles, saveVehicle } from "@/lib/server/vehiclesStore";
 import { Vehicle } from "@/lib/vehicles";
+import { toVehicleCardDTO } from "@/lib/vehicles/publicFields";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,11 +37,27 @@ export async function GET(req: NextRequest) {
       list = list.filter((v) => (v.status || "Disponible") !== "Borrador");
     }
 
-    return NextResponse.json({ vehicles: list, total: list.length });
+    const fields = searchParams.get("fields");
+    const payload =
+      fields === "card" || fields === "summary"
+        ? list.map(toVehicleCardDTO)
+        : list;
+
+    const res = NextResponse.json({ vehicles: payload, total: payload.length });
+    if (admin === "true") {
+      res.headers.set("Cache-Control", "private, no-store");
+    } else {
+      // Cloudflare / CDN: cache corto + SWR para catálogo fluido
+      res.headers.set(
+        "Cache-Control",
+        "public, s-maxage=60, stale-while-revalidate=300",
+      );
+    }
+    return res;
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error al obtener vehículos." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -52,11 +69,10 @@ export async function POST(req: NextRequest) {
     if (!body.brand || !body.model || !body.year || !body.price) {
       return NextResponse.json(
         { error: "Faltan campos obligatorios (marca, modelo, año, precio)." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Generate slug if not provided
     const slug =
       body.slug && /^[a-z0-9-]+$/i.test(body.slug)
         ? body.slug.toLowerCase()
@@ -85,13 +101,14 @@ export async function POST(req: NextRequest) {
       owners: Number(body.owners || 1),
       featured: Boolean(body.featured),
       status: body.status || "Disponible",
-      highlights: Array.isArray(body.highlights) && body.highlights.length > 0
-        ? body.highlights
-        : [
-            "Inspección de 150 puntos aprobada",
-            "Mantenciones al día",
-            "Documentación y transferencia al día",
-          ],
+      highlights:
+        Array.isArray(body.highlights) && body.highlights.length > 0
+          ? body.highlights
+          : [
+              "Inspección de 150 puntos aprobada",
+              "Mantenciones al día",
+              "Documentación y transferencia al día",
+            ],
       spin: body.spin && body.spin.count ? body.spin : undefined,
     };
 
@@ -104,7 +121,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error al guardar el vehículo." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

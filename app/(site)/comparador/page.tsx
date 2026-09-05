@@ -22,7 +22,7 @@ export default function ComparadorPage() {
   const [vehiclesData, setVehiclesData] = useState<Vehicle[]>(initialVehicles);
   
   useEffect(() => {
-    fetch("/api/vehicles")
+    fetch("/api/vehicles?fields=card")
       .then((r) => r.json())
       .then((data) => {
         if (data && data.vehicles) setVehiclesData(data.vehicles);

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readJson, writeJson } from "@/lib/server/db";
 import { notifyTeam } from "@/lib/server/notify";
-import { clientKey, rateLimit } from "@/lib/server/rateLimit";
 import { COMPANY } from "@/lib/company";
+import {
+  guardPublicLeadPost,
+  isValidChilePhone,
+  isValidEmail,
+} from "@/lib/server/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,19 +34,11 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const rl = rateLimit(clientKey(req, "contact"), 8, 60_000);
-  if (!rl.ok) {
-    return NextResponse.json({ error: "Demasiados envíos. Intenta en un minuto." }, { status: 429 });
-  }
+  const guard = await guardPublicLeadPost(req, "contact", 8);
+  if (!guard.ok) return guard.response;
+  const body = guard.body;
 
   try {
-    const body = await req.json();
-
-    // Honeypot anti-bot
-    if (body.website || body.company_url) {
-      return NextResponse.json({ success: true });
-    }
-
     const name = String(body.name || "").trim();
     const phone = String(body.phone || "").trim();
     const email = String(body.email || "").trim();
@@ -53,6 +49,15 @@ export async function POST(req: NextRequest) {
         { error: "Completa nombre, teléfono, correo y mensaje." },
         { status: 400 },
       );
+    }
+    if (!isValidEmail(email)) {
+      return NextResponse.json({ error: "Correo electrónico inválido." }, { status: 400 });
+    }
+    if (!isValidChilePhone(phone)) {
+      return NextResponse.json({ error: "Teléfono inválido." }, { status: 400 });
+    }
+    if (name.length > 80 || message.length > 2000) {
+      return NextResponse.json({ error: "Datos demasiado largos." }, { status: 400 });
     }
 
     const entry: ContactMessage = {

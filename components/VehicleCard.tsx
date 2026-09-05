@@ -42,6 +42,9 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
         <img
           src={displayImage}
           alt={`${v.brand} ${v.model}`}
+          loading="lazy"
+          decoding="async"
+          fetchPriority="low"
           onError={(e) => {
             e.currentTarget.onerror = null;
             e.currentTarget.src = asset("/images/placeholder-pending-car.svg");
@@ -49,6 +52,12 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
           className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-80" />
+
+        {has360 && (
+          <span className="absolute left-3.5 bottom-3.5 flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-brand-300 backdrop-blur-md shadow-sm z-10">
+            Tour 360°
+          </span>
+        )}
 
         {hasRealPhotos ? (
           <span className="absolute left-3.5 top-3.5 flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-emerald-300 backdrop-blur-md shadow-sm z-10">

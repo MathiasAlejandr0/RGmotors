@@ -57,7 +57,7 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
   }, [vehiclesData, vehicleType]);
 
   useEffect(() => {
-    fetch("/api/vehicles")
+    fetch("/api/vehicles?fields=card")
       .then((r) => r.json())
       .then((data) => {
         if (!data?.vehicles?.length) return;
@@ -140,7 +140,7 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
     } catch {
       /* ignore */
     }
-  }, [selectedSlug, sim, price, selectedVehicle?.year]);
+  }, [selectedSlug, sim, price, selectedVehicle]);
 
   useEffect(() => {
     const t = setTimeout(() => void trackCalc(), 800);

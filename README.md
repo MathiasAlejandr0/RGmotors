@@ -4,9 +4,9 @@
 
 # RG Motors — Plataforma de Autos Usados
 
-**Plataforma web de automotora para Chile.**
-Catálogo, simulación de crédito referencial Autofin, solicitud de reserva,
-comparador y panel admin — estética *dark, premium*.
+**Plataforma web de automotora para Chile (Puerto Montt).**  
+Catálogo, simulación de crédito referencial Autofin, solicitud de reserva **sin pago online**,
+comparador y panel admin.
 
 <br/>
 
@@ -14,143 +14,121 @@ comparador y panel admin — estética *dark, premium*.
 [![React](https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Three.js](https://img.shields.io/badge/Three.js-0.185-000000?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 
 </div>
 
 ---
 
-## 📊 Estado real del stack
+## Documentación de alcance (leer primero)
+
+| Documento | Contenido |
+|-----------|-----------|
+| [`docs/ESTADO-Y-ALCANCE.md`](docs/ESTADO-Y-ALCANCE.md) | Qué está hecho, qué no, y posición oficial sobre **WebPay** |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Roadmap priorizado (hardening → ops → pagos con contrato) |
+| [`docs/OPS-RENDIMIENTO.md`](docs/OPS-RENDIMIENTO.md) | Volumen (100 autos), Blob, KV, Cloudflare, 360 fluido |
+| [`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) | Hardening producción **sin** pasarela de pago |
+| [`.env.example`](.env.example) | Variables de entorno |
+
+> **No hay contrato Transbank/WebPay.** La reserva web es una **solicitud** (`Pendiente`); el abono se coordina en tienda o WhatsApp. No se vende cobro online como feature lista.
+
+---
+
+## Estado real del stack
 
 - **App**: Next.js (App Router) + React + TypeScript + Tailwind.
-- **Persistencia**: archivos JSON locales y/o **Vercel KV** (`lib/server/db.ts`). **No** usa Supabase en esta versión.
-- **Pagos**: **sin pasarelas** (WebPay / Mercado Pago / etc.). La reserva web es una **solicitud** (`Pendiente`); el abono se coordina en tienda o WhatsApp.
-- **360°**: componentes existentes, pero **no forman parte del alcance de este release** comercial.
-- **Admin**: autenticación por middleware + cookie firmada (`/admin/login`). Usuario/clave por defecto: `admin` / `rgmotors2026`. En el **primer ingreso** obliga a cambiar usuario y contraseña por unos más fuertes. Variables útiles: `ADMIN_SESSION_SECRET`, `CRON_SECRET`, `KV_REST_API_*`.
-- **Leads**: contacto, crédito, reserva, trade-in, etc. se persisten y notifican al equipo (`lib/server/notify.ts` → log + bandeja interna; conectar SMTP/Resend después).
+- **Persistencia**: JSON locales y/o **Vercel KV** (`lib/server/db.ts`). **No** usa Supabase.
+- **Pagos**: sin pasarelas. Ver roadmap fase 3 (bloqueada por contrato).
+- **360°**: componentes en código; **no** forman parte del release comercial actual.
+- **Admin**: middleware + cookie firmada (`/admin/login`). En el primer ingreso obliga a cambiar usuario y contraseña. Secretos: ver `.env.example`.
+- **Leads**: se persisten; notificación al equipo hoy es stub (`lib/server/notify.ts`) hasta conectar email.
 - **Legales**: `/privacidad`, `/terminos`, `/aviso-credito`.
+- **Seguridad API**: política en `lib/auth/apiAccess.ts` — POST de leads público; **GET de listados con PII exige admin**.
 
 ---
 
-## ✨ Sobre el proyecto
-
-RG Motors es una automotora de vehículos de segunda mano en Puerto Montt.
-Esta plataforma ofrece catálogo, simulación de crédito referencial, solicitud de
-reserva, comparador y panel de administración — con estética dark premium.
-
-> Los tours 360° (Three.js / fotos) existen en el código como capacidad técnica,
-> pero **no están habilitados como promesa comercial** en este release.
-
----
-
-## 🚀 Características principales
-
-| | Función | Descripción |
-|---|---------|-------------|
-| 💳 | **Crédito referencial** | Simulador Autofin (pie/plazo/CAE) + envío de simulación al equipo. |
-| 📅 | **Solicitud de reserva** | Formulario web sin pago online; el abono se coordina después. |
-| 🚗 | **Prueba de manejo** | Agenda por sucursal, día, hora y ejecutivo. |
-| 🔍 | **Catálogo con filtros** | Marca, tipo, precio, año, combustible, transmisión y orden. |
-| ⚖️ | **Comparador** | Compara hasta 3 vehículos lado a lado. |
-| 🤖 | **Asistente** | Widget de ayuda que recomienda autos del catálogo. |
-| 📊 | **Admin** | Inventario, CRM y analítica sobre datos reales (sin KPIs inventados). |
-
----
-
-## 🎨 Sistema de diseño
-
-Paleta inspirada en marcas premium — regla **80 / 15 / 5** (oscuros / blancos / azul de marca):
-
-| Color | Hex | Uso |
-|-------|-----|-----|
-| ⬛ Negro absoluto | `#090909` | Fondo principal |
-| ⬛ Negro carbón | `#111315` | Header y footer |
-| ⬛ Gris grafito | `#181A1F` | Tarjetas |
-| 🟦 Azul premium | `#006CFF` | Botones, links, foco, CTA |
-| 🟩 Verde | `#22C55E` | Crédito aprobado / disponible |
-| 🟨 Amarillo | `#FACC15` | Reserva pendiente |
-| 🟥 Rojo | `#EF4444` | Error / vendido |
-| ⬜ Blanco | `#F8F9FB` | Texto principal |
-
-> El objetivo: que **el vehículo sea el protagonista** y la interfaz pase desapercibida,
-> con el azul eléctrico guiando la atención hacia las acciones importantes.
-
----
-
-## 🛠️ Stack tecnológico
-
-- **Frontend**: **Next.js** (App Router) · **React** · **TypeScript** · **Tailwind CSS**
-- **Persistencia**: JSON + **Vercel KV** (opcional). Sin Supabase en este release.
-- **Hosting**: **Vercel**
-
----
-
-## ⚡ Cómo ejecutarlo
+## Cómo ejecutarlo
 
 ```bash
-# 1. Instalar dependencias
 npm install
-
-# 2. Entorno de desarrollo  ->  http://localhost:3000
-npm run dev
-
-# 3. Build de producción
-npm run build
-npm start
+cp .env.example .env.local   # completar secretos en prod
+npm run dev                  # http://localhost:3000
+npm run build && npm start
 ```
 
-### Scripts disponibles
+### Scripts
 
 | Script | Descripción |
 |--------|-------------|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Compila para producción |
-| `npm run lint` | Linter |
-| `npm run demo:frames` | Genera frames 360° de demostración (opcional) |
-| `node scripts/build-cx5-spin.mjs` | Monta el giro 360° del Mazda CX-5 (opcional) |
-| `node scripts/process-logo.mjs` | Procesa el logo (fondo transparente) |
+| `npm run dev` | Desarrollo |
+| `npm run build` / `start` | Producción |
+| `npm run lint` | ESLint |
+| `npm run test` | Vitest (unitarios) |
+| `npm run test:e2e` | Playwright |
+| `npm run test:all` | lint + unit + e2e |
 
 ---
 
-## 📂 Estructura del proyecto
+## Tests
+
+Cobertura orientada a **nota de práctica / hardening**:
+
+- Unit: RUT, Autofin, sesión admin, política de API (PII), rate limit, credenciales fuertes, company, vehiclesStore.
+- E2E: home, catálogo, simulador (sin WebPay), legales, redirect admin, GET PII → 401, catálogo API público.
+
+CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) corre lint + vitest + playwright en `main`.
+
+---
+
+## Características principales
+
+| Función | Descripción |
+|---------|-------------|
+| Crédito referencial | Simulador Autofin-like (pie/plazo/CAE) + envío al equipo |
+| Solicitud de reserva | Sin pago online |
+| Prueba de manejo | Agenda por sucursal |
+| Catálogo / comparador | Filtros y ficha |
+| Admin | Inventario + CRM + sync Sheets/Drive |
+
+---
+
+## Stack
+
+- Frontend: Next.js · React · TypeScript · Tailwind  
+- Persistencia: JSON + Vercel KV (recomendado en prod)  
+- Hosting: Vercel  
+
+---
+
+## Estructura
 
 ```
-app/
-  (site)/                    # Páginas públicas (header, footer)
-    page.tsx                 # Home
-    catalogo/  comparador/  simulador/  contacto/
-    privacidad/  terminos/  aviso-credito/
-    vehiculo/[slug]/         # Ficha del auto
-    reserva/[slug]/          # Solicitud de reserva (sin pago)
-    prueba-manejo/[slug]/    # Agenda de prueba de manejo
-  cuenta/                    # Portal cliente (próximamente)
-  admin/                     # Panel administrador
-components/
-  SiteHeader · SiteFooter · ChatWidget · Logo
-  VehicleCard · ReserveFlow · TestDriveForm
-lib/
-  company.ts · vehicles.ts · analytics.ts
-  finance/autofin.ts
-  server/db.ts · notify · rateLimit · *Store
+app/(site)/     # Público (+ legales)
+app/admin/      # Panel
+app/api/        # REST (leads, auth, vehicles, cron…)
+lib/auth/       # Sesión + política de API
+lib/finance/    # Motor Autofin
+lib/server/     # Stores + db + notify
+docs/           # Alcance y roadmap
+e2e/            # Playwright
 ```
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap (resumen)
 
-- [x] Persistencia JSON / Vercel KV y admin con auth middleware.
-- [x] Solicitud de reserva sin pasarela de pago.
-- [ ] Pasarela real (Transbank WebPay Plus u otra).
-- [ ] Portal de cliente activo.
-- [ ] Tours 360° habilitados comercialmente para el inventario.
-- [ ] Notificaciones email (Resend/SMTP) sobre `notifyTeam`.
+1. **Fase 1** — Hardening P0 (KV obligatorio, sync seguro, Blob fotos, email).  
+2. **Fase 2** — Operación sin cobro online.  
+3. **Fase 3** — WebPay **solo con contrato Transbank**.  
+4. **Fase 4** — 360° comercial, portal cliente, DB SQL opcional.
+
+Detalle: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 
-## 👤 Autor
+## Autor
 
-Proyecto desarrollado para **RG Motors** por [**MathiasAlejandr0**](https://github.com/MathiasAlejandr0).
+Proyecto para **RG Motors** por [**MathiasAlejandr0**](https://github.com/MathiasAlejandr0).
 
 <div align="center">
-<sub>Hecho con ❤️ y mucho ☕ en Chile.</sub>
+<sub>Hecho en Chile — alcance documentado con honestidad técnica.</sub>
 </div>

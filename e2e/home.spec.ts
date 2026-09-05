@@ -10,7 +10,32 @@ test.describe("Sitio público", () => {
   test("navega al catálogo", async ({ page }) => {
     await page.goto("/catalogo");
     await expect(page.getByRole("main")).toContainText(
-      /catálogo|vehículo|filtr|precio|toyota|mazda|buscar/i
+      /catálogo|vehículo|filtr|precio|toyota|mazda|buscar|auto/i,
     );
+  });
+
+  test("simulador de crédito carga sin pasarela de pago", async ({ page }) => {
+    await page.goto("/simulador");
+    await expect(page.getByRole("main")).toContainText(/crédito|simul|cuota|pie|plazo/i);
+    await expect(page.locator("body")).not.toContainText(/webpay|transbank/i);
+  });
+
+  test("páginas legales existen", async ({ page }) => {
+    await page.goto("/privacidad");
+    await expect(page.getByRole("main")).toContainText(/privacidad|datos|personal/i);
+
+    await page.goto("/terminos");
+    await expect(page.getByRole("main")).toContainText(/términos|condiciones|uso/i);
+
+    await page.goto("/aviso-credito");
+    await expect(page.getByRole("main")).toContainText(/crédito|aviso|autofin|sernac/i);
+  });
+
+  test("admin login es accesible; panel exige auth", async ({ page }) => {
+    await page.goto("/admin/login");
+    await expect(page.locator("body")).toContainText(/admin|usuario|contraseña|ingresar|acceso/i);
+
+    await page.goto("/admin");
+    await expect(page).toHaveURL(/\/admin\/login/);
   });
 });
