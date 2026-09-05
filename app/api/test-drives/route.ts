@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTestDrives, addTestDrive } from "@/lib/server/testDrivesStore";
+import { getTestDrives, addTestDrive, type TrafficInfo } from "@/lib/server/testDrivesStore";
 import { notifyTeam } from "@/lib/server/notify";
 import {
   guardPublicLeadPost,
@@ -55,7 +55,10 @@ export async function POST(req: NextRequest) {
       clientName,
       clientPhone,
       clientEmail,
-      trafficSource: body.trafficSource,
+      trafficSource:
+        body.trafficSource && typeof body.trafficSource === "object"
+          ? (body.trafficSource as TrafficInfo)
+          : undefined,
       notes: body.notes ? String(body.notes).slice(0, 1000) : "",
     });
 

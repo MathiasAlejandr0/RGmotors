@@ -62,9 +62,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const allowedSources = ["simulador", "ficha", "modal", "catalogo", "otro"] as const;
+    const rawSource = String(body.source || "simulador");
+    const source = (allowedSources as readonly string[]).includes(rawSource)
+      ? (rawSource as (typeof allowedSources)[number])
+      : "otro";
+
     const event = await addSimulationEvent({
       sessionId,
-      source: String(body.source || "simulador"),
+      source,
       vehicleSlug: body.vehicleSlug ? String(body.vehicleSlug) : undefined,
       vehiclePrice: body.vehiclePrice != null ? Number(body.vehiclePrice) : undefined,
       vehicleYear: body.vehicleYear != null ? Number(body.vehicleYear) : undefined,

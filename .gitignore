@@ -64,3 +64,5 @@ next-env.d.ts
 /scratch/
 /public/inspect_photos.html
 
+# Sesiones locales de herramientas (no versionar)
+.omo/
