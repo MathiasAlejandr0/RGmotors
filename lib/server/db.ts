@@ -17,12 +17,29 @@ const isKvConfigured = () => isKvReady();
 
 /**
  * Lee un archivo JSON de forma segura.
+ * En desarrollo prioriza data/ local para no pisar el stock nuevo con KV viejo.
  * Si el archivo no existe, devuelve `fallback` y lo almacena.
  */
 export async function readJson<T>(filename: string, fallback: T): Promise<T> {
   logStorageHealthOnce();
 
-  // 1. Intentar leer desde Vercel KV primero si está habilitado
+  const preferLocal =
+    process.env.NODE_ENV !== "production" || process.env.RG_PREFER_LOCAL_DATA === "1";
+
+  // 1. En local/dev: leer primero el archivo del proyecto
+  if (preferLocal) {
+    const localPath = join(LOCAL_DIR, filename);
+    try {
+      if (existsSync(localPath)) {
+        const content = await readFile(localPath, "utf8");
+        return JSON.parse(content) as T;
+      }
+    } catch (error) {
+      console.warn(`Error leyendo local ${filename}:`, error);
+    }
+  }
+
+  // 2. Vercel KV
   if (isKvConfigured()) {
     try {
       const data = await kv.get<T>(filename);
@@ -38,7 +55,7 @@ export async function readJson<T>(filename: string, fallback: T): Promise<T> {
     );
   }
 
-  // 2. Fallback a archivos locales
+  // 3. Fallback a archivos locales (tmp / data)
   const paths = getPossiblePaths(filename);
 
   for (const p of paths) {
@@ -47,8 +64,8 @@ export async function readJson<T>(filename: string, fallback: T): Promise<T> {
         const content = await readFile(p, "utf8");
         const parsed = JSON.parse(content) as T;
 
-        // Sincronizar hacia KV si está habilitado pero no lo tenía
-        if (isKvConfigured()) {
+        // Sincronizar hacia KV solo si no había dato remoto
+        if (isKvConfigured() && !preferLocal) {
           await kv.set(filename, parsed).catch(() => console.warn("Error migrando a KV"));
         }
 

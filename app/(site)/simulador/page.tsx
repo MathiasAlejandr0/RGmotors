@@ -18,9 +18,9 @@ function SimuladorInner() {
           Simula tu crédito automotriz
         </h1>
         <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-white/50">
-          RG Motors vende el vehículo; el crédito lo otorga Autofin. Esta calculadora usa la
-          misma lógica de referencia del mercado Autofin (pie, plazo y cuota fija) para que
-          llegues a sucursal con una preidea cercana. Los datos quedan en RG Motors.
+          En RG Motors eliges el vehículo; el financiamiento lo evalúa y otorga Autofin.
+          Esta herramienta te entrega una cuota referencial —pie, plazo y cuota fija— para
+          que llegues a sucursal con una idea clara y realista.
         </p>
       </div>
 

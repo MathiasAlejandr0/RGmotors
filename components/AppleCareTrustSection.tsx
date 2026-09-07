@@ -1,65 +1,135 @@
 "use client";
 
 import Link from "next/link";
+import { whatsappLink } from "@/lib/company";
+
+const PILLARS = [
+  {
+    n: "01",
+    title: "Inspección 150 puntos",
+    desc: "Revisamos cada unidad antes de publicarla. Se vende en el estado inspeccionado; no ofrecemos garantía mecánica postventa.",
+  },
+  {
+    n: "02",
+    title: "Informe Autofact",
+    desc: "Dominio, kilometraje y antecedentes al día: sin deudas ni multas que te sorprendan al comprar.",
+  },
+  {
+    n: "03",
+    title: "Entrega en patio",
+    desc: "Visita, prueba de manejo y retiro en Av. El Tepual, Puerto Montt, con asesoría de punta a punta.",
+  },
+];
 
 export default function AppleCareTrustSection() {
-  const pillars = [
-    {
-      icon: "🔧",
-      title: "Inspección mecánica 150 puntos",
-      badge: "Usados seleccionados",
-      desc: "Revisamos cada unidad antes de publicarla. Los vehículos usados se venden en el estado inspeccionado; RG Motors no ofrece garantía mecánica postventa.",
-    },
-    {
-      icon: "📄",
-      title: "Certificación Legal & Autofact",
-      badge: "Documentación al día",
-      desc: "Cada vehículo cuenta con informe de dominio vigente, kilometraje auditado por escáner y cero anotaciones, deudas o multas pendientes.",
-    },
-    {
-      icon: "🚚",
-      title: "Entrega en showroom",
-      badge: "Puerto Montt",
-      desc: "Coordinamos la entrega en nuestro showroom de Puerto Montt con atención personalizada y transferencia ágil.",
-    },
-  ];
-
   return (
-    <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-      <div className="apple-glass-card relative overflow-hidden rounded-3xl p-8 sm:p-10 border border-white/10 space-y-8 shadow-apple-card">
-        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3.5 py-1 text-xs font-semibold text-brand-300">
-              Transparencia RG Motors · Vehículos usados
-            </span>
-            <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl text-white">
-              Transparencia total en cada etapa de tu compra
+    <section className="relative overflow-hidden border-t border-white/[0.07] bg-[#08090d]">
+      {/* Ambiente sutil */}
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(23,58,121,0.18),transparent_55%),radial-gradient(ellipse_at_90%_100%,rgba(201,168,76,0.06),transparent_45%)]"
+        aria-hidden
+      />
+
+      <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16">
+        {/* Financiamiento — banda útil */}
+        <div className="flex flex-col gap-5 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#12151e] to-[#0b0c11] px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-7">
+          <div className="max-w-xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#C9A84C]/90">
+              Financiamiento Autofin
+            </p>
+            <h2 className="mt-2 font-display text-2xl font-semibold uppercase tracking-[0.04em] text-white sm:text-[1.75rem]">
+              Simula tu cuota en minutos
             </h2>
+            <p className="mt-2 text-sm leading-relaxed text-white/48">
+              Pie, plazo y cuota referencial con el mismo canal concesionario que usamos en
+              sucursal.
+            </p>
           </div>
-          <Link
-            href="/contacto"
-            className="apple-btn-secondary rounded-full px-5 py-2.5 text-xs font-semibold text-white"
-          >
-            Conocer sucursales y showroom →
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/simulador"
+              className="rg-btn-primary inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-bold text-white"
+            >
+              Ir al simulador
+            </Link>
+            <Link
+              href="/catalogo"
+              className="inline-flex items-center justify-center rounded-lg border border-white/15 px-6 py-3 text-sm font-semibold text-white/80 transition hover:border-white/30 hover:text-white"
+            >
+              Ver vehículos
+            </Link>
+          </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {pillars.map((g) => (
+        {/* Transparencia */}
+        <div className="mt-14 sm:mt-16">
+          <div className="flex items-center gap-3">
+            <span className="h-px w-8 bg-gradient-to-r from-[#C9A84C] to-transparent" />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#C9A84C]/90">
+              Transparencia
+            </p>
+          </div>
+          <h2 className="mt-4 max-w-lg font-display text-[1.85rem] font-semibold uppercase leading-[1.1] tracking-[0.03em] text-white sm:text-[2.25rem]">
+            Claridad en cada
+            <br />
+            etapa de la compra
+          </h2>
+          <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/45">
+            Sabes qué estás comprando: inspección, papeles y entrega en un solo lugar.
+          </p>
+
+          <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.06] sm:grid-cols-3">
+            {PILLARS.map((p) => (
+              <article
+                key={p.n}
+                className="bg-[#0c0d12] px-6 py-7 transition duration-300 hover:bg-[#101219] sm:px-7 sm:py-8"
+              >
+                <p className="font-display text-sm font-medium tracking-[0.2em] text-[#C9A84C]/75">
+                  {p.n}
+                </p>
+                <h3 className="mt-4 text-[15px] font-semibold tracking-tight text-white">
+                  {p.title}
+                </h3>
+                <p className="mt-3 text-[13px] leading-relaxed text-white/48">{p.desc}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        {/* Cierre CTA — sin hueco vacío */}
+        <div className="mt-14 overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-br from-brand-700/35 via-[#12151d] to-[#08090d] sm:mt-16">
+          <div className="relative px-6 py-10 text-center sm:px-12 sm:py-12">
             <div
-              key={g.title}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md transition-transform duration-300 hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-3xl">{g.icon}</span>
-                <span className="rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
-                  {g.badge}
-                </span>
-              </div>
-              <h3 className="mt-4 text-base font-bold text-white tracking-tight">{g.title}</h3>
-              <p className="mt-2 text-xs leading-relaxed text-white/60">{g.desc}</p>
+              className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand-500/20 blur-3xl"
+              aria-hidden
+            />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-200/80">
+              Siguiente paso
+            </p>
+            <h2 className="relative mt-3 font-display text-[1.7rem] font-semibold uppercase tracking-[0.04em] text-white sm:text-[2.1rem]">
+              ¿Listo para tu próximo vehículo?
+            </h2>
+            <p className="relative mx-auto mt-3 max-w-md text-sm leading-relaxed text-white/55">
+              Explora el stock, simula el crédito o escribe a un asesor. Te acompañamos en Puerto
+              Montt.
+            </p>
+            <div className="relative mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/catalogo"
+                className="rg-btn-primary inline-flex rounded-lg px-7 py-3.5 text-sm font-bold text-white"
+              >
+                Explorar catálogo
+              </Link>
+              <a
+                href={whatsappLink("Hola RG Motors, quiero información sobre un vehículo.")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex rounded-lg border border-white/20 bg-white/[0.03] px-7 py-3.5 text-sm font-semibold text-white transition hover:border-white/35 hover:bg-white/[0.06]"
+              >
+                Hablar por WhatsApp
+              </a>
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </section>

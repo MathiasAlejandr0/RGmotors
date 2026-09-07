@@ -8,39 +8,42 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Azul Corporativo Banco de Chile (#173A79)
+        // Azul corporativo Banco de Chile (#173A79)
         brand: {
           200: "#9CBDF2",
-          300: "#6597E5", // glow / texto destacado
-          400: "#2E62B8", // claro / hover
-          500: "#173A79", // azul Banco de Chile principal
-          600: "#112C5C", // azul profundo
-          700: "#0B1E40", // azul base oscuro
+          300: "#6597E5",
+          400: "#2E62B8",
+          500: "#173A79",
+          600: "#112C5C",
+          700: "#0B1E40",
         },
-        // Escala de oscuros profundos Apple (Jet Black / Obsidian)
+        accent: {
+          red: "#E11D2E",
+        },
         ink: {
-          950: "#050608", // fondo principal ultra profundo
-          900: "#0c0d10", // superficies secundarias
-          800: "#13151b", // tarjetas esmeriladas
-          700: "#1d2029", // paneles y flotantes
-          600: "#2d3240", // bordes sutiles
-          500: "#868e9e", // texto secundario iOS
+          950: "#050608",
+          900: "#0c0d10",
+          800: "#13151b",
+          700: "#1d2029",
+          600: "#2d3240",
+          500: "#868e9e",
         },
         state: {
           green: "#30D158",
           yellow: "#FFD60A",
-          red: "#FF453A",
+          red: "#E11D2E",
           violet: "#BF5AF2",
         },
       },
       fontFamily: {
         sans: [
-          "-apple-system",
-          "BlinkMacSystemFont",
           "var(--font-sans)",
-          '"SF Pro Display"',
-          '"SF Pro Text"',
-          '"Helvetica Neue"',
+          "system-ui",
+          "sans-serif",
+        ],
+        display: [
+          "var(--font-display)",
+          "var(--font-sans)",
           "system-ui",
           "sans-serif",
         ],
@@ -50,7 +53,7 @@ const config: Config = {
         "glow-lg": "0 20px 60px -10px rgba(23, 58, 121, 0.7)",
         "apple-card": "0 20px 50px -12px rgba(0, 0, 0, 0.7)",
         "apple-glass": "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
-        "apple-hover": "0 30px 60px -15px rgba(0, 0, 0, 0.8)",
+        "apple-hover": "0 24px 48px -16px rgba(0, 0, 0, 0.75)",
         modal: "0 40px 100px -20px rgba(0, 0, 0, 0.85)",
       },
       keyframes: {

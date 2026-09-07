@@ -1,6 +1,7 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ChatWidget from "@/components/ChatWidget";
+import CookieConsent from "@/components/CookieConsent";
 
 export default function SiteLayout({
   children,
@@ -13,6 +14,7 @@ export default function SiteLayout({
       <div className="flex-1">{children}</div>
       <SiteFooter />
       <ChatWidget />
+      <CookieConsent />
     </div>
   );
 }

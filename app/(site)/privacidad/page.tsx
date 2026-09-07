@@ -1,5 +1,6 @@
 import { COMPANY } from "@/lib/company";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad | RG Motors",
@@ -12,7 +13,7 @@ export default function PrivacidadPage() {
       <div className="mb-8 border-b border-white/[0.08] pb-6">
         <h1 className="text-3xl font-extrabold tracking-tight text-white">Política de Privacidad</h1>
         <p className="mt-2 text-sm text-white/50">
-          {COMPANY.name} · Ley N° 19.628 sobre Protección de la Vida Privada
+          {COMPANY.legalName} · Ley N° 19.628 sobre Protección de la Vida Privada
         </p>
       </div>
 
@@ -21,8 +22,14 @@ export default function PrivacidadPage() {
           <h2 className="text-base font-bold text-white">1. Responsable</h2>
           <p>
             El responsable del tratamiento de los datos personales es{" "}
-            <strong className="text-white">{COMPANY.name}</strong>, con domicilio en{" "}
-            {COMPANY.address}. Contacto:{" "}
+            <strong className="text-white">{COMPANY.legalName}</strong>
+            {COMPANY.rut ? (
+              <>
+                {" "}
+                (RUT <strong className="text-white">{COMPANY.rut}</strong>)
+              </>
+            ) : null}
+            , con domicilio en {COMPANY.address}, {COMPANY.region}. Contacto:{" "}
             <a href={`mailto:${COMPANY.email}`} className="text-brand-300 hover:underline">
               {COMPANY.email}
             </a>{" "}
@@ -34,29 +41,36 @@ export default function PrivacidadPage() {
           <h2 className="text-base font-bold text-white">2. Datos que recopilamos</h2>
           <p>
             Podemos recopilar nombre, RUT, teléfono, correo electrónico, datos del vehículo de
-            interés, información de simulación de crédito (renta declarada, pie, plazo) y
-            mensajes que nos envíes por formularios o WhatsApp, cuando tú los entregas
-            voluntariamente.
+            interés, información de simulación de crédito (renta declarada, pie, plazo),
+            preferencias de visita o prueba de manejo, y mensajes que nos envíes por
+            formularios o WhatsApp, cuando tú los entregas voluntariamente. También podemos
+            registrar datos técnicos de navegación y origen de visita según tu consentimiento
+            de cookies (ver{" "}
+            <Link href="/cookies" className="text-brand-300 hover:underline">
+              Política de Cookies
+            </Link>
+            ).
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="text-base font-bold text-white">3. Finalidad</h2>
           <p>
-            Usamos tus datos para atender consultas, gestionar solicitudes de reserva, tasación
-            o crédito, contactarte comercialmente en relación con vehículos de nuestro
-            inventario y mejorar la atención. No vendemos bases de datos a terceros ajenos a
-            la operación comercial.
+            Usamos tus datos para atender consultas, gestionar solicitudes de prioridad sobre
+            unidades, tasación o simulación de crédito, coordinar visitas o pruebas de manejo,
+            contactarte comercialmente en relación con vehículos de nuestro inventario y
+            mejorar la atención. No vendemos bases de datos a terceros ajenos a la operación
+            comercial.
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-base font-bold text-white">4. Transferencias</h2>
+          <h2 className="text-base font-bold text-white">4. Encargados y transferencias</h2>
           <p>
             Podemos compartir datos estrictamente necesarios con entidades financieras
-            asociadas (por ejemplo Autofin) cuando solicitas una simulación o evaluación de
-            crédito, y con proveedores técnicos que alojan o operan el sitio, bajo deber de
-            confidencialidad.
+            asociadas (por ejemplo Autofin) cuando solicitas una evaluación de crédito, y con
+            proveedores técnicos que alojan u operan el sitio (hosting, infraestructura cloud),
+            bajo deber de confidencialidad y solo para las finalidades indicadas.
           </p>
         </section>
 
@@ -68,16 +82,17 @@ export default function PrivacidadPage() {
             <a href={`mailto:${COMPANY.email}`} className="text-brand-300 hover:underline">
               {COMPANY.email}
             </a>
-            . Responderemos en plazos razonables.
+            , indicando “Ejercicio derechos ARCO” en el asunto. Responderemos en plazos
+            razonables conforme a la ley.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="text-base font-bold text-white">6. Conservación y seguridad</h2>
           <p>
-            Conservamos la información el tiempo necesario para las finalidades indicadas y
-            obligaciones legales. Aplicamos medidas técnicas y organizativas razonables para
-            proteger los datos frente a accesos no autorizados.
+            Conservamos la información el tiempo necesario para las finalidades indicadas,
+            seguimiento comercial razonable y obligaciones legales. Aplicamos medidas técnicas
+            y organizativas razonables para proteger los datos frente a accesos no autorizados.
           </p>
         </section>
 

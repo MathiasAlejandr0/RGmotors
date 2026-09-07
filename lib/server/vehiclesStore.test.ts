@@ -10,10 +10,20 @@ describe("vehiclesStore", () => {
     expect(list[0]).toHaveProperty("price");
   });
 
-  it("finds a vehicle by slug", async () => {
-    const rav4 = await getVehicleBySlug("toyota-rav4-hibrido");
-    expect(rav4).toBeDefined();
-    expect(rav4?.brand).toBe("Toyota");
-    expect(rav4?.model).toBe("RAV4");
+  it("finds a vehicle by slug from current stock", async () => {
+    const list = await getVehicles();
+    const sample = list[0];
+    expect(sample).toBeDefined();
+
+    const found = await getVehicleBySlug(sample.slug);
+    expect(found).toBeDefined();
+    expect(found?.brand).toBe(sample.brand);
+    expect(found?.slug).toBe(sample.slug);
+  });
+
+  it("normalizes Pickup bodyType to Camioneta", async () => {
+    const list = await getVehicles();
+    expect(list.every((v) => v.bodyType !== "Pickup")).toBe(true);
+    expect(list.some((v) => v.bodyType === "Camioneta")).toBe(true);
   });
 });

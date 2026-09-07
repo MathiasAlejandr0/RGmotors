@@ -4,18 +4,23 @@ import { useMemo, useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   vehicles as initialVehicles,
-  BRANDS,
-  BODY_TYPES,
-  FUELS,
-  TRANSMISSIONS,
   formatCLP,
   Vehicle,
 } from "@/lib/vehicles";
+import { isCamionetaBody } from "@/lib/vehicles/publicCatalog";
 import VehicleCard from "@/components/VehicleCard";
 import CatalogPdfButton from "@/components/CatalogPdfButton";
 import QuickCategoryFilter, { CategoryPill } from "@/components/QuickCategoryFilter";
 import FastCreditPreApprovalModal from "@/components/FastCreditPreApprovalModal";
 import CarRequestModal from "@/components/CarRequestModal";
+
+function matchesSelectedBodyType(bodyType: string, selected: string[]): boolean {
+  if (!selected.length) return true;
+  return selected.some((t) => {
+    if (isCamionetaBody(t) && isCamionetaBody(bodyType)) return true;
+    return t === bodyType;
+  });
+}
 
 const MAX_PRICE = 80000000;
 
@@ -96,7 +101,7 @@ function CatalogContent() {
     hibridos: vehicleList.filter((v) => v.fuel === "Híbrido" || v.fuel === "Eléctrico").length,
     suv: vehicleList.filter((v) => v.bodyType === "SUV").length,
     sedan: vehicleList.filter((v) => v.bodyType === "Sedán").length,
-    camioneta: vehicleList.filter((v) => v.bodyType === "Camioneta").length,
+    camioneta: vehicleList.filter((v) => isCamionetaBody(v.bodyType)).length,
     "bajo-km": vehicleList.filter((v) => v.km <= 30000).length,
   }), [vehicleList]);
 
@@ -157,7 +162,7 @@ function CatalogContent() {
     let result = vehicleList.filter((v) => {
       if (activeCat === "bajo-km" && v.km > 30000) return false;
       if (brands.length && !brands.includes(v.brand)) return false;
-      if (types.length && !types.includes(v.bodyType)) return false;
+      if (!matchesSelectedBodyType(v.bodyType, types)) return false;
       if (fuels.length && !fuels.includes(v.fuel)) return false;
       if (trans.length && !trans.includes(v.transmission)) return false;
       if (v.price > maxPrice) return false;
@@ -191,6 +196,28 @@ function CatalogContent() {
     return result;
   }, [vehicleList, activeCat, brands, types, fuels, trans, maxPrice, minYear, query, sort]);
 
+  const bodyTypesAvailable = useMemo(() => {
+    const set = new Set(
+      vehicleList.map((v) => (isCamionetaBody(v.bodyType) ? "Camioneta" : v.bodyType)),
+    );
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }, [vehicleList]);
+
+  const brandsAvailable = useMemo(() => {
+    const set = new Set(vehicleList.map((v) => v.brand));
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }, [vehicleList]);
+
+  const fuelsAvailable = useMemo(() => {
+    const set = new Set(vehicleList.map((v) => v.fuel));
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }, [vehicleList]);
+
+  const transmissionsAvailable = useMemo(() => {
+    const set = new Set(vehicleList.map((v) => v.transmission));
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }, [vehicleList]);
+
   const filterSummary = useMemo(() => {
     const parts: string[] = [];
     if (brands.length) parts.push(brands.join(", "));
@@ -218,13 +245,13 @@ function CatalogContent() {
   const Filters = (
     <div className="space-y-6">
       <FilterGroup title="Marca">
-        {BRANDS.map((b) => (
+        {brandsAvailable.map((b) => (
           <Check key={b} label={b} checked={brands.includes(b)} onChange={() => toggleBrand(b)} />
         ))}
       </FilterGroup>
 
       <FilterGroup title="Tipo de vehículo">
-        {BODY_TYPES.map((t) => (
+        {bodyTypesAvailable.map((t) => (
           <Check key={t} label={t} checked={types.includes(t)} onChange={() => toggleType(t)} />
         ))}
       </FilterGroup>
@@ -260,13 +287,13 @@ function CatalogContent() {
       </FilterGroup>
 
       <FilterGroup title="Combustible">
-        {FUELS.map((f) => (
+        {fuelsAvailable.map((f) => (
           <Check key={f} label={f} checked={fuels.includes(f)} onChange={() => toggleFuel(f)} />
         ))}
       </FilterGroup>
 
       <FilterGroup title="Transmisión">
-        {TRANSMISSIONS.map((t) => (
+        {transmissionsAvailable.map((t) => (
           <Check key={t} label={t} checked={trans.includes(t)} onChange={() => toggleTrans(t)} />
         ))}
       </FilterGroup>
@@ -294,31 +321,25 @@ function CatalogContent() {
         <CatalogPdfButton vehicles={filtered} filterSummary={filterSummary} />
       </div>
 
-      {/* High-Impact Conversion Banner */}
-      <div className="mb-8 rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 via-ink-950 to-brand-500/10 p-5 backdrop-blur-xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-glow">
-        <div className="flex items-center gap-3.5">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-500/20 text-2xl text-emerald-400">
-            ⚡
-          </span>
-          <div>
-            <h2 className="text-sm font-bold text-white">¿Quieres calcular tu financiamiento a medida?</h2>
-            <p className="text-xs text-white/60 mt-0.5">
-              Simula tu cuota online y nuestro equipo te responderá a la brevedad con las opciones disponibles.
-            </p>
-          </div>
+      <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#12141c] p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-white">¿Quieres calcular tu financiamiento?</h2>
+          <p className="mt-0.5 text-xs text-white/55">
+            Simula tu cuota online y te respondemos con las opciones disponibles.
+          </p>
         </div>
-        <div className="flex flex-wrap gap-2.5 shrink-0 w-full md:w-auto">
+        <div className="flex w-full flex-wrap gap-2.5 sm:w-auto shrink-0">
           <button
             onClick={() => setIsPreApprovalOpen(true)}
-            className="apple-btn-primary flex-1 md:flex-none rounded-full px-5 py-2.5 text-xs font-bold text-white shadow-glow"
+            className="apple-btn-primary flex-1 rounded-full px-5 py-2.5 text-xs font-bold text-white sm:flex-none"
           >
-            ⚡ Simular crédito online
+            Simular crédito online
           </button>
           <button
             onClick={() => setIsCarRequestOpen(true)}
-            className="apple-btn-secondary flex-1 md:flex-none rounded-full px-4 py-2.5 text-xs font-semibold text-white/80 hover:text-white"
+            className="apple-btn-secondary flex-1 rounded-full px-4 py-2.5 text-xs font-semibold text-white/80 hover:text-white sm:flex-none"
           >
-            🔍 Pedir auto a medida
+            Pedir auto a medida
           </button>
         </div>
       </div>

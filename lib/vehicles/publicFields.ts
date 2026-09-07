@@ -19,6 +19,10 @@ export type VehicleCardDTO = Pick<
   | "status"
   | "hasRealPhotos"
   | "plate"
+  | "engine"
+  | "power"
+  | "traction"
+  | "doors"
 > & {
   galleryCount: number;
   hasSpin: boolean;
@@ -42,6 +46,10 @@ export function toVehicleCardDTO(v: Vehicle): VehicleCardDTO {
     status: v.status,
     hasRealPhotos: v.hasRealPhotos,
     plate: v.plate,
+    engine: v.engine,
+    power: v.power,
+    traction: v.traction,
+    doors: v.doors,
     galleryCount: v.gallery?.length ?? 0,
     hasSpin: Boolean(v.spin && v.spin.count > 0),
   };

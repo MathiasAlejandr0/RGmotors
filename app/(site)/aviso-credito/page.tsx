@@ -23,17 +23,17 @@ export default function AvisoCreditoPage() {
           <h2 className="text-base font-bold text-white">1. Simulador propio RG Motors</h2>
           <p>
             En <Link href="/simulador" className="text-brand-300 hover:underline">/simulador</Link>{" "}
-            usamos una calculadora propia. El crédito lo otorga <strong className="text-white">Autofin</strong>;
-            RG Motors vende el vehículo. La cuota se calcula con la misma lógica de referencia
-            del mercado Autofin (pie desde 20%, hasta 48 cuotas, tasa referencial, cuota fija).
+            ofrecemos una estimación referencial de cuota. El crédito lo otorga{" "}
+            <strong className="text-white">Autofin</strong>; RG Motors comercializa el vehículo.
+            La proyección considera parámetros habituales del mercado Autofin (pie desde 20%,
+            hasta 48 cuotas, tasa referencial y cuota fija).
           </p>
           <p>
             <strong className="text-white">
               La simulación puede coincidir o el valor de referencia puede aumentar
             </strong>{" "}
-            al evaluar en sucursal (perfil del cliente, seguros, campaña). No es oferta
-            vinculante ni pre-aprobación. Los datos del cliente se almacenan en RG Motors
-            para contacto y análisis; no se envían al portal público de Autofin.
+            al evaluar en sucursal (perfil del cliente, seguros, campaña vigente). No constituye
+            oferta vinculante ni pre-aprobación. Las condiciones definitivas las confirma Autofin.
           </p>
         </section>
 

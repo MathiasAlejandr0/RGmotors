@@ -42,6 +42,9 @@ describe("toVehicleCardDTO", () => {
     const dto = toVehicleCardDTO(v);
     expect(dto.galleryCount).toBe(3);
     expect(dto.hasSpin).toBe(true);
+    expect(dto.engine).toBe("2.5");
+    expect(dto.power).toBe("200");
+    expect(dto.doors).toBe(5);
     expect(dto).not.toHaveProperty("gallery");
     expect(dto).not.toHaveProperty("highlights");
   });

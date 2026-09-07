@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const created = await addTestDrive({
       vehicleSlug,
       vehicleTitle: String(body.vehicleTitle || vehicleSlug),
-      branch: String(body.branch || "Sucursal Cardonal (Puerto Montt)"),
+      branch: String(body.branch || "Showroom Av. El Tepual (Puerto Montt)"),
       date: String(body.date || new Date().toLocaleDateString("es-CL")),
       time: String(body.time || "11:30"),
       executive: String(body.executive || "Sin preferencia"),

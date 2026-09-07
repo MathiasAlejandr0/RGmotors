@@ -7,6 +7,7 @@ import { formatRut, validateRut, evaluateCreditCapacity } from "@/lib/rut";
 import { asset } from "@/lib/asset";
 import { getTrafficSource } from "@/lib/trafficTracking";
 import { whatsappLink } from "@/lib/company";
+import LegalConsentCheckbox from "@/components/LegalConsentCheckbox";
 
 type Props = {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export default function FastCreditPreApprovalModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [consent, setConsent] = useState(false);
   const [vehiclesData, setVehiclesData] = useState<Vehicle[]>(staticVehicles);
   const [result, setResult] = useState<{
     maxFinanced: number;
@@ -94,6 +96,10 @@ export default function FastCreditPreApprovalModal({
     }
     if (!name.trim() || !phone.trim() || !email.trim()) {
       alert("Por favor completa tu nombre, correo electrónico y teléfono.");
+      return;
+    }
+    if (!consent) {
+      setSubmitError("Debes aceptar la política de privacidad y el aviso de crédito.");
       return;
     }
 
@@ -167,7 +173,8 @@ Mi nombre es ${name} (RUT: ${rut}) y solicito financiamiento para ${
               </span>
               <h2 className="mt-2 text-xl font-bold text-white">Simula tu Crédito en Línea</h2>
               <p className="text-xs text-white/60 mt-1">
-                Ingresa tus datos y condiciones. La simulación llegará a nuestro equipo para responderte a la brevedad a tu correo electrónico.
+                Completa tus datos y condiciones. Un asesor te responderá a la brevedad por
+                correo con la orientación de tu simulación.
               </p>
             </div>
 
@@ -310,16 +317,25 @@ Mi nombre es ${name} (RUT: ${rut}) y solicito financiamiento para ${
               </div>
             )}
 
+            <LegalConsentCheckbox
+              checked={consent}
+              onChange={setConsent}
+              strict
+              id="fast-credit-consent"
+            />
+
             <button
               type="submit"
               disabled={isSubmitting}
-              className="apple-btn-primary w-full rounded-full py-3.5 text-xs font-bold text-white shadow-glow disabled:opacity-50 mt-2"
+              className="apple-btn-primary mt-2 w-full rounded-full py-3.5 text-xs font-bold text-white shadow-glow disabled:opacity-50"
             >
-              {isSubmitting ? "Enviando simulación…" : "Enviar Simulación de Crédito a Nuestro Equipo"}
+              {isSubmitting ? "Enviando simulación…" : "Enviar simulación de crédito"}
             </button>
 
-            <p className="text-[10px] text-white/45 text-center leading-relaxed mt-2">
-              ⚖️ Simulación referencial conforme a Ley N° 19.496 (SERNAC). No constituye pre-aprobación ni oferta vinculante; está sujeta a evaluación comercial de Autofin u otras entidades asociadas. Datos protegidos bajo la Ley N° 19.628.
+            <p className="mt-2 text-center text-[10px] leading-relaxed text-white/45">
+              Simulación referencial conforme a Ley N° 19.496 (SERNAC). No constituye
+              aprobación de crédito ni oferta vinculante; está sujeta a evaluación de Autofin
+              u otras entidades asociadas.
             </p>
           </form>
         ) : (

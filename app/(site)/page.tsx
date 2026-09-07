@@ -1,130 +1,103 @@
 import Link from "next/link";
 import { asset } from "@/lib/asset";
 import { getVehicles } from "@/lib/server/vehiclesStore";
-import { HERO_SHOWCASE_VEHICLES } from "@/lib/vehicles";
+import {
+  filterPublicCatalog,
+  pickFeaturedVehicles,
+} from "@/lib/vehicles/publicCatalog";
 import VehicleCard from "@/components/VehicleCard";
 import RevealOnScroll from "@/components/RevealOnScroll";
-import Hero3DCarousel from "@/components/Hero3DCarousel";
 import AppleCareTrustSection from "@/components/AppleCareTrustSection";
 import ShowroomMapSection from "@/components/ShowroomMapSection";
+import HeroExploreHint from "@/components/HeroExploreHint";
+import TrustMarquee from "@/components/TrustMarquee";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const vehicles = await getVehicles();
-  const availableVehicles = vehicles.filter((v) => (v.status || "Disponible") !== "Borrador");
-  const withPhotos = availableVehicles.filter((v) => v.hasRealPhotos || (v.gallery && v.gallery.length > 0));
-  const publicVehicles = withPhotos.length > 0 ? withPhotos : availableVehicles;
-  const featured = (
-    publicVehicles.filter((v) => v.featured).length > 0
-      ? publicVehicles.filter((v) => v.featured)
-      : publicVehicles
-  ).slice(0, 6);
+  const publicVehicles = filterPublicCatalog(vehicles);
+  const featured = pickFeaturedVehicles(vehicles, 6);
 
   return (
     <main className="relative overflow-hidden">
-      {/* 1. HERO SECTION */}
-      <section className="relative hero-bg border-b border-white/[0.08] pt-10 pb-16 lg:pt-14 lg:pb-20">
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
-          {/* Left Hero Copy */}
-          <div className="animate-fade-up">
-            <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3.5 py-1 backdrop-blur-md shadow-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-300 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-400" />
-              </span>
-              <span className="text-xs font-semibold text-brand-200 tracking-wide">
-                Inspección 150 puntos · Fotos reales
-              </span>
-            </div>
+      {/* HERO — mockup cinematográfico + acabado */}
+      <section className="relative isolate min-h-[100svh] overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={asset("/hero-l200-puerto-montt.png")}
+          alt="Stock RG Motors Puerto Montt"
+          className="rg-hero-media absolute inset-0 h-full w-full object-cover object-[82%_center] sm:object-[78%_center]"
+        />
+        {/* Más oscuro a la izquierda/abajo: el auto queda libre a la derecha */}
+        <div className="rg-hero-vignette absolute inset-0 bg-[linear-gradient(105deg,rgba(0,0,0,0.88)_0%,rgba(0,0,0,0.72)_22%,rgba(0,0,0,0.28)_42%,rgba(0,0,0,0.05)_58%,transparent_72%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.55)_0%,transparent_18%,transparent_55%,rgba(6,7,10,0.95)_100%)]" />
+        <div className="rg-grain" aria-hidden />
 
-            <h1 className="mt-5 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-white leading-[1.1]">
-              Tu próximo vehículo,{" "}
-              <span className="bg-gradient-to-r from-brand-200 via-white to-brand-300 bg-clip-text text-transparent drop-shadow-sm">
-                inspeccionado y con financiamiento a tu medida.
-              </span>
-            </h1>
-
-            <p className="mt-4 max-w-lg text-base sm:text-lg leading-relaxed text-white/65 font-normal">
-              Explora nuestra selección de camionetas 4x4, SUVs y autos seminuevos inspeccionados. Fotografías 100% reales, evaluación crediticia rápida y entrega inmediata en Puerto Montt.
+        <div className="relative mx-auto flex min-h-[100svh] max-w-7xl flex-col justify-end px-5 pb-28 pt-28 sm:px-8 sm:pb-32 lg:px-10 lg:pb-36">
+          <div className="rg-stagger w-full max-w-[22rem] sm:max-w-[28rem]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/65">
+              RG Motors · Puerto Montt
             </p>
 
-            <div className="mt-7 flex flex-wrap items-center gap-3.5">
+            <h1 className="mt-4 text-[1.85rem] font-extrabold leading-[1.2] tracking-[-0.02em] text-white drop-shadow-[0_6px_32px_rgba(0,0,0,0.9)] sm:text-[2.4rem] sm:leading-[1.18] lg:text-[2.65rem]">
+              Tu próximo vehículo,
+              <br />
+              con financiamiento a tu medida
+            </h1>
+
+            <p className="mt-5 text-sm leading-relaxed text-white/78 drop-shadow-[0_2px_18px_rgba(0,0,0,0.8)] sm:text-[0.95rem]">
+              Camionetas y autos con fotos reales de patio.
+              <br />
+              Visítalos en Puerto Montt y simula tu cuota con Autofin.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/catalogo"
-                className="apple-btn-primary rounded-full px-7 py-3 text-sm font-bold text-white shadow-glow transition hover:scale-105"
+                className="rg-btn-primary inline-flex min-w-[9.5rem] items-center justify-center rounded-lg px-7 py-3.5 text-sm font-bold text-white"
               >
-                Explorar Catálogo Completo
+                Ver catálogo
               </Link>
               <Link
                 href="/simulador"
-                className="apple-btn-secondary rounded-full px-6 py-3 text-sm font-semibold text-white"
+                className="rg-btn-ghost-light inline-flex min-w-[9.5rem] items-center justify-center rounded-lg px-7 py-3.5 text-sm font-bold"
               >
-                Simular Crédito Online
+                Simular cuota
               </Link>
             </div>
           </div>
-
-          {/* Right 3D Carousel Stage */}
-          <div className="animate-fade-up lg:pl-4">
-            <Hero3DCarousel vehicles={publicVehicles} />
-          </div>
         </div>
 
-        {/* Value Props Clean Strip */}
-        <div className="mt-12 border-t border-white/[0.08] bg-white/[0.02] backdrop-blur-md">
-          <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-white/[0.08] px-4 py-5 sm:grid-cols-4">
-            <Pillar
-              icon="🚘"
-              title="Stock Verificado"
-              text="Historial y kilometraje auditado"
-            />
-            <Pillar
-              icon="⚡"
-              title="Simulación Online"
-              text="Respuesta ágil a tu correo"
-            />
-            <Pillar
-              icon="📸"
-              title="Fotos Reales HD"
-              text="Exteriores, interiores y motor"
-            />
-            <Pillar
-              icon="🔧"
-              title="Inspección 150 puntos"
-              text="Revisión mecánica antes de publicar"
-            />
-          </div>
-        </div>
+        <HeroExploreHint />
       </section>
 
-      {/* 2. FEATURED VEHICLES */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <TrustMarquee />
+
+      {/* DESTACADOS */}
+      <section id="catalogo" className="relative scroll-mt-24 mx-auto max-w-7xl px-4 pb-16 pt-0 sm:px-6 sm:pb-20">
         <RevealOnScroll>
-          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mb-7 flex flex-col gap-2 pt-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="h-4 w-1 rounded-full bg-brand-400" />
-                <h2 className="text-2xl font-bold tracking-tight sm:text-3xl text-white">
-                  Vehículos destacados
-                </h2>
-              </div>
+              <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+                Vehículos destacados
+              </h2>
               <p className="mt-1 text-sm text-white/50">
-                Unidades seleccionadas minuciosamente por su óptimo estado mecánico y estético.
+                Unidades seleccionadas por estado mecánico y estético.
               </p>
             </div>
-            <Link
-              href="/catalogo"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-300 transition hover:text-white"
-            >
-              Ver catálogo completo <span className="text-xs">→</span>
+            <Link href="/catalogo" className="rg-link text-sm font-semibold text-brand-300 hover:text-white">
+              Ver catálogo completo
+              <span className="rg-link-arrow" aria-hidden>
+                →
+              </span>
             </Link>
           </div>
         </RevealOnScroll>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {featured.map((v, idx) => (
-            <RevealOnScroll key={v.slug} delay={idx * 100}>
+            <RevealOnScroll key={v.slug} delay={idx * 70}>
               <VehicleCard vehicle={v} />
             </RevealOnScroll>
           ))}
@@ -133,127 +106,67 @@ export default async function Home() {
         <div className="mt-10 text-center">
           <Link
             href="/catalogo"
-            className="apple-btn-secondary inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-semibold text-white"
+            className="apple-btn-secondary inline-flex rounded-full px-8 py-3 text-sm font-semibold text-white"
           >
-            Ver todos los {vehicles.length} vehículos disponibles →
+            Ver todos los {publicVehicles.length} vehículos →
           </Link>
-        </div>
-
-        {/* Mapa Google Maps de RG Motors Puerto Montt debajo del catálogo */}
-        <div className="mt-14">
-          <ShowroomMapSection />
         </div>
       </section>
 
-      {/* 3. HOW IT WORKS (SIMPLE 4 STEPS) */}
-      <section className="border-y border-white/[0.08] bg-ink-900/40 backdrop-blur-xl py-16">
+      {/* PROCESO */}
+      <section className="border-y border-white/[0.08] bg-[#0a0b10] py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <RevealOnScroll>
-            <div className="text-center max-w-2xl mx-auto">
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl text-white">
-                Comprar tu auto nunca fue tan simple y seguro
-              </h2>
-              <p className="mt-2 text-sm text-white/50">
-                Experiencia 100% digital respaldada por atención personalizada en cada etapa.
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-gradient-to-r from-[#C9A84C] to-transparent" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#C9A84C]/90">
+                Proceso
               </p>
             </div>
+            <h2 className="mt-4 font-display text-[1.85rem] font-semibold uppercase tracking-[0.03em] text-white sm:text-[2.25rem]">
+              Comprar en cuatro pasos
+            </h2>
+            <p className="mt-3 max-w-xl text-sm text-white/48">
+              Del catálogo al showroom, con atención en Puerto Montt.
+            </p>
           </RevealOnScroll>
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <RevealOnScroll delay={60}>
+              <Step n="1" title="Explora el stock" text="Filtra vehículos inspeccionados con ficha clara y fotos reales." />
+            </RevealOnScroll>
             <RevealOnScroll delay={100}>
-              <Step
-                n="1"
-                title="Explora el stock"
-                text="Filtra entre autos inspeccionados con certificación técnica de 150 puntos."
-              />
+              <Step n="2" title="Revisa en detalle" text="Galería, 360° cuando está disponible e información técnica." />
             </RevealOnScroll>
-            <RevealOnScroll delay={200}>
-              <Step
-                n="2"
-                title="Inspección 360°"
-                text="Revisa cada rincón exterior e interior con fotos reales de alta fidelidad."
-              />
+            <RevealOnScroll delay={140}>
+              <Step n="3" title="Simula tu cuota" text="Elige pie y plazo. Te contactamos en horario hábil el mismo día." />
             </RevealOnScroll>
-            <RevealOnScroll delay={300}>
-              <Step
-                n="3"
-                title="Simula tu cuota"
-                text="Elige tu pie y plazo. Recibiremos tu solicitud para responderte a la brevedad."
-              />
-            </RevealOnScroll>
-            <RevealOnScroll delay={400}>
-              <Step
-                n="4"
-                title="Entrega & Showroom"
-                text="Visita nuestro showroom en Puerto Montt o coordinamos la entrega de tu auto."
-              />
+            <RevealOnScroll delay={180}>
+              <Step n="4" title="Visita el showroom" text="Coordinamos entrega o visita al patio en Puerto Montt." />
             </RevealOnScroll>
           </div>
         </div>
       </section>
 
-      {/* 4. TRUST & GUARANTEES BENTO */}
+      {/* SHOWROOM */}
+      <section className="mx-auto max-w-7xl px-4 pb-10 pt-14 sm:px-6 sm:pb-12 sm:pt-16">
+        <ShowroomMapSection />
+      </section>
+
+      {/* FINANCIAMIENTO + TRANSPARENCIA + CIERRE */}
       <RevealOnScroll>
         <AppleCareTrustSection />
       </RevealOnScroll>
-
-      {/* 5. CTA BANNER */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <RevealOnScroll>
-          <div className="relative overflow-hidden rounded-3xl border border-brand-500/40 bg-gradient-to-br from-brand-600/25 via-ink-900/90 to-black p-8 text-center sm:p-14 shadow-apple-card">
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
-              ¿Listo para encontrar tu próximo vehículo?
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-base text-white/60">
-              Explora nuestro catálogo con fotos 360°, simula tu crédito online o solicita una tasación por tu vehículo actual.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Link
-                href="/catalogo"
-                className="apple-btn-primary rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-glow"
-              >
-                Explorar catálogo completo
-              </Link>
-              <Link
-                href="/contacto"
-                className="apple-btn-secondary rounded-full px-8 py-3.5 text-sm font-semibold text-white"
-              >
-                Hablar con un asesor
-              </Link>
-            </div>
-          </div>
-        </RevealOnScroll>
-      </section>
     </main>
-  );
-}
-
-function Pillar({
-  icon,
-  title,
-  text,
-}: {
-  icon: string;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center px-4 py-2 text-center">
-      <span className="text-xl mb-1.5">{icon}</span>
-      <p className="text-sm font-bold tracking-tight text-white">{title}</p>
-      <p className="text-[11px] text-white/50 mt-0.5">{text}</p>
-    </div>
   );
 }
 
 function Step({ n, title, text }: { n: string; title: string; text: string }) {
   return (
-    <div className="apple-glass-card rounded-3xl p-6 transition-transform duration-300 hover:-translate-y-1">
-      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-500/90 font-bold text-white text-sm shadow-glow">
-        {n}
-      </span>
-      <h3 className="mt-5 text-base font-bold tracking-tight text-white">{title}</h3>
-      <p className="mt-2 text-xs leading-relaxed text-white/55 font-normal">{text}</p>
+    <div className="group h-full border border-white/[0.08] bg-[#0e1016] px-5 py-5 transition duration-300 hover:border-[#C9A84C]/25 hover:bg-[#12151c]">
+      <span className="font-display text-sm tracking-[0.18em] text-[#C9A84C]/80">{n.padStart(2, "0")}</span>
+      <h3 className="mt-3 text-sm font-semibold text-white">{title}</h3>
+      <p className="mt-2 text-[12.5px] leading-relaxed text-white/48">{text}</p>
     </div>
   );
 }

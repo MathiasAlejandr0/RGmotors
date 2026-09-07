@@ -14,6 +14,7 @@ import {
 import { getTrafficSource } from "@/lib/trafficTracking";
 import { whatsappLink } from "@/lib/company";
 import SernacDisclaimer from "@/components/SernacDisclaimer";
+import LegalConsentCheckbox from "@/components/LegalConsentCheckbox";
 
 function getSessionId(): string {
   if (typeof window === "undefined") return "ssr";
@@ -48,6 +49,7 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [consent, setConsent] = useState(false);
 
   const sessionId = useRef(getSessionId());
   const lastTrackKey = useRef("");
@@ -151,6 +153,10 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
     e.preventDefault();
     if (!name.trim() || !phone.trim() || !email.trim()) {
       setError("Completa nombre, teléfono y correo.");
+      return;
+    }
+    if (!consent) {
+      setError("Debes aceptar la política de privacidad y el aviso de crédito.");
       return;
     }
     setSubmitting(true);
@@ -393,17 +399,17 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
             </div>
 
             <p className="mt-4 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[10px] leading-relaxed text-white/45">
-              En sucursal Autofin puede confirmar esta cuota o elevarla según evaluación,
-              seguros y campaña vigente. Este número es solo una preidea.
+              En sucursal, Autofin puede confirmar esta cuota o ajustarla según evaluación,
+              seguros y campaña vigente. Este valor es solo referencial.
             </p>
           </div>
 
           <form onSubmit={submitLead} className="apple-glass-card space-y-4 rounded-3xl p-6">
             <div>
-              <h3 className="text-sm font-bold text-white">Deja tus datos — los guarda RG Motors</h3>
+              <h3 className="text-sm font-bold text-white">¿Te contactamos con esta simulación?</h3>
               <p className="mt-1 text-[11px] text-white/45">
-                No enviamos esta simulación al portal de Autofin. Usamos tus datos para
-                contactarte y para análisis comercial.
+                Un asesor de RG Motors te orientará con esta referencia y los pasos para evaluar
+                el crédito con Autofin.
               </p>
             </div>
 
@@ -430,16 +436,23 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
               <Field label="Email" value={email} onChange={setEmail} type="email" required />
             </div>
 
+            <LegalConsentCheckbox
+              checked={consent}
+              onChange={setConsent}
+              strict
+              id="sim-consent"
+            />
+
             <button
               type="submit"
               disabled={submitting}
               className="apple-btn-primary w-full rounded-full py-3.5 text-xs font-bold text-white shadow-glow disabled:opacity-50"
             >
-              {submitting ? "Enviando…" : "Enviar simulación a RG Motors"}
+              {submitting ? "Enviando…" : "Enviar simulación"}
             </button>
 
             <p className="text-[10px] leading-relaxed text-white/35">
-              Crédito otorgado por Autofin · simulación propia RG Motors ·{" "}
+              Crédito otorgado por Autofin · simulación referencial ·{" "}
               <Link href="/aviso-credito" className="text-brand-300 hover:underline">
                 aviso de crédito
               </Link>

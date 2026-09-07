@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
           km: r.km > 0 ? r.km : (existing?.km || 0),
           fuel: existing?.fuel || "Diésel",
           transmission: existing?.transmission || "Manual",
-          bodyType: existing?.bodyType || "Pickup",
+          bodyType: existing?.bodyType || "Camioneta",
           location: r.location || existing?.location || "Puerto Montt · Av. El Tepual (Ex Banco de Chile)",
           image: existing?.image || "/images/placeholder-pending-car.svg",
           gallery: existing?.gallery || [],

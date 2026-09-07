@@ -4,6 +4,8 @@ import { COMPANY } from "@/lib/company";
 export type SystemSettings = {
   company: {
     name: string;
+    legalName?: string;
+    rut?: string;
     tagline: string;
     phoneDisplay: string;
     whatsapp: string;
@@ -26,7 +28,18 @@ export type SystemSettings = {
 };
 
 const DEFAULT_SETTINGS: SystemSettings = {
-  company: { ...COMPANY },
+  company: {
+    name: COMPANY.name,
+    legalName: COMPANY.legalName,
+    rut: COMPANY.rut,
+    tagline: COMPANY.tagline,
+    phoneDisplay: COMPANY.phoneDisplay,
+    whatsapp: COMPANY.whatsapp,
+    email: COMPANY.email,
+    address: COMPANY.address,
+    hours: COMPANY.hours,
+    website: COMPANY.website,
+  },
   preferences: {
     showSpin360: false,
     enableChatbot: true,

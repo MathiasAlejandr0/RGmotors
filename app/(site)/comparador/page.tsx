@@ -8,14 +8,14 @@ import { vehicles as initialVehicles, Vehicle, formatCLP } from "@/lib/vehicles"
 const ROWS: { label: string; get: (v: Vehicle) => string }[] = [
   { label: "Precio", get: (v) => formatCLP(v.price) },
   { label: "Año", get: (v) => String(v.year) },
-  { label: "Kilometraje", get: (v) => `${v.km.toLocaleString("es-CL")} km` },
-  { label: "Motor", get: (v) => v.engine },
-  { label: "Potencia", get: (v) => v.power },
-  { label: "Transmisión", get: (v) => v.transmission },
-  { label: "Tracción", get: (v) => v.traction },
-  { label: "Combustible", get: (v) => v.fuel },
-  { label: "Puertas", get: (v) => String(v.doors) },
-  { label: "Carrocería", get: (v) => v.bodyType },
+  { label: "Kilometraje", get: (v) => `${(v.km ?? 0).toLocaleString("es-CL")} km` },
+  { label: "Motor", get: (v) => v.engine || "—" },
+  { label: "Potencia", get: (v) => v.power || "—" },
+  { label: "Transmisión", get: (v) => v.transmission || "—" },
+  { label: "Tracción", get: (v) => v.traction || "—" },
+  { label: "Combustible", get: (v) => v.fuel || "—" },
+  { label: "Puertas", get: (v) => (v.doors != null ? String(v.doors) : "—") },
+  { label: "Carrocería", get: (v) => v.bodyType || "—" },
 ];
 
 export default function ComparadorPage() {

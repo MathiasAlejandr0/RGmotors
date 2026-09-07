@@ -18,9 +18,8 @@ export default function SernacDisclaimer({ className = "" }: { className?: strin
       </p>
 
       <p className="text-[11px] text-white/60">
-        El crédito lo otorga Autofin. RG Motors comercializa el vehículo y captura tus datos
-        solo para contacto y análisis propios. Solicita siempre la información formal (FIEL)
-        antes de firmar.
+        El crédito lo otorga Autofin. RG Motors comercializa el vehículo. Solicita siempre la
+        información formal (FIEL) y la documentación oficial antes de firmar.
       </p>
 
       <div className="flex flex-wrap items-center justify-between border-t border-white/10 pt-2 text-[10px] text-white/40">

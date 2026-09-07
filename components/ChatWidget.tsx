@@ -17,12 +17,12 @@ const SUGGESTIONS = [
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
-  const [showTeaser, setShowTeaser] = useState(true);
+  const [showTeaser, setShowTeaser] = useState(false);
   const [input, setInput] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: "ai",
-      text: "¡Hola! Soy el asistente del catálogo RG Motors. Cuéntame qué auto buscas (uso, presupuesto, tipo) y te muestro opciones disponibles. No soy una IA generativa: busco en nuestro inventario.",
+      text: "¡Hola! Soy el asistente del catálogo RG Motors. Cuéntame qué buscas (uso, presupuesto o tipo) y te muestro opciones de nuestro stock.",
     },
   ]);
   const [vehiclesData, setVehiclesData] = useState<any[]>(staticVehicles);
@@ -93,8 +93,10 @@ export default function ChatWidget() {
     let matches = vehiclesData;
 
     if (query.includes("suv")) matches = matches.filter((v) => v.bodyType === "SUV");
-    if (query.includes("camioneta") || query.includes("4x4"))
-      matches = vehiclesData.filter((v) => v.bodyType === "Camioneta");
+    if (query.includes("camioneta") || query.includes("4x4") || query.includes("pickup"))
+      matches = vehiclesData.filter(
+        (v) => v.bodyType === "Camioneta" || v.bodyType === "Pickup",
+      );
     if (query.includes("sedán") || query.includes("sedan"))
       matches = vehiclesData.filter((v) => v.bodyType === "Sedán");
     if (query.includes("económic") || query.includes("barato") || query.includes("ciudad"))

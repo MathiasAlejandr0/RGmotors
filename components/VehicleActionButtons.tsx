@@ -30,7 +30,7 @@ export default function VehicleActionButtons({ vehicle: v }: { vehicle: Vehicle 
           href={`/simulador?auto=${encodeURIComponent(v.slug)}`}
           className="apple-btn-primary flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-center text-xs font-bold text-white shadow-glow transition hover:scale-[1.01] active:scale-95"
         >
-          <span>⚡</span> Simular crédito (datos RG Motors)
+          <span>⚡</span> Simular crédito Autofin
         </Link>
 
         <button

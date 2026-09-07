@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getVehicles, saveVehicle } from "@/lib/server/vehiclesStore";
 import { Vehicle } from "@/lib/vehicles";
 import { toVehicleCardDTO } from "@/lib/vehicles/publicFields";
+import { isCamionetaBody, isPublicCatalogVehicle } from "@/lib/vehicles/publicCatalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function matchesBodyTypeQuery(vehicleBody: string, query: string): boolean {
+  const q = query.toLowerCase();
+  if (isCamionetaBody(q) && isCamionetaBody(vehicleBody)) return true;
+  return vehicleBody.toLowerCase() === q;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     const bodyType = searchParams.get("bodyType");
     if (bodyType) {
-      list = list.filter((v) => v.bodyType.toLowerCase() === bodyType.toLowerCase());
+      list = list.filter((v) => matchesBodyTypeQuery(v.bodyType, bodyType));
     }
 
     const status = searchParams.get("status");
@@ -31,10 +38,10 @@ export async function GET(req: NextRequest) {
       list = list.filter((v) => (v.status || "Disponible").toLowerCase() === status.toLowerCase());
     }
 
-    // Exclude drafts unless admin mode
+    // Exclude drafts / sold unless admin mode
     const admin = searchParams.get("admin");
     if (admin !== "true") {
-      list = list.filter((v) => (v.status || "Disponible") !== "Borrador");
+      list = list.filter(isPublicCatalogVehicle);
     }
 
     const fields = searchParams.get("fields");
@@ -44,13 +51,13 @@ export async function GET(req: NextRequest) {
         : list;
 
     const res = NextResponse.json({ vehicles: payload, total: payload.length });
-    if (admin === "true") {
+    if (admin === "true" || process.env.NODE_ENV !== "production") {
       res.headers.set("Cache-Control", "private, no-store");
     } else {
-      // Cloudflare / CDN: cache corto + SWR para catálogo fluido
+      // CDN: cache corto tras sync de stock
       res.headers.set(
         "Cache-Control",
-        "public, s-maxage=60, stale-while-revalidate=300",
+        "public, s-maxage=15, stale-while-revalidate=60",
       );
     }
     return res;

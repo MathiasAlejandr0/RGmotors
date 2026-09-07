@@ -549,7 +549,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
               <div>
                 <h3 className="font-semibold text-white">Fotos en el catálogo</h3>
                 <p className="text-xs text-white/50">
-                  {gallery.length} fotos guardadas · La primera foto o la marcada como ⭐ es la portada
+                  {gallery.length} fotos · Portada = perfil delantero 3/4 (frente + costado)
                 </p>
               </div>
               <button

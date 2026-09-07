@@ -7,7 +7,7 @@ import { Vehicle, formatCLP } from "@/lib/vehicles";
 import { getTrafficSource } from "@/lib/trafficTracking";
 import { whatsappLink } from "@/lib/company";
 
-const BRANCHES = ["Sucursal Cardonal (Puerto Montt)"];
+const BRANCHES = ["Showroom Av. El Tepual (Puerto Montt)"];
 const TIMES = ["10:00", "11:30", "12:30", "15:00", "16:30", "17:30"];
 const EXECUTIVES = ["Sin preferencia", "Asesor de Ventas RG Motors", "Especialista Comercial"];
 
@@ -279,7 +279,7 @@ export default function TestDriveForm({ vehicle: v }: { vehicle: Vehicle }) {
           {isSubmitting
             ? "Agendando tu prueba…"
             : canConfirm
-            ? "Confirmar reserva de prueba de manejo"
+            ? "Confirmar prueba de manejo"
             : "Selecciona fecha, hora y contacto"}
         </button>
       </div>

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { COMPANY, whatsappLink } from "@/lib/company";
 import { getTrafficSource } from "@/lib/trafficTracking";
+import LegalConsentCheckbox from "@/components/LegalConsentCheckbox";
 
 export default function ContactForm() {
   const [sent, setSent] = useState(false);
@@ -13,6 +15,7 @@ export default function ContactForm() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [honeypot, setHoneypot] = useState("");
+  const [consent, setConsent] = useState(false);
 
   if (sent) {
     return (
@@ -22,8 +25,8 @@ export default function ContactForm() {
         </div>
         <h2 className="mt-4 text-xl font-bold tracking-tight text-emerald-400">¡Mensaje enviado!</h2>
         <p className="mt-2 text-xs leading-relaxed text-white/70 max-w-md mx-auto">
-          Gracias{name ? `, ${name}` : ""}. Un asesor de RG Motors te contactará pronto al{" "}
-          {phone || email}.
+          Gracias{name ? `, ${name}` : ""}. Un asesor de RG Motors te contactará en horario
+          hábil al {phone || email}.
         </p>
         <a
           href={whatsappLink("Hola RG Motors, quiero más información sobre un vehículo.")}
@@ -48,6 +51,10 @@ export default function ContactForm() {
       className="apple-glass-card rounded-3xl p-7 space-y-5"
       onSubmit={async (e) => {
         e.preventDefault();
+        if (!consent) {
+          setError("Debes aceptar la política de privacidad para continuar.");
+          return;
+        }
         setLoading(true);
         setError("");
         try {
@@ -117,6 +124,8 @@ export default function ContactForm() {
           className="mt-1.5 w-full rounded-2xl border border-white/15 bg-white/[0.05] px-4 py-3 text-xs text-white outline-none focus:border-brand-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-brand-500/20 transition placeholder-white/40"
         />
       </div>
+      <LegalConsentCheckbox checked={consent} onChange={setConsent} id="contact-consent" />
+
       <button
         type="submit"
         disabled={loading}
@@ -125,8 +134,11 @@ export default function ContactForm() {
         {loading ? "Enviando…" : "Enviar mensaje"}
       </button>
       <p className="text-[10px] text-white/35">
-        Al enviar autorizas a RG Motors a contactarte. Horario: {COMPANY.hours}. Datos protegidos
-        bajo Ley 19.628.
+        Horario de atención: {COMPANY.hours}. Más info en{" "}
+        <Link href="/privacidad" className="text-brand-300 hover:underline">
+          Privacidad
+        </Link>
+        .
       </p>
     </form>
   );

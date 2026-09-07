@@ -1,47 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { MouseEvent, useRef } from "react";
 import { asset } from "@/lib/asset";
 import { Vehicle, formatCLP, estimateMonthly } from "@/lib/vehicles";
 
+type CardVehicle = Vehicle & {
+  galleryCount?: number;
+  hasSpin?: boolean;
+};
+
 export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
-  const cardRef = useRef<HTMLAnchorElement>(null);
+  const card = v as CardVehicle;
+  const has360 = Boolean((card.spin && card.spin.count > 0) || card.hasSpin);
+  const galleryCount = card.gallery?.length ?? card.galleryCount ?? 0;
 
-  const handleMouseMove = (e: MouseEvent<HTMLAnchorElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    cardRef.current.style.setProperty("--mouse-x", `${x}px`);
-    cardRef.current.style.setProperty("--mouse-y", `${y}px`);
-  };
-
-  const has360 = Boolean(v.spin && v.spin.count > 0);
-  const hasRealPhotos = Boolean(
-    v.hasRealPhotos &&
-    v.gallery &&
-    v.gallery.length > 0 &&
-    v.image &&
-    !v.image.includes("placeholder-pending-car")
+  // El API ?fields=card no envía gallery[], solo galleryCount + image + hasRealPhotos
+  const showRealPhoto = Boolean(
+    card.image &&
+      !card.image.includes("placeholder-pending-car") &&
+      (card.hasRealPhotos || galleryCount > 0),
   );
-  const displayImage = hasRealPhotos
-    ? asset(v.image)
+  const displayImage = showRealPhoto
+    ? asset(card.image)
     : asset("/images/placeholder-pending-car.svg");
 
   return (
     <Link
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      href={`/vehiculo/${v.slug}`}
-      className="apple-glass-card apple-glass-glow group flex flex-col overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:shadow-apple-hover"
+      href={`/vehiculo/${card.slug}`}
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0e1016] shadow-[0_16px_40px_-18px_rgba(0,0,0,0.8)] transition duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-brand-400/35 hover:shadow-[0_28px_60px_-20px_rgba(0,0,0,0.9)]"
     >
-      {/* Vehicle Image Container */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-b from-ink-800 to-ink-950">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-60" />
+
+      <div className="relative aspect-[16/10] overflow-hidden bg-ink-900">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={displayImage}
-          alt={`${v.brand} ${v.model}`}
+          alt={`${card.brand} ${card.model}`}
           loading="lazy"
           decoding="async"
           fetchPriority="low"
@@ -49,77 +43,71 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
             e.currentTarget.onerror = null;
             e.currentTarget.src = asset("/images/placeholder-pending-car.svg");
           }}
-          className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0e1016]/40 via-transparent to-black/10 opacity-80" />
+        <div className="absolute inset-0 translate-x-[-120%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-[120%]" />
 
-        {has360 && (
-          <span className="absolute left-3.5 bottom-3.5 flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-brand-300 backdrop-blur-md shadow-sm z-10">
-            Tour 360°
-          </span>
-        )}
-
-        {hasRealPhotos ? (
-          <span className="absolute left-3.5 top-3.5 flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-emerald-300 backdrop-blur-md shadow-sm z-10">
-            <span>📸</span> Fotos Reales de Patio
-          </span>
-        ) : (
-          <span className="absolute left-3.5 top-3.5 flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-amber-300 backdrop-blur-md shadow-sm z-10">
-            <span>⏳</span> Fotos en preparación
-          </span>
-        )}
-
-        {v.featured && (
-          <span className="absolute right-3.5 top-3.5 rounded-full bg-brand-500/90 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-md shadow-glow z-10">
-            Destacado
-          </span>
-        )}
+        <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
+          {has360 && (
+            <span className="rounded-md border border-white/10 bg-black/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">
+              360°
+            </span>
+          )}
+          {!showRealPhoto && (
+            <span className="rounded-md bg-amber-400 px-2 py-1 text-[10px] font-semibold text-black">
+              Fotos pronto
+            </span>
+          )}
+          {card.featured && (
+            <span className="rounded-md bg-brand-500 px-2 py-1 text-[10px] font-semibold text-white shadow-[0_6px_16px_-6px_rgba(23,58,121,0.8)]">
+              Destacado
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Vehicle Information */}
-      <div className="flex flex-1 flex-col p-5 relative z-10">
-        <div className="flex items-baseline justify-between gap-2">
-          <h3 className="text-base font-bold tracking-tight text-white group-hover:text-brand-300 transition-colors">
-            {v.brand} {v.model}
-          </h3>
-          <span className="text-xs font-semibold text-white/40">{v.plate ? `${v.plate} · ` : ""}{v.year}</span>
-        </div>
-        <p className="mt-0.5 text-xs text-white/50">{v.version}</p>
-
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
-            {v.km.toLocaleString("es-CL")} km
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
-            {v.fuel}
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
-            {v.transmission}
-          </span>
-        </div>
-
-        <div className="mt-auto pt-5">
-          <div className="flex items-baseline justify-between">
-            <div>
-              <p className="text-xl font-extrabold tracking-tight text-white">
-                {v.price > 0 ? formatCLP(v.price) : "Consultar precio"}
-              </p>
-              {v.price > 0 ? (
-                <p className="text-[11px] text-white/45">
-                  o cuota desde <span className="text-brand-300 font-medium">{formatCLP(estimateMonthly(v.price))}</span>/mes
-                </p>
-              ) : (
-                <p className="text-[11px] text-brand-300/80">
-                  Unidad física en evaluación comercial
-                </p>
-              )}
-            </div>
+      <div className="flex flex-1 flex-col gap-3 border-t border-white/[0.06] bg-[#12141c] p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-[15px] font-bold tracking-tight text-white transition-colors group-hover:text-brand-200 sm:text-base">
+              {card.brand} {card.model}
+            </h3>
+            {card.version ? (
+              <p className="mt-0.5 truncate text-xs text-white/45">{card.version}</p>
+            ) : null}
           </div>
-
-          <span className="mt-4 flex items-center justify-center gap-1.5 w-full rounded-2xl border border-white/10 bg-white/[0.06] py-2.5 text-xs font-semibold text-white transition-all duration-200 group-hover:border-brand-500/50 group-hover:bg-brand-500 group-hover:shadow-glow">
-            Ver vehículo & Fotos
-            <span className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+          <span className="shrink-0 rounded-md bg-white/[0.04] px-2 py-0.5 text-xs font-medium text-white/45">
+            {card.year}
           </span>
+        </div>
+
+        <p className="text-[11px] leading-relaxed text-white/50">
+          {card.km.toLocaleString("es-CL")} km
+          <span className="mx-1.5 text-white/20">·</span>
+          {card.fuel}
+          <span className="mx-1.5 text-white/20">·</span>
+          {card.transmission}
+        </p>
+
+        <div className="mt-auto flex items-end justify-between gap-3 pt-1">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-wider text-white/35">
+              Precio
+            </p>
+            <p className="text-lg font-extrabold tracking-tight text-white sm:text-xl">
+              {formatCLP(card.price)}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-white/35">
+              Desde
+            </p>
+            <p className="text-sm font-semibold text-brand-300">
+              {formatCLP(estimateMonthly(card.price))}
+              <span className="text-xs font-medium text-white/40">/mes</span>
+            </p>
+          </div>
         </div>
       </div>
     </Link>

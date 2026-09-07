@@ -57,8 +57,8 @@ export default function CuotaSimulator({ price, vehicleYear, vehicleSlug }: Prop
       </div>
 
       <div className="mb-4 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100/85">
-        Esta cuota es una <b>preidea</b>. En sucursal, Autofin puede confirmarla o{" "}
-        <b>aumentar</b> el valor según evaluación y seguros.
+        Esta cuota es <b>referencial</b>. En sucursal, Autofin puede confirmarla o{" "}
+        <b>ajustarla</b> según evaluación y seguros.
       </div>
 
       <div className="space-y-5">

@@ -6,6 +6,7 @@ import { asset } from "@/lib/asset";
 import { Vehicle, formatCLP } from "@/lib/vehicles";
 import { getTrafficSource } from "@/lib/trafficTracking";
 import { whatsappLink } from "@/lib/company";
+import LegalConsentCheckbox from "@/components/LegalConsentCheckbox";
 
 const RESERVE_AMOUNT = 200000;
 
@@ -14,7 +15,8 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
-  const [website, setWebsite] = useState(""); // honeypot
+  const [website, setWebsite] = useState("");
+  const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -22,6 +24,10 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
     e.preventDefault();
     if (!clientName.trim() || !phone.trim() || !email.trim()) {
       setErrorMsg("Por favor ingresa nombre, teléfono y correo.");
+      return;
+    }
+    if (!consent) {
+      setErrorMsg("Debes aceptar la política de privacidad para continuar.");
       return;
     }
 
@@ -41,7 +47,9 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
           method: "solicitud-web",
           status: "Pendiente",
           trafficSource: getTrafficSource(),
-          notes: notes.trim() || "Solicitud de reserva desde el sitio web (sin pago online).",
+          notes:
+            notes.trim() ||
+            "Solicitud de prioridad desde el sitio web (sin pago online).",
           website,
         }),
       });
@@ -61,31 +69,31 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
   };
 
   const waUrl = whatsappLink(
-    `Hola RG Motors, envié una solicitud de reserva para el ${v.brand} ${v.model} ${v.year}. Mi nombre es ${clientName || "..."}. Quiero coordinar el abono.`
+    `Hola RG Motors, envié una solicitud de prioridad para el ${v.brand} ${v.model} ${v.year}. Mi nombre es ${clientName || "..."}. Quiero coordinar el abono.`
   );
 
   if (status === "done") {
     return (
-      <div className="apple-glass-card mx-auto max-w-lg rounded-3xl p-8 text-center border-emerald-500/30 animate-fade-up">
+      <div className="apple-glass-card mx-auto max-w-lg animate-fade-up rounded-3xl border-emerald-500/30 p-8 text-center">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-3xl font-bold text-emerald-400 shadow-glow">
           ✓
         </div>
         <h2 className="mt-4 text-2xl font-bold tracking-tight text-emerald-400">
-          Solicitud de reserva enviada
+          Solicitud de prioridad enviada
         </h2>
         <p className="mt-2 text-xs leading-relaxed text-white/70">
           Hola <b>{clientName}</b>, recibimos tu interés en el{" "}
           <b>
             {v.brand} {v.model} {v.year}
           </b>
-          . Nuestro equipo te contactará a la brevedad para confirmar disponibilidad.
+          . Nuestro equipo te contactará en horario hábil para confirmar disponibilidad.
         </p>
         <div className="mt-4 rounded-2xl border border-white/10 bg-black/40 p-4 text-xs text-white/70">
           El abono referencial de{" "}
           <span className="font-bold text-white">{formatCLP(RESERVE_AMOUNT)}</span> se
           coordina en tienda o por WhatsApp. No se realizó ningún cargo online.
         </div>
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
             href={waUrl}
             target="_blank"
@@ -106,8 +114,8 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-8 lg:grid-cols-3 items-start">
-      <div className="apple-glass-card rounded-3xl p-6 space-y-4">
+    <form onSubmit={submit} className="grid items-start gap-8 lg:grid-cols-3">
+      <div className="apple-glass-card space-y-4 rounded-3xl p-6">
         <h2 className="text-base font-bold text-white">Vehículo de interés</h2>
         <div className="aspect-[16/10] overflow-hidden rounded-2xl border border-white/10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -122,7 +130,7 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
           </p>
           <p className="mt-2 text-2xl font-extrabold text-brand-300">{formatCLP(v.price)}</p>
         </div>
-        <div className="space-y-1.5 text-xs text-white/60 border-t border-white/10 pt-3">
+        <div className="space-y-1.5 border-t border-white/10 pt-3 text-xs text-white/60">
           <p>✓ {v.km.toLocaleString("es-CL")} km</p>
           <p>
             ✓ {v.fuel} · Transmisión {v.transmission}
@@ -130,11 +138,15 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
         </div>
       </div>
 
-      <div className="apple-glass-card rounded-3xl p-6 space-y-4 lg:col-span-2">
-        <h2 className="text-base font-bold text-white">Solicitud de reserva</h2>
+      <div className="apple-glass-card space-y-4 rounded-3xl p-6 lg:col-span-2">
+        <h2 className="text-base font-bold text-white">Solicitar prioridad sobre esta unidad</h2>
         <p className="text-xs text-white/50">
-          Déjanos tus datos y te contactamos para coordinar el abono en tienda o WhatsApp.
-          Por ahora no hay pago online.
+          Sin cargo online. Un asesor confirma disponibilidad y coordina el abono en tienda o
+          WhatsApp.{" "}
+          <Link href="/condiciones-reserva" className="text-brand-300 hover:underline">
+            Condiciones
+          </Link>
+          .
         </p>
 
         {errorMsg && (
@@ -143,7 +155,6 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
           </div>
         )}
 
-        {/* Honeypot */}
         <input
           type="text"
           name="website"
@@ -157,7 +168,7 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="block text-[11px] text-white/60 mb-1">Nombre completo *</label>
+            <label className="mb-1 block text-[11px] text-white/60">Nombre completo *</label>
             <input
               type="text"
               value={clientName}
@@ -168,7 +179,7 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
             />
           </div>
           <div>
-            <label className="block text-[11px] text-white/60 mb-1">WhatsApp / Celular *</label>
+            <label className="mb-1 block text-[11px] text-white/60">WhatsApp / Celular *</label>
             <input
               type="tel"
               value={phone}
@@ -179,7 +190,7 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
             />
           </div>
           <div>
-            <label className="block text-[11px] text-white/60 mb-1">Email *</label>
+            <label className="mb-1 block text-[11px] text-white/60">Email *</label>
             <input
               type="email"
               value={email}
@@ -190,7 +201,7 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-[11px] text-white/60 mb-1">Notas (opcional)</label>
+            <label className="mb-1 block text-[11px] text-white/60">Notas (opcional)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -207,6 +218,8 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
           se coordina al confirmar la solicitud.
         </div>
 
+        <LegalConsentCheckbox checked={consent} onChange={setConsent} id="reserve-consent" />
+
         <button
           type="submit"
           disabled={status === "processing"}
@@ -218,7 +231,7 @@ export default function ReserveFlow({ vehicle: v }: { vehicle: Vehicle }) {
               Enviando solicitud…
             </>
           ) : (
-            "Enviar solicitud de reserva"
+            "Solicitar prioridad"
           )}
         </button>
       </div>

@@ -500,7 +500,7 @@ export default function VehicleEditorModal({
                         Selecciona la Foto de Portada para este Vehículo
                       </h4>
                       <p className="text-xs text-white/70">
-                        Haz clic en la foto que más te guste para que sea la primera imagen visible en el catálogo y en la página principal.
+                        Portada del catálogo: perfil delantero 3/4 (se ve el frente y el costado), como la foto estándar de patio.
                       </p>
                     </div>
                   </div>

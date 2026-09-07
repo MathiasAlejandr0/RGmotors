@@ -1,18 +1,28 @@
 /**
  * Datos de contacto oficiales de RG Motors Chile.
+ * Completa `rut` / `legalName` reales antes del lanzamiento amplio.
  */
 export const COMPANY = {
   name: "RG Motors",
+  /** Razón social / nombre comercial para legales y footer */
+  legalName: "RG Motors Chile",
+  /** RUT de la empresa. Vacío = no se muestra aún (configurar antes de go-live). */
+  rut: "",
   tagline: "Autos usados seleccionados en Puerto Montt",
   phoneDisplay: "+56 9 5907 3127",
   /** Solo dígitos, formato internacional sin + */
   whatsapp: "56959073127",
   email: "administracion@rgmotorschile.cl",
   address: "Av. El Tepual (Ex Banco de Chile), Puerto Montt",
-  hours: "Lun a Vie 9:00–19:00 · Sáb 10:00–14:00",
+  addressShort: "Av. El Tepual, Puerto Montt",
+  region: "Región de Los Lagos, Chile",
+  /** Sucursal única oficial (showroom / pruebas de manejo) */
+  branchName: "Showroom Av. El Tepual",
+  hours: "Lun a Jue 9:00–19:00 · Vie 9:00–18:00 · Sáb 10:00–13:00",
   website: "www.rgmotors.cl",
   instagram: "https://www.instagram.com/_rgmotors/",
   facebook: "https://www.facebook.com/automotoraga?locale=es_LA",
+  facebookLabel: "Facebook oficial RG Motors",
 };
 
 /**

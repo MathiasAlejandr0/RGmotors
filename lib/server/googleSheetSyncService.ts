@@ -283,7 +283,7 @@ export async function syncFromLiveGoogleSheet(customSheetId?: string): Promise<S
         km: item.km,
         fuel: "Diésel",
         transmission: "Manual",
-        bodyType: "Pickup",
+        bodyType: "Camioneta",
         location: "Puerto Montt · Av. El Tepual",
         image: "/images/placeholder-pending-car.svg",
         gallery: [],
