@@ -237,7 +237,7 @@ export default function ChatWidget() {
       ...m,
       {
         role: "ai",
-        text: `¡Gracias, ${parsed.name}! Un ejecutivo te contactará pronto. También podés escribirnos ahora por WhatsApp con las fichas listas.`,
+        text: `¡Gracias, ${parsed.name}! Un ejecutivo te contactará pronto. También puedes escribirnos ahora por WhatsApp con las fichas listas.`,
         waMessage: waMsg,
       },
     ]);
@@ -288,7 +288,7 @@ export default function ChatWidget() {
             <p className="truncate text-[11px] text-white/70">
               {pageVehicle
                 ? `¿Te ayudo con el ${pageVehicle.brand} ${pageVehicle.model}?`
-                : "¿Buscás auto? Te asesoro con el stock ➔"}
+                : "¿Buscas auto? Te ayudo con el stock ➔"}
             </p>
           </div>
           <button
@@ -428,7 +428,7 @@ export default function ChatWidget() {
             {askContact && !contactSent && (
               <div className="mb-3 rounded-2xl border border-brand-500/30 bg-brand-500/10 p-3 backdrop-blur-md space-y-2">
                 <p className="text-[11px] font-medium text-white/80">
-                  ¿Te enviamos estas opciones? Dejá tu nombre y WhatsApp.
+                  ¿Te enviamos estas opciones? Deja tu nombre y WhatsApp.
                 </p>
                 <input
                   value={contactName}

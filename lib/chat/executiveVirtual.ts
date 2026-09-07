@@ -188,7 +188,7 @@ export function answerAsExecutive(
   if (/\b(horario|hora|abierto|abren|cierran|atencion|atención)\b/.test(q)) {
     intents.push("horario");
     return {
-      text: `Nuestro horario en ${COMPANY.branchName}:\n${COMPANY.hours}.\n¿Querés que te reserve una visita o te muestre stock ahora?`,
+      text: `Nuestro horario en ${COMPANY.branchName}:\n${COMPANY.hours}.\n¿Quieres que te reserve una visita o te muestre stock ahora?`,
       intents,
       showContact: true,
     };
@@ -197,7 +197,7 @@ export function answerAsExecutive(
   if (/\b(direccion|dirección|ubicacion|ubicación|donde|dónde|sucursal|showroom|mapa|llegar)\b/.test(q)) {
     intents.push("ubicacion");
     return {
-      text: `Estamos en ${COMPANY.address}. Showroom oficial: ${COMPANY.branchName}.\n¿Te armo un WhatsApp para coordinar la visita?`,
+      text: `Estamos en ${COMPANY.address}. Showroom oficial: ${COMPANY.branchName}.\n¿Te preparo un WhatsApp para coordinar la visita?`,
       intents,
       showContact: true,
       waMessage: `Hola RG Motors, quiero ir al showroom (${COMPANY.addressShort}).`,
@@ -208,7 +208,7 @@ export function answerAsExecutive(
     intents.push("financiamiento");
     const sim = autofinSimulatorUrl();
     return {
-      text: `Sí, trabajamos financiamiento (incl. Autofin). Podés simular cuotas aquí: ${sim}\nSi me decís presupuesto o pie, te muestro autos que calcen. También puedo pasarte con un ejecutivo por WhatsApp.`,
+      text: `Sí, trabajamos con financiamiento (incluye Autofin). Puedes simular cuotas aquí: ${sim}\nSi me indicas presupuesto o pie, te muestro autos que encajen. También puedo pasarte con un ejecutivo por WhatsApp.`,
       intents,
       financing: true,
       showContact: true,
@@ -219,7 +219,7 @@ export function answerAsExecutive(
   if (/\b(test[\s-]?drive|prueba de manejo|probar|manejar)\b/.test(q)) {
     intents.push("test-drive");
     return {
-      text: `Armamos prueba de manejo en el showroom (${COMPANY.addressShort}). Decime qué auto te interesa o dejame tu WhatsApp y un ejecutivo te agenda.`,
+      text: `Agendamos prueba de manejo en el showroom (${COMPANY.addressShort}). Dime qué auto te interesa o déjame tu WhatsApp y un ejecutivo te contacta.`,
       intents,
       showContact: true,
       waMessage: "Hola RG Motors, quiero agendar una prueba de manejo.",
@@ -229,7 +229,7 @@ export function answerAsExecutive(
   if (/\b(parte de pago|permuta|trade[\s-]?in|mi auto|usado como pie)\b/.test(q)) {
     intents.push("parte-de-pago");
     return {
-      text: `Sí, recibimos parte de pago. Contame marca, modelo, año y km de tu auto (o dejá tu WhatsApp) y un ejecutivo te cotiza.`,
+      text: `Sí, recibimos parte de pago. Cuéntame marca, modelo, año y km de tu auto (o deja tu WhatsApp) y un ejecutivo te cotiza.`,
       intents,
       showContact: true,
       waMessage: "Hola RG Motors, quiero cotizar parte de pago de mi auto.",
@@ -239,7 +239,7 @@ export function answerAsExecutive(
   if (/\b(visita|agendar|reservar hora|ir a ver|conocer el local)\b/.test(q)) {
     intents.push("visita");
     return {
-      text: `Perfecto. Horario: ${COMPANY.hours}. Dirección: ${COMPANY.addressShort}.\nDejá tu nombre y WhatsApp o escribí ahora y te confirmamos la visita.`,
+      text: `Perfecto. Horario: ${COMPANY.hours}. Dirección: ${COMPANY.addressShort}.\nDeja tu nombre y WhatsApp o escribe ahora y te confirmamos la visita.`,
       intents,
       showContact: true,
       waMessage: `Hola RG Motors, quiero agendar una visita al showroom (${COMPANY.addressShort}).`,
@@ -251,13 +251,13 @@ export function answerAsExecutive(
     const page = opts?.pageVehicle;
     if (page) {
       return {
-        text: `¡Hola! Soy el ejecutivo virtual de RG Motors. Vi que estás mirando el ${page.brand} ${page.model}. ¿Te ayudo con precio, financiamiento, visita o te muestro alternativas?`,
+        text: `¡Hola! Soy el ejecutivo virtual de RG Motors. Vi que estás viendo el ${page.brand} ${page.model}. ¿Te ayudo con precio, financiamiento, visita o te muestro alternativas?`,
         cars: [page.slug],
         intents,
       };
     }
     return {
-      text: "¡Hola! Soy el ejecutivo virtual de RG Motors. Contame qué buscás (marca, tipo, presupuesto) o elegí una sugerencia abajo.",
+      text: "¡Hola! Soy el ejecutivo virtual de RG Motors. Cuéntame qué buscas (marca, tipo, presupuesto) o elige una sugerencia abajo.",
       intents,
     };
   }
@@ -322,14 +322,14 @@ export function answerAsExecutive(
     const page = opts?.pageVehicle;
     if (page) {
       return {
-        text: `Sobre el ${page.brand} ${page.model}: puedo ayudarte con financiamiento, visita al showroom o mostrarte alternativas similares. ¿Qué preferís?`,
+        text: `Sobre el ${page.brand} ${page.model}: puedo ayudarte con financiamiento, visita al showroom o mostrarte alternativas similares. ¿Qué prefieres?`,
         cars: [page.slug],
         intents: ["contexto-ficha"],
         showContact: true,
       };
     }
     return {
-      text: "Contame un poco más: marca (Toyota, Mitsubishi…), tipo (SUV, camioneta) o presupuesto (ej. bajo $16M). También puedo ayudarte con horario, financiamiento o agendar visita.",
+      text: "Cuéntame un poco más: marca (Toyota, Mitsubishi…), tipo (SUV, camioneta) o presupuesto (ej. bajo $16M). También puedo ayudarte con horario, financiamiento o agendar visita.",
       intents,
     };
   }
@@ -337,7 +337,7 @@ export function answerAsExecutive(
   const top = matches.slice(0, 3);
   if (top.length === 0) {
     return {
-      text: "No encontré coincidencias exactas en el stock actual. ¿Bajamos el presupuesto, cambiamos marca/tipo, o te paso con un ejecutivo por WhatsApp?",
+      text: "No encontré coincidencias exactas en el stock actual. ¿Bajamos el presupuesto, cambiamos marca o tipo, o te paso con un ejecutivo por WhatsApp?",
       intents,
       bodyType,
       budget,
@@ -418,12 +418,12 @@ export function whatsappHref(message: string) {
 export function parseLeadContact(nameRaw: string, contactRaw: string): ContactParse {
   const name = nameRaw.trim().replace(/\s+/g, " ");
   if (name.length < 2) {
-    return { ok: false, error: "Indicá tu nombre (mín. 2 caracteres)." };
+    return { ok: false, error: "Indica tu nombre (mín. 2 caracteres)." };
   }
 
   const contact = contactRaw.trim();
   if (!contact) {
-    return { ok: false, error: "Indicá tu WhatsApp o email." };
+    return { ok: false, error: "Indica tu WhatsApp o email." };
   }
 
   if (contact.includes("@")) {
@@ -443,12 +443,12 @@ export function parseLeadContact(nameRaw: string, contactRaw: string): ContactPa
   } else if (!(phone.startsWith("569") && phone.length === 11)) {
     return {
       ok: false,
-      error: "WhatsApp inválido. Usá formato 9 XXXX XXXX o +56 9…",
+      error: "WhatsApp inválido. Usa formato 9 XXXX XXXX o +56 9…",
     };
   }
 
   if (!/^569\d{8}$/.test(phone) && !(phone.startsWith("56") && phone.length >= 11)) {
-    return { ok: false, error: "WhatsApp inválido. Usá un móvil chileno." };
+    return { ok: false, error: "WhatsApp inválido. Usa un móvil chileno." };
   }
 
   return { ok: true, name, contact: phone.startsWith("+") ? phone : `+${phone}`, kind: "whatsapp" };
@@ -456,7 +456,7 @@ export function parseLeadContact(nameRaw: string, contactRaw: string): ContactPa
 
 export function greetingForPage(pageVehicle?: ChatVehicle | null): string {
   if (pageVehicle) {
-    return `¡Hola! Soy el ejecutivo virtual de RG Motors. Vi que estás mirando el ${pageVehicle.brand} ${pageVehicle.model}. ¿Te ayudo con precio, financiamiento, visita o alternativas del stock?`;
+    return `¡Hola! Soy el ejecutivo virtual de RG Motors. Vi que estás viendo el ${pageVehicle.brand} ${pageVehicle.model}. ¿Te ayudo con precio, financiamiento, visita o alternativas del stock?`;
   }
-  return "¡Hola! Soy el ejecutivo virtual de RG Motors. Contame qué buscás (marca, tipo o presupuesto) y te muestro opciones de nuestro stock.";
+  return "¡Hola! Soy el ejecutivo virtual de RG Motors. Cuéntame qué buscas (marca, tipo o presupuesto) y te muestro opciones de nuestro stock.";
 }

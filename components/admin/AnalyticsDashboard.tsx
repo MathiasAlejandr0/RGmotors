@@ -752,7 +752,7 @@ export default function AnalyticsDashboard() {
       >
         {captured.length === 0 ? (
           <p className="text-sm text-white/40">
-            Aún no hay leads. Abrí el ejecutivo virtual del sitio, pedí opciones
+            Aún no hay leads. Abre el ejecutivo virtual del sitio, pide opciones
             (marca, tipo o presupuesto) y aparecerán aquí automáticamente.
           </p>
         ) : (
