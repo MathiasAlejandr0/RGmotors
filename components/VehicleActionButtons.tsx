@@ -21,39 +21,39 @@ export default function VehicleActionButtons({ vehicle: v }: { vehicle: Vehicle 
           )}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-3.5 text-center text-xs font-bold text-white shadow-sm transition hover:bg-[#20bd5a] hover:scale-[1.01] active:scale-95"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-3.5 text-center text-[14px] font-bold text-white shadow-sm transition hover:bg-[#20bd5a] hover:scale-[1.01] active:scale-95"
         >
-          <span>💬</span> Hablar con un asesor por WhatsApp
+          Hablar con un asesor por WhatsApp
         </a>
 
         <Link
           href={`/simulador?auto=${encodeURIComponent(v.slug)}`}
-          className="apple-btn-primary flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-center text-xs font-bold text-white shadow-glow transition hover:scale-[1.01] active:scale-95"
+          className="apple-btn-primary flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-center text-[14px] font-bold text-white shadow-glow transition hover:scale-[1.01] active:scale-95"
         >
-          <span>⚡</span> Simular crédito Autofin
+          Simular crédito Autofin
         </Link>
 
         <button
           onClick={() => setIsTradeInOpen(true)}
-          className="apple-btn-secondary flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-center text-xs font-semibold text-white transition hover:border-brand-400/50"
+          className="apple-btn-secondary flex min-h-11 w-full items-center justify-center gap-2 rounded-full py-3 text-center text-[13px] font-semibold text-white transition hover:border-brand-400/50"
         >
-          <span>🔄</span> Dejar mi auto en parte de pago (Tasación)
+          Dejar mi auto en parte de pago
         </button>
 
         <Link
           href={`/prueba-manejo/${v.slug}`}
-          className="apple-btn-secondary block w-full rounded-full py-2.5 text-center text-xs font-semibold text-white/85"
+          className="apple-btn-secondary flex min-h-11 w-full items-center justify-center rounded-full py-3 text-center text-[13px] font-semibold text-white/85"
         >
-          🚗 Agendar prueba de manejo
+          Agendar prueba de manejo
         </Link>
 
         <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
-          <VehiclePdfButton vehicle={v} className="w-full !text-[11px] !px-3" />
+          <VehiclePdfButton vehicle={v} className="w-full !text-[13px] !px-3 !min-h-11" />
           <button
             onClick={() => setIsPriceAlertOpen(true)}
-            className="apple-btn-secondary flex w-full items-center justify-center gap-1.5 rounded-full border-amber-400/20 py-2.5 text-center text-[11px] font-medium text-amber-300/90 transition hover:border-amber-400/50 hover:bg-amber-400/5"
+            className="apple-btn-secondary flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border-amber-400/20 py-3 text-center text-[13px] font-medium text-amber-300/90 transition hover:border-amber-400/50 hover:bg-amber-400/5"
           >
-            <span>🔔</span> Alerta de precio
+            Alerta de precio
           </button>
         </div>
       </div>

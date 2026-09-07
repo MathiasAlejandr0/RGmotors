@@ -28,7 +28,7 @@ export default function HeroExploreHint() {
       type="button"
       onClick={goToCatalog}
       aria-label="Ir al catálogo de vehículos"
-      className={`pointer-events-auto absolute inset-x-0 bottom-7 z-20 mx-auto flex w-fit flex-col items-center rounded-full px-4 py-2 text-white/70 transition-[opacity,transform,color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-400 ${
+      className={`pointer-events-auto absolute inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.75rem))] z-20 mx-auto hidden w-fit flex-col items-center rounded-full px-4 py-2 text-white/70 transition-[opacity,transform,color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-400 sm:flex ${
         visible
           ? "opacity-100"
           : "pointer-events-none translate-y-3 opacity-0"

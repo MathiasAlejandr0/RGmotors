@@ -27,26 +27,29 @@ export default async function Home() {
         <img
           src={asset("/hero-l200-puerto-montt.png")}
           alt="Stock RG Motors Puerto Montt"
-          className="rg-hero-media absolute inset-0 h-full w-full object-cover object-[82%_center] sm:object-[78%_center]"
+          className="rg-hero-media absolute inset-0 h-full w-full object-cover object-[68%_center] sm:object-[78%_center]"
         />
         {/* Más oscuro a la izquierda/abajo: el auto queda libre a la derecha */}
         <div className="rg-hero-vignette absolute inset-0 bg-[linear-gradient(105deg,rgba(0,0,0,0.88)_0%,rgba(0,0,0,0.72)_22%,rgba(0,0,0,0.28)_42%,rgba(0,0,0,0.05)_58%,transparent_72%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.55)_0%,transparent_18%,transparent_55%,rgba(6,7,10,0.95)_100%)]" />
         <div className="rg-grain" aria-hidden />
 
-        <div className="relative mx-auto flex min-h-[100svh] max-w-7xl flex-col justify-end px-5 pb-28 pt-28 sm:px-8 sm:pb-32 lg:px-10 lg:pb-36">
+        <div className="relative mx-auto flex min-h-[100svh] max-w-7xl flex-col justify-end px-5 pb-[max(6.5rem,calc(env(safe-area-inset-bottom)+5.5rem))] pt-[max(7rem,calc(env(safe-area-inset-top)+5.5rem))] sm:px-8 sm:pb-32 lg:px-10 lg:pb-36">
           <div className="rg-stagger w-full max-w-[22rem] sm:max-w-[28rem]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/65">
-              RG Motors · Puerto Montt
+            <p className="font-display text-lg font-semibold uppercase tracking-[0.14em] text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)] sm:text-xl">
+              RG Motors
+            </p>
+            <p className="mt-1 text-[12px] font-medium tracking-wide text-white/65 sm:text-[13px]">
+              Puerto Montt · Showroom Av. El Tepual
             </p>
 
-            <h1 className="mt-4 text-[1.85rem] font-extrabold leading-[1.2] tracking-[-0.02em] text-white drop-shadow-[0_6px_32px_rgba(0,0,0,0.9)] sm:text-[2.4rem] sm:leading-[1.18] lg:text-[2.65rem]">
+            <h1 className="font-display mt-4 text-[2rem] font-semibold leading-[1.12] tracking-wide text-white drop-shadow-[0_6px_32px_rgba(0,0,0,0.9)] sm:text-[2.55rem] sm:leading-[1.1] lg:text-[2.85rem]">
               Tu próximo vehículo,
               <br />
               con financiamiento a tu medida
             </h1>
 
-            <p className="mt-5 text-sm leading-relaxed text-white/78 drop-shadow-[0_2px_18px_rgba(0,0,0,0.8)] sm:text-[0.95rem]">
+            <p className="mt-5 text-[15px] leading-relaxed text-white/80 drop-shadow-[0_2px_18px_rgba(0,0,0,0.8)] sm:text-base">
               Camionetas y autos con fotos reales de patio.
               <br />
               Visítalos en Puerto Montt y simula tu cuota con Autofin.
@@ -55,13 +58,13 @@ export default async function Home() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/catalogo"
-                className="rg-btn-primary inline-flex min-w-[9.5rem] items-center justify-center rounded-lg px-7 py-3.5 text-sm font-bold text-white"
+                className="rg-btn-primary inline-flex min-h-11 min-w-[9.5rem] items-center justify-center rounded-lg px-7 py-3.5 text-[15px] font-bold text-white"
               >
                 Ver catálogo
               </Link>
               <Link
                 href="/simulador"
-                className="rg-btn-ghost-light inline-flex min-w-[9.5rem] items-center justify-center rounded-lg px-7 py-3.5 text-sm font-bold"
+                className="rg-btn-ghost-light inline-flex min-h-11 min-w-[9.5rem] items-center justify-center rounded-lg px-7 py-3.5 text-[15px] font-bold"
               >
                 Simular cuota
               </Link>

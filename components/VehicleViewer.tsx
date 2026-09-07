@@ -148,7 +148,7 @@ export default function VehicleViewer({
       )}
 
       {/* Altura acotada: evita “zoom” y desborde por fotos 4K en CSS grid */}
-      <div className="relative h-[min(42vh,280px)] w-full overflow-hidden rounded-2xl border border-white/15 bg-[#080b11] shadow-2xl sm:h-[min(48vh,380px)] sm:rounded-3xl group">
+      <div className="relative h-[min(48vh,340px)] w-full overflow-hidden rounded-2xl border border-white/15 bg-[#080b11] shadow-2xl sm:h-[min(52vh,420px)] sm:rounded-3xl group">
         {tab === "exterior" && hasSpin ? (
           <div className="absolute inset-0">
             <PhotoSpin360 frames={frames} className="h-full w-full" autoPlay={false} />

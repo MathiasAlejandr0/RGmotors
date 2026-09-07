@@ -7,6 +7,10 @@
   --rg-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --rg-surface: #12141c;
   --rg-border: rgba(255, 255, 255, 0.1);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 }
 
 html {
@@ -159,15 +163,15 @@ input[type="range"].apple-range {
   -webkit-appearance: none;
   appearance: none;
   background: rgba(255, 255, 255, 0.1);
-  height: 6px;
+  height: 8px;
   border-radius: 9999px;
   outline: none;
 }
 input[type="range"].apple-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -175,7 +179,41 @@ input[type="range"].apple-range::-webkit-slider-thumb {
   transition: transform 0.15s ease;
 }
 input[type="range"].apple-range::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
+  transform: scale(1.1);
+}
+input[type="range"].apple-range::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+/* Utilidades móvil */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.pb-safe {
+  padding-bottom: max(0.75rem, var(--safe-bottom));
+}
+.pt-safe {
+  padding-top: max(0px, var(--safe-top));
+}
+.px-safe {
+  padding-left: max(0px, var(--safe-left));
+  padding-right: max(0px, var(--safe-right));
 }
 
 .apple-glass-glow {

@@ -15,6 +15,7 @@ import VehicleViewer from "@/components/VehicleViewer";
 import CuotaSimulator from "@/components/CuotaSimulator";
 import VehicleHealthCard from "@/components/VehicleHealthCard";
 import VehicleActionButtons from "@/components/VehicleActionButtons";
+import MobileVehicleStickyBar from "@/components/MobileVehicleStickyBar";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +56,7 @@ export default async function VehiclePage({
   const monthly = estimateMonthly(v.price);
 
   return (
-    <main className="mx-auto w-full max-w-7xl overflow-x-clip px-4 py-6 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
+    <main className="mx-auto w-full max-w-7xl overflow-x-clip px-4 py-6 pb-28 sm:px-6 sm:py-8 sm:pb-28 lg:pb-8 space-y-6 sm:space-y-8">
       {/* Top Header & Breadcrumbs */}
       <div className="flex min-w-0 flex-col gap-4 border-b border-white/10 pb-5 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:pb-6">
         <div className="min-w-0 flex-1">
@@ -171,6 +172,8 @@ export default async function VehiclePage({
             ))}
         </div>
       </section>
+
+      <MobileVehicleStickyBar vehicle={v} />
     </main>
   );
 }

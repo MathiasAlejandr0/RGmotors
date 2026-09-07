@@ -480,12 +480,12 @@ function Check({
   onChange: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-white/65 hover:text-white transition-colors">
+    <label className="flex min-h-11 cursor-pointer items-center gap-3 py-1 text-[13px] font-medium text-white/70 hover:text-white transition-colors">
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="h-4 w-4 rounded border-white/20 bg-white/10 accent-brand-500 cursor-pointer"
+        className="h-5 w-5 shrink-0 rounded border-white/20 bg-white/10 accent-brand-500 cursor-pointer"
       />
       {label}
     </label>

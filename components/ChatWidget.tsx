@@ -47,6 +47,7 @@ export default function ChatWidget() {
   const [contactName, setContactName] = useState("");
   const [contactValue, setContactValue] = useState("");
   const [contactError, setContactError] = useState("");
+  const [cookieBannerOpen, setCookieBannerOpen] = useState(false);
 
   const pageSlug = useMemo(() => {
     const m = pathname?.match(/^\/vehiculo\/([^/?#]+)/);
@@ -133,6 +134,47 @@ export default function ChatWidget() {
     const timer = setTimeout(() => setShowTeaser(true), 1200);
     return () => clearTimeout(timer);
   }, [enabled]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("rg_cookie_consent_v1");
+      setCookieBannerOpen(!(stored === "accepted" || stored === "essential"));
+    } catch {
+      setCookieBannerOpen(true);
+    }
+    const onBanner = (e: Event) => {
+      const detail = (e as CustomEvent<{ open?: boolean }>).detail;
+      setCookieBannerOpen(Boolean(detail?.open));
+    };
+    window.addEventListener("rg-cookie-banner", onBanner);
+    return () => window.removeEventListener("rg-cookie-banner", onBanner);
+  }, []);
+
+  const fabOffsetClass = (() => {
+    if (cookieBannerOpen && pageSlug) {
+      return "bottom-[max(9.5rem,calc(env(safe-area-inset-bottom)+8.5rem))]";
+    }
+    if (cookieBannerOpen) {
+      return "bottom-[max(7.5rem,calc(env(safe-area-inset-bottom)+6.5rem))]";
+    }
+    if (pageSlug) {
+      return "bottom-[max(5.25rem,calc(env(safe-area-inset-bottom)+4.5rem))]";
+    }
+    return "bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+1rem))]";
+  })();
+  const panelOffsetClass = (() => {
+    if (cookieBannerOpen && pageSlug) {
+      return "bottom-[max(11.5rem,calc(env(safe-area-inset-bottom)+10.5rem))]";
+    }
+    if (cookieBannerOpen) {
+      return "bottom-[max(9.5rem,calc(env(safe-area-inset-bottom)+8.5rem))]";
+    }
+    if (pageSlug) {
+      return "bottom-[max(7.25rem,calc(env(safe-area-inset-bottom)+6.5rem))]";
+    }
+    return "bottom-[max(5.5rem,calc(env(safe-area-inset-bottom)+5rem))]";
+  })();
+  const teaserOffsetClass = fabOffsetClass;
 
   const track = (payload: Record<string, unknown>) => {
     if (!sessionIdRef.current) return;
@@ -272,7 +314,7 @@ export default function ChatWidget() {
             setOpen(true);
             setShowTeaser(false);
           }}
-          className="fixed bottom-6 right-24 z-50 hidden sm:flex max-w-[310px] cursor-pointer items-center gap-3 rounded-2xl border border-white/15 bg-ink-950/90 p-3 pr-3.5 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:scale-[1.02] hover:border-brand-500/50 active:scale-95 animate-fade-in group"
+          className={`fixed ${teaserOffsetClass} right-24 z-50 hidden sm:flex max-w-[310px] cursor-pointer items-center gap-3 rounded-2xl border border-white/15 bg-ink-950/90 p-3 pr-3.5 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:scale-[1.02] hover:border-brand-500/50 active:scale-95 animate-fade-in group`}
         >
           <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-xs shadow-glow">
             EV
@@ -280,12 +322,12 @@ export default function ChatWidget() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-1">
-              <span className="text-xs font-bold text-white group-hover:text-brand-300 transition-colors">
+              <span className="text-[13px] font-bold text-white group-hover:text-brand-300 transition-colors">
                 Ejecutivo virtual
               </span>
-              <span className="text-[9px] text-emerald-400">● En línea</span>
+              <span className="text-[10px] text-emerald-400">● En línea</span>
             </div>
-            <p className="truncate text-[11px] text-white/70">
+            <p className="truncate text-[12px] text-white/70">
               {pageVehicle
                 ? `¿Te ayudo con el ${pageVehicle.brand} ${pageVehicle.model}?`
                 : "¿Buscas auto? Te ayudo con el stock ➔"}
@@ -297,7 +339,7 @@ export default function ChatWidget() {
               e.stopPropagation();
               setShowTeaser(false);
             }}
-            className="grid h-5 w-5 place-items-center rounded-full text-white/40 hover:bg-white/10 hover:text-white transition"
+            className="touch-target grid h-11 w-11 place-items-center rounded-full text-white/40 hover:bg-white/10 hover:text-white transition"
             aria-label="Cerrar sugerencia"
           >
             ✕
@@ -310,15 +352,16 @@ export default function ChatWidget() {
           setOpen((o) => !o);
           if (!open) setShowTeaser(false);
         }}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-2xl text-white shadow-glow transition-all duration-300 hover:scale-105 active:scale-95 border border-white/20 backdrop-blur-xl"
+        className={`fixed ${fabOffsetClass} right-[max(1rem,env(safe-area-inset-right))] z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-2xl text-white shadow-glow transition-all duration-300 hover:scale-105 active:scale-95 border border-white/20 backdrop-blur-xl`}
         aria-label="Ejecutivo virtual RG Motors"
       >
         {open ? "✕" : "💬"}
       </button>
 
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-[520px] max-h-[78vh] w-[min(92vw,375px)] flex-col overflow-hidden rounded-3xl border border-white/15 bg-ink-950/90 backdrop-blur-2xl shadow-2xl animate-fade-up">
-          <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-3.5 backdrop-blur-md">
+        <div
+          className={`fixed ${panelOffsetClass} right-[max(1rem,env(safe-area-inset-right))] z-50 flex h-[min(520px,70dvh)] max-h-[78vh] w-[min(92vw,375px)] flex-col overflow-hidden rounded-3xl border border-white/15 bg-ink-950/90 backdrop-blur-2xl shadow-2xl animate-fade-up`}
+        >          <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-3.5 backdrop-blur-md">
             <div className="flex items-center gap-3">
               <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-[10px] font-bold tracking-tight shadow-glow">
                 EV
@@ -336,7 +379,7 @@ export default function ChatWidget() {
                 href={COMPANY.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="grid h-7 w-7 place-items-center rounded-full border border-pink-500/20 bg-pink-500/10 text-pink-300 transition hover:bg-pink-500/25"
+                className="grid h-11 w-11 place-items-center rounded-full border border-pink-500/20 bg-pink-500/10 text-pink-300 transition hover:bg-pink-500/25"
                 title="Instagram @_rgmotors"
                 aria-label="Instagram"
               >
@@ -348,7 +391,7 @@ export default function ChatWidget() {
                 href={COMPANY.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="grid h-7 w-7 place-items-center rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-300 transition hover:bg-blue-500/25"
+                className="grid h-11 w-11 place-items-center rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-300 transition hover:bg-blue-500/25"
                 title="Facebook Automotora GA"
                 aria-label="Facebook"
               >
@@ -358,7 +401,7 @@ export default function ChatWidget() {
               </a>
               <button
                 onClick={() => setOpen(false)}
-                className="grid h-7 w-7 place-items-center rounded-lg text-white/40 hover:bg-white/10 hover:text-white transition"
+                className="grid h-11 w-11 place-items-center rounded-lg text-white/40 hover:bg-white/10 hover:text-white transition"
                 aria-label="Cerrar chat"
               >
                 ✕
@@ -370,7 +413,7 @@ export default function ChatWidget() {
             {msgs.map((m, i) => (
               <div key={i} className="space-y-2">
                 <div
-                  className={`max-w-[90%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed ${
+                  className={`max-w-[90%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-[13px] font-medium leading-relaxed ${
                     m.role === "user"
                       ? "ml-auto bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-sm"
                       : "bg-white/[0.08] text-white/90 border border-white/10 backdrop-blur-md"
@@ -415,7 +458,7 @@ export default function ChatWidget() {
                   <button
                     type="button"
                     onClick={() => openWhatsAppNow(m.waMessage)}
-                    className="ml-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3 py-1.5 text-[11px] font-semibold text-emerald-300 transition hover:bg-emerald-500/25"
+                    className="ml-1 min-h-11 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3 py-2 text-[13px] font-semibold text-emerald-300 transition hover:bg-emerald-500/25"
                   >
                     Hablar ahora por WhatsApp
                   </button>
@@ -427,37 +470,37 @@ export default function ChatWidget() {
           <div className="border-t border-white/10 bg-white/[0.02] p-3.5 backdrop-blur-md">
             {askContact && !contactSent && (
               <div className="mb-3 rounded-2xl border border-brand-500/30 bg-brand-500/10 p-3 backdrop-blur-md space-y-2">
-                <p className="text-[11px] font-medium text-white/80">
+                <p className="text-[13px] font-medium text-white/80">
                   ¿Te enviamos estas opciones? Deja tu nombre y WhatsApp.
                 </p>
                 <input
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
                   placeholder="Tu nombre"
-                  className="w-full rounded-full border border-white/15 bg-black/40 px-3 py-1.5 text-xs text-white outline-none focus:border-brand-500 placeholder-white/40"
+                  className="min-h-11 w-full rounded-full border border-white/15 bg-black/40 px-3 py-2.5 text-[13px] text-white outline-none focus:border-brand-500 placeholder-white/40"
                 />
                 <input
                   value={contactValue}
                   onChange={(e) => setContactValue(e.target.value)}
                   placeholder="WhatsApp (9… ) o email"
-                  className="w-full rounded-full border border-white/15 bg-black/40 px-3 py-1.5 text-xs text-white outline-none focus:border-brand-500 placeholder-white/40"
+                  className="min-h-11 w-full rounded-full border border-white/15 bg-black/40 px-3 py-2.5 text-[13px] text-white outline-none focus:border-brand-500 placeholder-white/40"
                   onKeyDown={(e) => e.key === "Enter" && sendContact()}
                 />
                 {contactError ? (
-                  <p className="text-[10px] text-red-300">{contactError}</p>
+                  <p className="text-[12px] text-red-300">{contactError}</p>
                 ) : null}
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={sendContact}
-                    className="apple-btn-primary rounded-full px-3.5 py-1.5 text-xs font-semibold text-white"
+                    className="apple-btn-primary min-h-11 rounded-full px-3.5 py-2.5 text-[13px] font-semibold text-white"
                   >
                     Guardar contacto
                   </button>
                   <button
                     type="button"
                     onClick={() => openWhatsAppNow()}
-                    className="rounded-full border border-emerald-500/35 bg-emerald-500/15 px-3.5 py-1.5 text-xs font-semibold text-emerald-300"
+                    className="min-h-11 rounded-full border border-emerald-500/35 bg-emerald-500/15 px-3.5 py-2.5 text-[13px] font-semibold text-emerald-300"
                   >
                     WhatsApp ahora
                   </button>
@@ -465,7 +508,7 @@ export default function ChatWidget() {
                     type="button"
                     onClick={() => setAskContact(false)}
                     aria-label="Cerrar"
-                    className="px-1.5 text-xs text-white/40 hover:text-white"
+                    className="touch-target grid h-11 w-11 place-items-center text-[13px] text-white/40 hover:text-white"
                   >
                     ✕
                   </button>
@@ -479,7 +522,7 @@ export default function ChatWidget() {
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[11px] font-medium text-white/70 transition hover:bg-white/15 hover:text-white active:scale-95"
+                  className="min-h-11 rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[12px] font-medium text-white/75 transition hover:bg-white/15 hover:text-white active:scale-95"
                 >
                   {s}
                 </button>
@@ -497,11 +540,11 @@ export default function ChatWidget() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Marca, presupuesto, visita…"
-                className="flex-1 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-xs text-white outline-none focus:border-brand-500 focus:bg-white/[0.09] transition placeholder-white/40"
+                className="min-h-11 flex-1 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2.5 text-[13px] text-white outline-none focus:border-brand-500 focus:bg-white/[0.09] transition placeholder-white/40"
               />
               <button
                 type="submit"
-                className="apple-btn-primary grid h-8 w-8 place-items-center rounded-full text-white text-xs shadow-glow"
+                className="apple-btn-primary touch-target grid h-11 w-11 place-items-center rounded-full text-white text-sm shadow-glow"
                 aria-label="Enviar"
               >
                 ➔
