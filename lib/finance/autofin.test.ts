@@ -41,6 +41,21 @@ describe("simulateCredit — paridad Trinidad autofin.cl", () => {
       AUTOFIN_DEFAULT_MONTHLY_RATE,
     );
     expect(resolveMonthlyRate(0.025)).toBe(AUTOFIN_DEFAULT_MONTHLY_RATE);
+    expect(resolveMonthlyRate(0.019)).toBe(AUTOFIN_DEFAULT_MONTHLY_RATE);
+  });
+
+  it("Katana case: $14.99M · 30% · 48m no usa 1.9%", () => {
+    const r = simulateCredit({
+      price: 14_990_000,
+      downPct: 30,
+      termMonths: 48,
+      monthlyRate: 0.019,
+    });
+    expect(r.monthlyRate).toBe(AUTOFIN_DEFAULT_MONTHLY_RATE);
+    expect(r.financed).toBe(10_493_000);
+    // Con 1.9% daba 335167; con Trinidad debe quedar ~431k
+    expect(r.monthlyPayment).toBeGreaterThan(420_000);
+    expect(r.monthlyPayment).toBeLessThan(445_000);
   });
 
   it("respeta pie mínimo 20%", () => {

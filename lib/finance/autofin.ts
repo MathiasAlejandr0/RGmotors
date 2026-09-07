@@ -155,15 +155,13 @@ export function clampTermMonths(termMonths: number): number {
   );
 }
 
-/** Normaliza tasas antiguas demasiado bajas vs Trinidad. */
+/** Normaliza tasas: settings viejos (1.85%/1.9%/2.5%) subestiman vs Trinidad. */
 export function resolveMonthlyRate(requested?: number): number {
   if (requested == null || !Number.isFinite(requested) || requested <= 0) {
     return AUTOFIN_DEFAULT_MONTHLY_RATE;
   }
-  if (
-    Math.abs(requested - AUTOFIN_LEGACY_PARTNER_RATE) < 0.00005 ||
-    Math.abs(requested - AUTOFIN_INTERMEDIATE_RATE) < 0.00005
-  ) {
+  // Piso = tasa all-in calibrada a autofin.cl; no permitir tasas más bajas por settings.
+  if (requested < AUTOFIN_DEFAULT_MONTHLY_RATE - 0.00005) {
     return AUTOFIN_DEFAULT_MONTHLY_RATE;
   }
   return requested;
@@ -184,11 +182,10 @@ export function simulateCredit(input: CreditSimulationInput): CreditSimulationRe
   }
   if (
     input.monthlyRate != null &&
-    (Math.abs(input.monthlyRate - AUTOFIN_LEGACY_PARTNER_RATE) < 0.00005 ||
-      Math.abs(input.monthlyRate - AUTOFIN_INTERMEDIATE_RATE) < 0.00005)
+    input.monthlyRate < AUTOFIN_DEFAULT_MONTHLY_RATE - 0.00005
   ) {
     warnings.push(
-      `Tasa all-in actualizada a ${(AUTOFIN_DEFAULT_MONTHLY_RATE * 100).toFixed(2)}% (Trinidad Autofin).`,
+      `Tasa subía demasiado baja (${(input.monthlyRate * 100).toFixed(2)}%); se usa ${(AUTOFIN_DEFAULT_MONTHLY_RATE * 100).toFixed(2)}% Trinidad Autofin.`,
     );
   }
 

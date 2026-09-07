@@ -8,6 +8,7 @@ import VehicleEditorModal from "./VehicleEditorModal";
 import { Reservation } from "@/lib/server/reservationsStore";
 import { CreditApplication } from "@/lib/server/creditsStore";
 import { SystemSettings } from "@/lib/server/settingsStore";
+import { AUTOFIN_DEFAULT_MONTHLY_RATE } from "@/lib/finance/autofin";
 import { TradeInRequest } from "@/lib/server/tradeInStore";
 import { CarRequest } from "@/lib/server/carRequestsStore";
 import { PriceAlert } from "@/lib/server/priceAlertsStore";
@@ -1081,8 +1082,8 @@ export function ConfigSection() {
                   className="w-full rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2 text-sm text-white focus:border-brand-500 outline-none"
                 />
                 <p className="mt-1 text-[10px] text-white/35">
-                  Referencia Trinidad Autofin: 0.0321 (3,21% all-in). Valores 0.0185 / 0.025 se
-                  corrigen solos. La cuota ya incluye desgravamen y cesantía.
+                  Piso Trinidad Autofin: {AUTOFIN_DEFAULT_MONTHLY_RATE} (3,21% all-in). Cualquier
+                  valor menor (p. ej. 0.019) se corrige solo en el simulador público.
                 </p>
               </div>
             </div>
