@@ -16,19 +16,15 @@ export default function VehiclePdfButton({
     if (loading) return;
     setLoading(true);
     try {
-      const { generateCatalogPdf } = await import("./CatalogPdfDoc");
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const generatedAt = new Date().toLocaleDateString("es-CL", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
-      const blob = await generateCatalogPdf([vehicle], {
-        generatedAt,
-        count: 1,
-        filterSummary: `Ficha Técnica Certificada — ${vehicle.brand} ${vehicle.model}`,
-        origin,
-      });
+      const res = await fetch(
+        `/api/catalog/pdf?slugs=${encodeURIComponent(vehicle.slug)}`,
+        { method: "GET", cache: "no-store" },
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -39,7 +35,11 @@ export default function VehiclePdfButton({
       setTimeout(() => URL.revokeObjectURL(url), 4000);
     } catch (e) {
       console.error("Error generando el PDF:", e);
-      alert("No se pudo generar la ficha PDF.");
+      alert(
+        e instanceof Error
+          ? `No se pudo generar la ficha PDF: ${e.message}`
+          : "No se pudo generar la ficha PDF.",
+      );
     } finally {
       setLoading(false);
     }

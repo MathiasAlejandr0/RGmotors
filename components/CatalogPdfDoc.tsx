@@ -1,10 +1,6 @@
 /**
- * Catálogo PDF de RG Motors:
- *  1) Portada de la empresa
- *  2) Una página por vehículo: fotos + especificaciones
- *  3) Siguiente vehículo en la página siguiente, y así sucesivamente
- *
- * Se carga de forma dinámica desde CatalogPdfButton.
+ * Catálogo PDF de RG Motors (cliente y servidor).
+ * Imágenes SVG / rotas se omiten para no tumbar la generación.
  */
 import {
   Document,
@@ -14,12 +10,12 @@ import {
   Image,
   StyleSheet,
   pdf,
+  renderToBuffer,
 } from "@react-pdf/renderer";
 import { asset } from "@/lib/asset";
 import {
   estimateMonthly,
   formatCLP,
-  specsOf,
   type Vehicle,
 } from "@/lib/vehicles";
 
@@ -38,7 +34,6 @@ const C = {
 };
 
 const s = StyleSheet.create({
-  // ---- Portada empresa ----
   cover: { backgroundColor: C.bg, color: C.white, padding: 0 },
   coverTopBar: {
     position: "absolute",
@@ -117,8 +112,6 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   coverTrustItem: { fontSize: 8, color: C.soft },
-
-  // ---- Página de vehículo ----
   page: {
     backgroundColor: C.bg,
     color: C.white,
@@ -137,7 +130,6 @@ const s = StyleSheet.create({
   },
   headerLogo: { width: 88 },
   headerRight: { fontSize: 8, color: C.muted },
-
   brandLine: {
     fontSize: 9,
     color: C.brandGlow,
@@ -147,7 +139,6 @@ const s = StyleSheet.create({
   },
   title: { fontSize: 22, fontWeight: 700, color: C.white, marginBottom: 2 },
   version: { fontSize: 10, color: C.muted, marginBottom: 12 },
-
   hero: {
     width: "100%",
     height: 280,
@@ -156,11 +147,19 @@ const s = StyleSheet.create({
     marginBottom: 14,
     backgroundColor: C.panel,
   },
-
+  heroPlaceholder: {
+    width: "100%",
+    height: 280,
+    borderRadius: 12,
+    marginBottom: 14,
+    backgroundColor: C.panel,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroPlaceholderText: { fontSize: 11, color: C.muted },
   body: { flexDirection: "row", gap: 12 },
   left: { flex: 1.15 },
   right: { flex: 0.85 },
-
   sectionTitle: {
     fontSize: 10,
     fontWeight: 700,
@@ -188,7 +187,6 @@ const s = StyleSheet.create({
   },
   specLabel: { fontSize: 7.5, color: C.muted, marginBottom: 2 },
   specValue: { fontSize: 9, color: C.white, fontWeight: 700 },
-
   priceBox: {
     backgroundColor: C.card,
     borderWidth: 1,
@@ -218,7 +216,6 @@ const s = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 7,
   },
-
   highlights: {
     backgroundColor: C.card,
     borderWidth: 1,
@@ -234,7 +231,6 @@ const s = StyleSheet.create({
   },
   hlDot: { color: C.green, fontSize: 9 },
   hlText: { color: C.soft, fontSize: 8, flex: 1, lineHeight: 1.35 },
-
   footer: {
     position: "absolute",
     bottom: 16,
@@ -250,16 +246,44 @@ const s = StyleSheet.create({
   },
 });
 
-type Meta = {
+export type CatalogPdfMeta = {
   generatedAt: string;
   count: number;
   filterSummary: string;
   origin?: string;
 };
 
-function abs(origin: string | undefined, path: string) {
+/** Rutas que @react-pdf no puede embeber (SVG, etc.). */
+export function isPdfSafeImagePath(path: string | undefined | null): boolean {
+  if (!path) return false;
+  if (/^data:image\/(jpeg|jpg|png|webp)/i.test(path)) return true;
+  if (/\.svg(\?|$)/i.test(path)) return false;
+  if (/placeholder/i.test(path)) return false;
+  return /\.(jpe?g|png|webp)(\?|$)/i.test(path) || path.startsWith("http");
+}
+
+function absUrl(origin: string | undefined, path: string) {
+  if (/^data:/i.test(path) || /^https?:\/\//i.test(path)) return path;
   const resolved = asset(path);
   return origin ? `${origin}${resolved}` : resolved;
+}
+
+function safeText(value: unknown, fallback = "—") {
+  if (value == null || value === "") return fallback;
+  return String(value);
+}
+
+function pdfSpecs(v: Vehicle) {
+  return [
+    { label: "Motor", value: safeText(v.engine) },
+    { label: "Potencia", value: safeText(v.power) },
+    { label: "Transmisión", value: safeText(v.transmission) },
+    { label: "Tracción", value: safeText(v.traction) },
+    { label: "Combustible", value: safeText(v.fuel) },
+    { label: "Puertas", value: v.doors != null ? String(v.doors) : "—" },
+    { label: "Kilometraje", value: `${(v.km ?? 0).toLocaleString("es-CL")} km` },
+    { label: "Carrocería", value: safeText(v.bodyType) },
+  ];
 }
 
 function VehiclePage({
@@ -268,38 +292,42 @@ function VehiclePage({
   index,
   total,
   logo,
+  heroSrc,
 }: {
   v: Vehicle;
-  meta: Meta;
+  meta: CatalogPdfMeta;
   index: number;
   total: number;
-  logo: string;
+  logo?: string;
+  heroSrc?: string;
 }) {
-  // El 360° no funciona en PDF (es interactivo en la web). Solo foto de catálogo.
-  const hero = abs(meta.origin, v.image);
-  const specs = specsOf(v);
-  const monthly = estimateMonthly(v.price);
+  const specs = pdfSpecs(v);
+  const monthly = estimateMonthly(v.price || 0);
 
   return (
     <Page size="A4" style={s.page}>
       <View style={s.header}>
-        {/* eslint-disable-next-line jsx-a11y/alt-text */}
-        <Image style={s.headerLogo} src={logo} />
+        {logo ? <Image style={s.headerLogo} src={logo} /> : <Text style={s.headerRight}>RG Motors</Text>}
         <Text style={s.headerRight}>
           Vehículo {index + 1} de {total} · {meta.generatedAt}
         </Text>
       </View>
 
-      <Text style={s.brandLine}>{v.brand}</Text>
+      <Text style={s.brandLine}>{safeText(v.brand)}</Text>
       <Text style={s.title}>
-        {v.model} {v.year}
+        {safeText(v.model)} {safeText(v.year)}
       </Text>
       <Text style={s.version}>
-        {v.version} · {v.location}
+        {safeText(v.version)} · {safeText(v.location)}
       </Text>
 
-      {/* eslint-disable-next-line jsx-a11y/alt-text */}
-      <Image style={s.hero} src={hero} />
+      {heroSrc ? (
+        <Image style={s.hero} src={heroSrc} />
+      ) : (
+        <View style={s.heroPlaceholder}>
+          <Text style={s.heroPlaceholderText}>Fotografías en preparación</Text>
+        </View>
+      )}
 
       <View style={s.body}>
         <View style={s.left}>
@@ -317,21 +345,26 @@ function VehiclePage({
         <View style={s.right}>
           <View style={s.priceBox}>
             <Text style={s.priceLabel}>Precio</Text>
-            <Text style={s.price}>{formatCLP(v.price)}</Text>
-            <Text style={s.monthly}>o {formatCLP(monthly)}/mes (pie 20% · 48 cuotas)</Text>
+            <Text style={s.price}>{formatCLP(v.price || 0)}</Text>
+            <Text style={s.monthly}>
+              o {formatCLP(monthly)}/mes (pie 20% · 48 cuotas)
+            </Text>
             <View style={s.badgeRow}>
               {v.featured ? <Text style={s.badgeFeat}>Destacado</Text> : null}
-              <Text style={s.badge}>Inspección 150 pts</Text>
+              <Text style={s.badge}>Patio Puerto Montt</Text>
             </View>
           </View>
 
           <Text style={s.sectionTitle}>Destacados</Text>
           <View style={s.highlights}>
-            {(v.highlights || [
-              "Inspección de 150 puntos aprobada",
-              "Documentación y Autofact al día",
-              "Financiamiento Autofin disponible",
-            ]).map((h: string) => (
+            {(v.highlights?.length
+              ? v.highlights
+              : [
+                  "Unidad del inventario actual RG Motors",
+                  "Financiamiento Autofin referencial",
+                  "Visita el showroom en Av. El Tepual",
+                ]
+            ).map((h: string) => (
               <View key={h} style={s.hlItem}>
                 <Text style={s.hlDot}>✓</Text>
                 <Text style={s.hlText}>{h}</Text>
@@ -342,7 +375,7 @@ function VehiclePage({
       </View>
 
       <View style={s.footer}>
-        <Text>RG Motors — autos usados certificados · www.rgmotors.cl</Text>
+        <Text>RG Motors — Puerto Montt · www.rgmotors.cl</Text>
         <Text
           render={({ pageNumber, totalPages }) =>
             `Página ${pageNumber} de ${totalPages}`
@@ -353,29 +386,36 @@ function VehiclePage({
   );
 }
 
+export type CatalogPdfImageMap = Record<string, string>;
+
 export function CatalogPdfDoc({
   vehicles,
   meta,
+  imageMap,
 }: {
   vehicles: Vehicle[];
-  meta: Meta;
+  meta: CatalogPdfMeta;
+  /** slug → data URI o URL absoluta ya resuelta */
+  imageMap?: CatalogPdfImageMap;
 }) {
-  const logo = abs(meta.origin, "/logo.png");
+  const logoFromMap = imageMap?.["__logo__"];
+  const logo = logoFromMap
+    ? logoFromMap
+    : isPdfSafeImagePath("/logo.png")
+      ? absUrl(meta.origin, "/logo.png")
+      : undefined;
 
   return (
     <Document title="Catálogo RG Motors" author="RG Motors">
-      {/* 1. Portada de la empresa */}
       <Page size="A4" style={s.cover}>
         <View style={s.coverTopBar} />
         <View style={s.coverInner}>
-          {/* eslint-disable-next-line jsx-a11y/alt-text */}
-          <Image style={s.coverLogo} src={logo} />
+          {logo ? <Image style={s.coverLogo} src={logo} /> : null}
           <Text style={s.coverEyebrow}>RG Motors</Text>
           <Text style={s.coverTitle}>Catálogo de vehículos</Text>
           <Text style={s.coverSub}>
-            Autos usados seleccionados con inspección de 150 puntos, historial
-            verificado y financiamiento en línea. Cada página siguiente
-            presenta un vehículo con sus fotos y especificaciones.
+            Stock actualizado del showroom en Puerto Montt. Cada página presenta
+            un vehículo con foto de patio y ficha técnica referencial.
           </Text>
           <View style={s.coverMetaRow}>
             <Text style={s.coverChip}>{meta.count} vehículos</Text>
@@ -383,36 +423,56 @@ export function CatalogPdfDoc({
             <Text style={s.coverChip}>{meta.generatedAt}</Text>
           </View>
           <View style={s.coverTrust}>
-            <Text style={s.coverTrustItem}>✓ Inspección 150 puntos</Text>
-            <Text style={s.coverTrustItem}>✓ Fotos reales</Text>
+            <Text style={s.coverTrustItem}>✓ Fotos reales de patio</Text>
             <Text style={s.coverTrustItem}>✓ Crédito Autofin</Text>
+            <Text style={s.coverTrustItem}>✓ Av. El Tepual</Text>
           </View>
         </View>
         <Text style={s.coverFoot}>
-          RG Motors · Santiago, Chile · www.rgmotors.cl
+          RG Motors · Puerto Montt, Chile · www.rgmotors.cl
         </Text>
         <View style={s.coverBottomBar} />
       </Page>
 
-      {/* 2. Una página por vehículo */}
-      {vehicles.map((v, i) => (
-        <VehiclePage
-          key={v.slug}
-          v={v}
-          meta={meta}
-          index={i}
-          total={vehicles.length}
-          logo={logo}
-        />
-      ))}
+      {vehicles.map((v, i) => {
+        const mapped = imageMap?.[v.slug];
+        const heroSrc =
+          mapped ||
+          (isPdfSafeImagePath(v.image) ? absUrl(meta.origin, v.image) : undefined);
+        return (
+          <VehiclePage
+            key={v.slug}
+            v={v}
+            meta={meta}
+            index={i}
+            total={vehicles.length}
+            logo={logo}
+            heroSrc={heroSrc}
+          />
+        );
+      })}
     </Document>
   );
 }
 
-/** Genera el PDF y devuelve un Blob descargable. */
 export async function generateCatalogPdf(
   vehicles: Vehicle[],
-  meta: Meta
+  meta: CatalogPdfMeta,
+  imageMap?: CatalogPdfImageMap,
 ): Promise<Blob> {
-  return pdf(<CatalogPdfDoc vehicles={vehicles} meta={meta} />).toBlob();
+  return pdf(
+    <CatalogPdfDoc vehicles={vehicles} meta={meta} imageMap={imageMap} />,
+  ).toBlob();
+}
+
+/** Buffer Node (API / scripts). */
+export async function generateCatalogPdfBuffer(
+  vehicles: Vehicle[],
+  meta: CatalogPdfMeta,
+  imageMap?: CatalogPdfImageMap,
+): Promise<Buffer> {
+  const buffer = await renderToBuffer(
+    <CatalogPdfDoc vehicles={vehicles} meta={meta} imageMap={imageMap} />,
+  );
+  return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
 }

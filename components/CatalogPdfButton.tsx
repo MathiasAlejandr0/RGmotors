@@ -16,19 +16,19 @@ export default function CatalogPdfButton({
     if (loading || vehicles.length === 0) return;
     setLoading(true);
     try {
-      const { generateCatalogPdf } = await import("./CatalogPdfDoc");
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const generatedAt = new Date().toLocaleDateString("es-CL", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
+      // Siempre desde stock vivo del servidor (se actualiza con el catálogo)
+      const slugs = vehicles.map((v) => v.slug).filter(Boolean);
+      const qs = new URLSearchParams();
+      if (slugs.length) qs.set("slugs", slugs.join(","));
+      const res = await fetch(`/api/catalog/pdf?${qs.toString()}`, {
+        method: "GET",
+        cache: "no-store",
       });
-      const blob = await generateCatalogPdf(vehicles, {
-        generatedAt,
-        count: vehicles.length,
-        filterSummary,
-        origin,
-      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -39,7 +39,11 @@ export default function CatalogPdfButton({
       setTimeout(() => URL.revokeObjectURL(url), 4000);
     } catch (e) {
       console.error("Error generando el PDF:", e);
-      alert("No se pudo generar el PDF. Intenta nuevamente.");
+      alert(
+        e instanceof Error
+          ? `No se pudo generar el PDF: ${e.message}`
+          : "No se pudo generar el PDF. Intenta nuevamente.",
+      );
     } finally {
       setLoading(false);
     }
@@ -50,6 +54,7 @@ export default function CatalogPdfButton({
       onClick={handle}
       disabled={loading || vehicles.length === 0}
       className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-glow transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
+      title={filterSummary}
     >
       {loading ? (
         <>

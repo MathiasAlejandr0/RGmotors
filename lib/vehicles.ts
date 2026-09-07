@@ -1466,12 +1466,12 @@ export function spinFramesOf(v: Vehicle): string[] {
 
 export function specsOf(v: Vehicle): { label: string; value: string }[] {
   return [
-    { label: "Motor", value: v.engine },
-    { label: "Potencia", value: v.power },
-    { label: "Transmisión", value: v.transmission },
-    { label: "Tracción", value: v.traction },
-    { label: "Combustible", value: v.fuel },
-    { label: "Puertas", value: String(v.doors) },
+    { label: "Motor", value: v.engine || "—" },
+    { label: "Potencia", value: v.power || "—" },
+    { label: "Transmisión", value: v.transmission || "—" },
+    { label: "Tracción", value: v.traction || "—" },
+    { label: "Combustible", value: v.fuel || "—" },
+    { label: "Puertas", value: v.doors != null ? String(v.doors) : "—" },
   ];
 }
 

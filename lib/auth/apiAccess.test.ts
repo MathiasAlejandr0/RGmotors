@@ -29,6 +29,7 @@ describe("isPublicApi — política de acceso", () => {
     expect(isPublicApi("/api/vehicles", "GET")).toBe(true);
     expect(isPublicApi("/api/spin", "GET")).toBe(true);
     expect(isPublicApi("/api/settings", "GET")).toBe(true);
+    expect(isPublicApi("/api/catalog/pdf", "GET")).toBe(true);
   });
 
   it("bloquea GET /api/vehicles?admin=true", () => {
