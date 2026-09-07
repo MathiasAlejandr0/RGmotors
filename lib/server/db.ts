@@ -6,7 +6,7 @@ import { kv } from "@vercel/kv";
 import { isKvReady, isVercelProduction, logStorageHealthOnce } from "@/lib/server/storageHealth";
 
 // Usamos data local si es escribible, o tmpdir en entornos serverless/Vercel
-const LOCAL_DIR = join(process.cwd(), "data");
+const LOCAL_DIR = join(/*turbopackIgnore: true*/ process.cwd(), "data");
 const TMP_DIR = os.tmpdir() + "/rgmotors_data";
 
 function getPossiblePaths(filename: string) {

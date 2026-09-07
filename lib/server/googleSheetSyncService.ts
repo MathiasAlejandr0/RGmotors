@@ -118,6 +118,10 @@ export interface SyncReport {
   updatedVehicles: number;
   sheetAccessGranted: boolean;
   timestamp: string;
+  /** Sync abortado por hoja vacía / scrape fallido */
+  antiWipe?: boolean;
+  /** Altas/updates OK pero no se archivó masivo por caída sospechosa */
+  antiWipeSkippedArchive?: boolean;
 }
 
 export async function syncFromLiveGoogleSheet(customSheetId?: string): Promise<SyncReport> {
