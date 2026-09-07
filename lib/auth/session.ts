@@ -76,7 +76,8 @@ export type AdminSessionPayload = {
   exp: number;
 };
 
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días (antes 30)
+const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días
+export { SESSION_TTL_SECONDS };
 
 export async function createAdminSessionToken(
   username: string,

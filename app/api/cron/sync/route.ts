@@ -20,7 +20,12 @@ function authorizeCron(req: NextRequest): { ok: boolean } {
 
   const auth = req.headers.get("authorization") || "";
   const bearer = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
-  const querySecret = req.nextUrl.searchParams.get("secret") || "";
+  // Query secret solo en no-prod o con flag explícito (evita leaks en logs/Referer).
+  const allowQuery =
+    !isProd || process.env.CRON_ALLOW_QUERY_SECRET === "1";
+  const querySecret = allowQuery
+    ? req.nextUrl.searchParams.get("secret") || ""
+    : "";
   const provided = bearer || querySecret;
 
   if (!provided || !timingSafeEqualString(provided, secret)) {

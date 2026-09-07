@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getVehicleBySlug, saveVehicle, deleteVehicle } from "@/lib/server/vehiclesStore";
 import { Vehicle } from "@/lib/vehicles";
+import { isPublicCatalogVehicle } from "@/lib/vehicles/publicCatalog";
+import { cookies } from "next/headers";
+import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+async function hasAdminSession(): Promise<boolean> {
+  const cookieStore = await cookies();
+  const session = await verifyAdminSessionToken(
+    cookieStore.get(ADMIN_SESSION_COOKIE)?.value,
+  );
+  return Boolean(session && !session.mustChange);
+}
 
 export async function GET(
   _req: NextRequest,
@@ -14,6 +25,11 @@ export async function GET(
   if (!v) {
     return NextResponse.json({ error: "Vehículo no encontrado." }, { status: 404 });
   }
+
+  if (!(await hasAdminSession()) && !isPublicCatalogVehicle(v)) {
+    return NextResponse.json({ error: "Vehículo no encontrado." }, { status: 404 });
+  }
+
   return NextResponse.json({ vehicle: v });
 }
 

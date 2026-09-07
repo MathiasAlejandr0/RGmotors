@@ -24,6 +24,7 @@ const PUBLIC_GET_PREFIXES = [
   "/api/settings",
   "/api/photos",
   "/api/catalog",
+  "/api/health",
 ] as const;
 
 /** Prefijos de leads cuyo GET lista PII y nunca debe ser público. */

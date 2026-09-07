@@ -26,9 +26,10 @@ export function assertProductionStorage(): { ok: boolean; warnings: string[] } {
   }
   if (!isBlobReady()) {
     warnings.push(
-      "BLOB_READ_WRITE_TOKEN ausente: fotos/360 en disco de Vercel son efímeras. Usa Blob o R2.",
+      "BLOB_READ_WRITE_TOKEN ausente: uploads de fotos/360 están rechazados en producción.",
     );
   }
+  // KV es bloqueante; Blob es bloqueante para media pero el sitio puede servir seed.
   return { ok: isKvReady(), warnings };
 }
 

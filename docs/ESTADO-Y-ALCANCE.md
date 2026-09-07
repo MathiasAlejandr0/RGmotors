@@ -11,8 +11,8 @@ Documento de alcance para práctica profesional y operación.
 | ¿La reserva web cobra? | **No.** Es solicitud (`Pendiente`); abono por WhatsApp/tienda. |
 | ¿Hay Supabase / SQL? | **No.** JSON local y/o Vercel KV. |
 | ¿360° es promesa comercial? | **No en este release** (código existe, flag apagado). |
-| ¿Email al equipo? | **Stub** (`notifyTeam` → log + `notifications.json`). |
-| ¿Listo para producción comercial dura? | **MVP + hardening en curso** — ver `docs/ROADMAP.md`. |
+| ¿Email al equipo? | **Resend** si `RESEND_API_KEY`; si no, stub (log + JSON) |
+| ¿Listo para producción comercial dura? | **Hardening P0 en código** — falta configurar env Vercel + DNS (ver `docs/GO-LIVE-CHECKLIST.md`). |
 
 ## Qué está implementado y usable
 

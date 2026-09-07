@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clientKey, rateLimit } from "@/lib/server/rateLimit";
+import { clientKey, rateLimitAsync } from "@/lib/server/rateLimit";
 import { validateRut } from "@/lib/rut";
 
 /** Campos honeypot típicos: si vienen llenos, es bot. */
@@ -89,7 +89,7 @@ export async function guardPublicLeadPost(
   const originBlock = rejectUntrustedOrigin(req);
   if (originBlock) return { ok: false, response: originBlock };
 
-  const rl = rateLimit(clientKey(req, bucket), limit, windowMs);
+  const rl = await rateLimitAsync(clientKey(req, bucket), limit, windowMs);
   if (!rl.ok) {
     return {
       ok: false,
@@ -129,6 +129,18 @@ export function securityHeaders(): Record<string, string> {
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     "X-DNS-Prefetch-Control": "on",
     "Cross-Origin-Opener-Policy": "same-origin",
+    // CSP básica: permite Next.js + imágenes remotas (Drive/Blob)
+    "Content-Security-Policy": [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' https:",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join("; "),
   };
   if (process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production") {
     headers["Strict-Transport-Security"] =

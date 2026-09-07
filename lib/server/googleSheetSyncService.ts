@@ -2,6 +2,10 @@ import { getVehicles } from "./vehiclesStore";
 import { archiveSoldVehicle, getSoldVehicles } from "./soldVehiclesStore";
 import { Vehicle } from "@/lib/vehicles";
 import { writeJson } from "./db";
+import {
+  evaluateSheetWipeGuard,
+  guessBodyTypeFromModel,
+} from "@/lib/server/sheetSyncGuards";
 import * as XLSX from "xlsx";
 import https from "node:https";
 
@@ -224,11 +228,52 @@ export async function syncFromLiveGoogleSheet(customSheetId?: string): Promise<S
 
   // Load current inventory
   const currentVehicles = await getVehicles();
+  const currentActive = currentVehicles.filter(
+    (v) => (v.status || "Disponible") !== "Vendido" && (v.status || "") !== "Borrador",
+  );
   const currentPlateMap = new Map<string, Vehicle>();
   currentVehicles.forEach((v) => {
     const p = cleanPlate(v.plate);
     currentPlateMap.set(p, v);
   });
+
+  const sheetActiveRows = sheetVehicles.filter((s) => !s.isSold);
+  const activeSheetPlatesPreview = new Set(sheetActiveRows.map((s) => s.plate));
+  let wouldArchive = 0;
+  for (const [plate, existing] of currentPlateMap.entries()) {
+    if (
+      !activeSheetPlatesPreview.has(plate) &&
+      existing.status !== "Vendido" &&
+      existing.status !== "Borrador"
+    ) {
+      wouldArchive++;
+    }
+  }
+
+  const wipeGuard = evaluateSheetWipeGuard({
+    sheetActiveCount: sheetActiveRows.length,
+    currentActiveCount: currentActive.length,
+    wouldArchiveCount: wouldArchive,
+  });
+
+  if (wipeGuard.abortAll) {
+    console.error(`[GoogleSheetSync] ${wipeGuard.reason}`);
+    return {
+      success: false,
+      message: wipeGuard.reason,
+      totalActive: currentActive.length,
+      newVehicles: 0,
+      soldVehicles: 0,
+      updatedVehicles: 0,
+      sheetAccessGranted: true,
+      antiWipe: true,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (wipeGuard.skipArchive) {
+    console.warn(`[GoogleSheetSync] ${wipeGuard.reason}`);
+  }
 
   const activeSheetPlates = new Set<string>();
   let newCount = 0;
@@ -265,7 +310,7 @@ export async function syncFromLiveGoogleSheet(customSheetId?: string): Promise<S
       if (changed) updatedCount++;
       updatedActiveList.push(existing);
     } else {
-      // New vehicle in sheet
+      // New vehicle in sheet — sin inventar diésel/manual/4x4
       const formattedPlate = `${item.plate.slice(0, 4)} ${item.plate.slice(4)}`;
       const slug = `${item.brand.toLowerCase()}-${item.model.toLowerCase()}-${item.year}-${item.plate.toLowerCase()}`
         .replace(/[^a-z0-9]+/g, "-")
@@ -281,18 +326,18 @@ export async function syncFromLiveGoogleSheet(customSheetId?: string): Promise<S
         price: item.price,
         listPrice: item.listPrice,
         km: item.km,
-        fuel: "Diésel",
-        transmission: "Manual",
-        bodyType: "Camioneta",
+        fuel: "Por confirmar",
+        transmission: "Por confirmar",
+        bodyType: guessBodyTypeFromModel(item.model),
         location: "Puerto Montt · Av. El Tepual",
         image: "/images/placeholder-pending-car.svg",
         gallery: [],
         hasRealPhotos: false,
         supplier: item.supplier || "RG Motors",
         status: "Disponible",
-        engine: "2.4L",
-        power: "150 HP",
-        traction: "4x4",
+        engine: "Por confirmar",
+        power: "Por confirmar",
+        traction: "Por confirmar",
         doors: 4,
         owners: 1,
         featured: item.brand === "Toyota" || item.brand === "Mitsubishi",
@@ -308,10 +353,24 @@ export async function syncFromLiveGoogleSheet(customSheetId?: string): Promise<S
   }
 
   // Check if any previously active vehicles are no longer in the sheet (sold/discontinued)
-  for (const [plate, existing] of currentPlateMap.entries()) {
-    if (!activeSheetPlates.has(plate) && existing.status !== "Vendido") {
-      await archiveSoldVehicle(existing, existing.price, "Vehículo retirado de inventario activo (Vendido/Entregado)");
-      soldCount++;
+  if (!wipeGuard.skipArchive) {
+    for (const [plate, existing] of currentPlateMap.entries()) {
+      if (!activeSheetPlates.has(plate) && existing.status !== "Vendido") {
+        await archiveSoldVehicle(existing, existing.price, "Vehículo retirado de inventario activo (Vendido/Entregado)");
+        soldCount++;
+      }
+    }
+  } else {
+    // Conservar en activo los que no vinieron en la hoja
+    for (const [plate, existing] of currentPlateMap.entries()) {
+      if (
+        !activeSheetPlates.has(plate) &&
+        existing.status !== "Vendido" &&
+        existing.status !== "Borrador" &&
+        !updatedActiveList.some((v) => cleanPlate(v.plate) === plate)
+      ) {
+        updatedActiveList.push(existing);
+      }
     }
   }
 
@@ -329,12 +388,13 @@ export async function syncFromLiveGoogleSheet(customSheetId?: string): Promise<S
 
   return {
     success: true,
-    message: `Sincronización con Google Sheets completada: ${updatedActiveList.length} vehículos activos, ${newCount} nuevos agregados, ${soldCount} vendidos archivados para ciencia de datos, ${updatedCount} actualizados.`,
+    message: `Sincronización con Google Sheets completada: ${updatedActiveList.length} vehículos activos, ${newCount} nuevos agregados, ${soldCount} vendidos archivados para ciencia de datos, ${updatedCount} actualizados.${wipeGuard.skipArchive ? ` Nota: ${wipeGuard.reason}` : ""}`,
     totalActive: updatedActiveList.length,
     newVehicles: newCount,
     soldVehicles: soldCount,
     updatedVehicles: updatedCount,
     sheetAccessGranted: true,
+    antiWipeSkippedArchive: wipeGuard.skipArchive,
     timestamp: new Date().toISOString(),
   };
 }

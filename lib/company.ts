@@ -1,18 +1,19 @@
 /**
  * Datos de contacto oficiales de RG Motors Chile.
- * Completa `rut` / `legalName` reales antes del lanzamiento amplio.
+ * RUT / razón social: preferir env COMPANY_RUT y COMPANY_LEGAL_NAME en Vercel.
  */
 export const COMPANY = {
   name: "RG Motors",
   /** Razón social / nombre comercial para legales y footer */
-  legalName: "RG Motors Chile",
-  /** RUT de la empresa. Vacío = no se muestra aún (configurar antes de go-live). */
-  rut: "",
+  legalName:
+    process.env.COMPANY_LEGAL_NAME?.trim() || "RG Motors Chile",
+  /** RUT de la empresa. Vacío = no se muestra aún. */
+  rut: process.env.COMPANY_RUT?.trim() || "",
   tagline: "Autos usados seleccionados en Puerto Montt",
   phoneDisplay: "+56 9 5907 3127",
   /** Solo dígitos, formato internacional sin + */
   whatsapp: "56959073127",
-  email: "administracion@rgmotorschile.cl",
+  email: process.env.COMPANY_EMAIL?.trim() || "administracion@rgmotorschile.cl",
   address: "Av. El Tepual (Ex Banco de Chile), Puerto Montt",
   addressShort: "Av. El Tepual, Puerto Montt",
   region: "Región de Los Lagos, Chile",

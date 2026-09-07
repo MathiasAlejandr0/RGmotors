@@ -29,11 +29,27 @@ test.describe("APIs — seguridad y catálogo", () => {
       "/api/reservations",
       "/api/contact",
       "/api/simulations",
+      "/api/track",
     ];
     for (const path of paths) {
       const res = await request.get(path);
       expect(res.status(), path).toBe(401);
     }
+  });
+
+  test("GET /api/health es público", async ({ request }) => {
+    const res = await request.get("/api/health");
+    expect([200, 503]).toContain(res.status());
+    const body = await res.json();
+    expect(body.checks).toBeTruthy();
+  });
+
+  test("GET /api/vehicles/[slug] de borrador no es público", async ({
+    request,
+  }) => {
+    // Si no hay borradores en el seed, el test pasa con un slug inventado → 404
+    const res = await request.get("/api/vehicles/__borrador-inexistente-rg__");
+    expect(res.status()).toBe(404);
   });
 
   test("POST /api/auth con credenciales inválidas no autentica", async ({

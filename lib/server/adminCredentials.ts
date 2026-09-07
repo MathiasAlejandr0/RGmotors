@@ -1,5 +1,6 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { readJson, writeJson } from "@/lib/server/db";
+import { readJsonOptional, writeJson } from "@/lib/server/db";
+import { isVercelProduction } from "@/lib/server/storageHealth";
 
 const FILENAME = "admin-credentials.json";
 
@@ -39,7 +40,19 @@ function defaultCredentials(): StoredCredentials {
 }
 
 export async function getAdminCredentials(): Promise<StoredCredentials> {
-  return readJson<StoredCredentials>(FILENAME, defaultCredentials());
+  const existing = await readJsonOptional<StoredCredentials>(FILENAME);
+  if (existing?.username && existing?.passwordHash) {
+    return existing;
+  }
+
+  const defaults = defaultCredentials();
+  const ok = await writeJson(FILENAME, defaults);
+  if (!ok && isVercelProduction()) {
+    throw new Error(
+      "No se pudieron inicializar credenciales admin: KV obligatorio en producción.",
+    );
+  }
+  return defaults;
 }
 
 export async function validateAdminLogin(
@@ -73,9 +86,6 @@ export function validateStrongUsername(username: string): string | null {
   if (u.length < 4) return "El usuario debe tener al menos 4 caracteres.";
   if (!/^[a-zA-Z0-9._-]+$/.test(u)) return "Usuario: solo letras, números, punto, guion o guion bajo.";
   if (u.toLowerCase() === DEFAULT_ADMIN_USERNAME && process.env.ALLOW_DEFAULT_ADMIN_USER !== "1") {
-    // Permitimos mantener "admin" solo si también cambian la password; no forzar otro user name estrictamente
-    // pero pedimos que no sea trivialmente "admin" si quieren seguridad — el usuario pidió cambiar usuario Y contraseña.
-    // Forzamos cambio de usuario distinto al default.
     return "Elige un usuario distinto a \"admin\".";
   }
   return null;
@@ -101,7 +111,13 @@ export async function changeAdminCredentials(
     mustChangePassword: false,
     updatedAt: new Date().toISOString(),
   };
-  await writeJson(FILENAME, next);
+  const saved = await writeJson(FILENAME, next);
+  if (!saved) {
+    return {
+      ok: false,
+      error: "No se pudo guardar las credenciales (revisa KV en producción).",
+    };
+  }
   return { ok: true };
 }
 

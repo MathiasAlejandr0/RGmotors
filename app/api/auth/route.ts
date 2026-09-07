@@ -6,12 +6,13 @@ import {
 } from "@/lib/server/adminCredentials";
 import {
   ADMIN_SESSION_COOKIE,
+  SESSION_TTL_SECONDS,
   createAdminSessionToken,
   verifyAdminSessionToken,
 } from "@/lib/auth/session";
-import { clientKey, rateLimit } from "@/lib/server/rateLimit";
+import { clientKey, rateLimitAsync } from "@/lib/server/rateLimit";
 
-function sessionCookieOptions(maxAge = 60 * 60 * 24 * 30) {
+function sessionCookieOptions(maxAge = SESSION_TTL_SECONDS) {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "change") {
-      const rl = rateLimit(clientKey(request, "auth-change"), 10, 60_000);
+      const rl = await rateLimitAsync(clientKey(request, "auth-change"), 10, 60_000);
       if (!rl.ok) {
         return NextResponse.json({ error: "Demasiados intentos. Espera un minuto." }, { status: 429 });
       }
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
     }
 
     // login — límite estricto anti fuerza bruta
-    const rl = rateLimit(clientKey(request, "auth-login"), 8, 60_000);
+    const rl = await rateLimitAsync(clientKey(request, "auth-login"), 8, 60_000);
     if (!rl.ok) {
       return NextResponse.json({ error: "Demasiados intentos. Espera un minuto." }, { status: 429 });
     }

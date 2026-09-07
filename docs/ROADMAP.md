@@ -39,13 +39,13 @@ Objetivo: poder desplegar en Vercel sin filtrar PII ni perder inventario.
 
 | # | Ítem | Tag | Notas |
 |---|------|-----|-------|
-| 1.1 | Exigir `KV_REST_API_*` + `ADMIN_SESSION_SECRET` + `CRON_SECRET` en prod | P0 | Fallar boot o healthcheck si faltan |
-| 1.2 | Rate limit + honeypot en **todos** los POST de leads | P0 | Hoy incompleto en algunos endpoints |
-| 1.3 | Guardas anti-wipe en sync Sheets | P0 | No archivar masivo si hoja vacía / caída >X% |
-| 1.4 | Fotos/360 a Blob (Vercel Blob / R2 / S3), no `public/` efímero | P0 | |
+| 1.1 | Exigir `KV_REST_API_*` + `ADMIN_SESSION_SECRET` + `CRON_SECRET` en prod | P0 | Health `/api/health` + writes rechazan sin KV |
+| 1.2 | Rate limit + honeypot en **todos** los POST de leads | P0 | + rate limit KV distribuido |
+| 1.3 | Guardas anti-wipe en sync Sheets | P0 | `sheetSyncGuards.ts` |
+| 1.4 | Fotos/360 a Blob (Vercel Blob / R2 / S3), no `public/` efímero | P0 | Prod rechaza upload sin Blob |
 | 1.5 | Timing-safe compare en firma de sesión | P0 | |
-| 1.6 | Quitar defaults de password del README público post-deploy | P0 | Solo `.env.example` + onboarding interno |
-| 1.7 | Headers de seguridad (CSP básica, HSTS vía Vercel) | P1 | |
+| 1.6 | Quitar defaults de password del README público post-deploy | P0 | must-change + write verificado |
+| 1.7 | Headers de seguridad (CSP básica, HSTS vía Vercel) | P1 | `vercel.json` + `securityHeaders` |
 
 **Criterio de salida:** checklist de deploy firmado + tests e2e de “GET PII → 401”.
 

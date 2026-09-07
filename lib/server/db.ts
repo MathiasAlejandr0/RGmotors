@@ -18,15 +18,14 @@ const isKvConfigured = () => isKvReady();
 /**
  * Lee un archivo JSON de forma segura.
  * En desarrollo prioriza data/ local para no pisar el stock nuevo con KV viejo.
- * Si el archivo no existe, devuelve `fallback` y lo almacena.
+ * Si el archivo no existe, devuelve `fallback` y lo almacena (salvo seed=false vía peek).
  */
-export async function readJson<T>(filename: string, fallback: T): Promise<T> {
+export async function readJsonOptional<T>(filename: string): Promise<T | null> {
   logStorageHealthOnce();
 
   const preferLocal =
     process.env.NODE_ENV !== "production" || process.env.RG_PREFER_LOCAL_DATA === "1";
 
-  // 1. En local/dev: leer primero el archivo del proyecto
   if (preferLocal) {
     const localPath = join(LOCAL_DIR, filename);
     try {
@@ -39,42 +38,37 @@ export async function readJson<T>(filename: string, fallback: T): Promise<T> {
     }
   }
 
-  // 2. Vercel KV
   if (isKvConfigured()) {
     try {
       const data = await kv.get<T>(filename);
-      if (data !== null) {
-        return data;
-      }
+      if (data !== null) return data;
     } catch (error) {
       console.warn(`Error leyendo ${filename} de Vercel KV:`, error);
     }
-  } else if (isVercelProduction()) {
-    console.error(
-      `[RG Storage] Lectura de ${filename} sin KV en producción — datos pueden ser inconsistentes.`,
-    );
   }
 
-  // 3. Fallback a archivos locales (tmp / data)
   const paths = getPossiblePaths(filename);
-
   for (const p of paths) {
     try {
       if (existsSync(p)) {
         const content = await readFile(p, "utf8");
-        const parsed = JSON.parse(content) as T;
-
-        // Sincronizar hacia KV solo si no había dato remoto
-        if (isKvConfigured() && !preferLocal) {
-          await kv.set(filename, parsed).catch(() => console.warn("Error migrando a KV"));
-        }
-
-        return parsed;
+        return JSON.parse(content) as T;
       }
     } catch {
-      // Intenta la siguiente ruta
+      /* next */
     }
   }
+  return null;
+}
+
+/**
+ * Lee un archivo JSON de forma segura.
+ * En desarrollo prioriza data/ local para no pisar el stock nuevo con KV viejo.
+ * Si el archivo no existe, devuelve `fallback` y lo almacena.
+ */
+export async function readJson<T>(filename: string, fallback: T): Promise<T> {
+  const existing = await readJsonOptional<T>(filename);
+  if (existing !== null) return existing;
 
   // Si no existe en ningún lado, guardamos en memoria y tratamos de escribir
   await writeJson(filename, fallback);
@@ -83,6 +77,7 @@ export async function readJson<T>(filename: string, fallback: T): Promise<T> {
 
 /**
  * Escribe un archivo JSON de forma segura.
+ * En Vercel Production solo cuenta el éxito en KV (disco local es efímero).
  */
 export async function writeJson<T>(filename: string, data: T): Promise<boolean> {
   logStorageHealthOnce();
@@ -104,17 +99,28 @@ export async function writeJson<T>(filename: string, data: T): Promise<boolean> 
     }
   }
 
+  let localSuccess = false;
   const paths = getPossiblePaths(filename);
   for (const p of paths) {
     try {
       const dir = p.endsWith(filename) ? p.slice(0, -filename.length) : LOCAL_DIR;
       await mkdir(dir, { recursive: true });
       await writeFile(p, JSON.stringify(data, null, 2), "utf8");
-      return true; // Éxito local
+      localSuccess = true;
+      break;
     } catch {
       // Si falla, intenta en la siguiente ruta (ej. tmpdir)
     }
   }
 
-  return kvSuccess;
+  if (isVercelProduction()) {
+    if (!kvSuccess) {
+      console.error(
+        `[RG Storage] Escritura de ${filename} falló en KV — no se considera persistida.`,
+      );
+    }
+    return kvSuccess;
+  }
+
+  return kvSuccess || localSuccess;
 }

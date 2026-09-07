@@ -1,7 +1,7 @@
 import { put } from "@vercel/blob";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { isBlobReady } from "@/lib/server/storageHealth";
+import { isBlobReady, isVercelProduction } from "@/lib/server/storageHealth";
 
 export type StoredMedia = {
   /** URL pública (Blob) o path relativo (/cars/...) */
@@ -14,7 +14,8 @@ export type StoredMedia = {
 /**
  * Guarda un archivo de media.
  * - Con BLOB_READ_WRITE_TOKEN → Vercel Blob (durable + CDN).
- * - Sin token (dev) → public/ local.
+ * - Sin token en prod Vercel → error (no escribir a disco efímero).
+ * - Sin token en local → public/.
  */
 export async function storeMediaFile(opts: {
   bytes: Buffer;
@@ -37,6 +38,12 @@ export async function storeMediaFile(opts: {
       relativePath: `/${relativePath}`,
       storage: "blob",
     };
+  }
+
+  if (isVercelProduction()) {
+    throw new Error(
+      "BLOB_READ_WRITE_TOKEN es obligatorio en producción para subir fotos/360.",
+    );
   }
 
   const abs = join(/*turbopackIgnore: true*/ process.cwd(), "public", relativePath);
