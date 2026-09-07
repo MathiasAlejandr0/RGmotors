@@ -37,9 +37,9 @@ export async function POST(req: NextRequest) {
 
     const eventType = body.eventType === "lead_submit" ? "lead_submit" : "view_calc";
 
-    let clientName = body.clientName ? String(body.clientName).trim() : undefined;
-    let phone = body.phone ? String(body.phone).trim() : undefined;
-    let email = body.email ? String(body.email).trim() : undefined;
+    const clientName = body.clientName ? String(body.clientName).trim() : undefined;
+    const phone = body.phone ? String(body.phone).trim() : undefined;
+    const email = body.email ? String(body.email).trim() : undefined;
     let rut = body.rut ? String(body.rut).trim() : undefined;
 
     if (eventType === "lead_submit") {
