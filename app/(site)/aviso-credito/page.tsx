@@ -30,11 +30,12 @@ export default function AvisoCreditoPage() {
             amortización fija).
           </p>
           <p>
-            <strong className="text-white">
-              La simulación puede coincidir o el valor de referencia puede aumentar
-            </strong>{" "}
-            al evaluar en sucursal (perfil del cliente, seguros, campaña vigente). No constituye
-            oferta vinculante ni pre-aprobación. Las condiciones definitivas las confirma Autofin.
+            Ofrecemos la cuota del <strong className="text-white">escenario normal</strong>{" "}
+            Autofin (Auto Plan Usados, con seguros típicos incluidos). No publicamos tasas
+            preferentes de campaña: así la referencia web es realista. En sucursal, según tu
+            evaluación, la cuota <strong className="text-white">puede mantenerse o mejorar</strong>.
+            No constituye oferta vinculante ni pre-aprobación. Las condiciones definitivas las
+            confirma Autofin.
           </p>
         </section>
 

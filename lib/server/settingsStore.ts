@@ -24,6 +24,10 @@ export type SystemSettings = {
     reserveAmount: number;
     defaultDownPct: number;
     defaultTermMonths: number;
+    /**
+     * Override opcional. 0 = usar tabla Autofin por tramo.
+     * Solo sube la cuota si es mayor a la tasa del tramo.
+     */
     monthlyInterestRate: number;
   };
 };
@@ -50,7 +54,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
     reserveAmount: 200000,
     defaultDownPct: 20,
     defaultTermMonths: 48,
-    monthlyInterestRate: AUTOFIN_DEFAULT_MONTHLY_RATE,
+    monthlyInterestRate: 0,
   },
 };
 
@@ -58,10 +62,12 @@ const FILENAME = "settings.json";
 
 function normalizeSettings(raw: SystemSettings): SystemSettings {
   const rate = Number(raw.preferences?.monthlyInterestRate);
-  const fixedRate =
-    !Number.isFinite(rate) || rate < AUTOFIN_DEFAULT_MONTHLY_RATE - 0.00005
-      ? AUTOFIN_DEFAULT_MONTHLY_RATE
-      : rate;
+  // Tasas legadas (1.85/1.9/2.5/3.21 fijo) → 0 (tabla por tramo).
+  // Solo se conservan overrides claramente al alza (> mediana matriz + margen).
+  let fixedRate = 0;
+  if (Number.isFinite(rate) && rate >= AUTOFIN_DEFAULT_MONTHLY_RATE + 0.001) {
+    fixedRate = rate;
+  }
   return {
     ...raw,
     preferences: {
@@ -76,7 +82,6 @@ function normalizeSettings(raw: SystemSettings): SystemSettings {
 export async function getSettings(): Promise<SystemSettings> {
   const raw = await readJson<SystemSettings>(FILENAME, DEFAULT_SETTINGS);
   const normalized = normalizeSettings(raw);
-  // Persistir migración si settings viejos tenían 1.85%/1.9%/2.5%
   if (
     Number(raw.preferences?.monthlyInterestRate) !==
     normalized.preferences.monthlyInterestRate

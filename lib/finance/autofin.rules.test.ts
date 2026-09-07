@@ -24,17 +24,18 @@ describe("autofin — reglas de negocio", () => {
   it("CAE anual desde tasa mensual es coherente", () => {
     const cae = annualCaeFromMonthlyRate(AUTOFIN_DEFAULT_MONTHLY_RATE);
     expect(cae).toBeGreaterThan(35);
-    expect(cae).toBeLessThan(50);
+    expect(cae).toBeLessThan(55);
   });
 
   it("approximateCaeWithFees sube el CAE vs tasa base", () => {
     const financed = 8_000_000;
-    const base = annualCaeFromMonthlyRate(0.0321);
-    const withFees = approximateCaeWithFees(financed, 0.0321, 36, 300_000);
+    const rate = 0.033;
+    const base = annualCaeFromMonthlyRate(rate);
+    const withFees = approximateCaeWithFees(financed, rate, 36, 300_000);
     expect(withFees).toBeGreaterThan(base);
   });
 
-  it("simulación completa incluye financed y cuota > 0", () => {
+  it("simulación completa incluye producto Auto Plan Usados", () => {
     const r = simulateCredit({
       price: 15_000_000,
       downPct: 25,
@@ -43,6 +44,8 @@ describe("autofin — reglas de negocio", () => {
     expect(r.financed).toBe(Math.round(15_000_000 * 0.75));
     expect(r.monthlyPayment).toBeGreaterThan(0);
     expect(r.monthlyPayment).toBe(r.capitalInstallment);
+    expect(r.productCode).toBe(2);
+    expect(r.productName).toContain("Auto Plan");
   });
 
   it("pie 0 o negativo se corrige al mínimo", () => {

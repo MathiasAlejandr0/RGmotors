@@ -39,7 +39,9 @@ export default function LegalConsentCheckbox({
             <Link href="/aviso-credito" className="text-brand-300 underline-offset-2 hover:underline">
               Aviso de Crédito
             </Link>
-            . Entiendo que la simulación es referencial y no constituye aprobación de crédito.
+            . Entiendo que la simulación es referencial (escenario normal), no constituye
+            aprobación de crédito, y que en sucursal la cuota puede mantenerse o mejorar según
+            evaluación Autofin.
           </>
         ) : (
           <>

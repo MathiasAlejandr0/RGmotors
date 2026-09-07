@@ -41,8 +41,8 @@ export default function AppleCareTrustSection() {
               Simula tu cuota en minutos
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-white/48">
-              Pie, plazo y cuota referencial con el mismo canal concesionario que usamos en
-              sucursal.
+              Pie, plazo y cuota del escenario normal Autofin. En sucursal, según tu
+              evaluación, la cuota puede mantenerse o mejorar.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

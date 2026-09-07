@@ -3,11 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatCLP } from "@/lib/vehicles";
-import {
-  AUTOFIN_DEFAULT_MONTHLY_RATE,
-  CREDIT_RULES,
-  simulateCredit,
-} from "@/lib/finance/autofin";
+import { CREDIT_QUOTE_COPY, CREDIT_RULES, simulateCredit } from "@/lib/finance/autofin";
 
 type Props = {
   price: number;
@@ -18,15 +14,15 @@ type Props = {
 export default function CuotaSimulator({ price, vehicleYear, vehicleSlug }: Props) {
   const [downPct, setDownPct] = useState(20);
   const [term, setTerm] = useState(48);
-  const [rate, setRate] = useState(AUTOFIN_DEFAULT_MONTHLY_RATE);
+  /** 0 = tabla por tramo Autofin (escenario normal). */
+  const [rate, setRate] = useState(0);
 
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data?.preferences?.monthlyInterestRate) {
-          setRate(Number(data.preferences.monthlyInterestRate));
-        }
+        const r = Number(data?.preferences?.monthlyInterestRate);
+        if (Number.isFinite(r) && r > 0) setRate(r);
       })
       .catch(() => {});
   }, []);
@@ -37,7 +33,7 @@ export default function CuotaSimulator({ price, vehicleYear, vehicleSlug }: Prop
         price,
         downPct,
         termMonths: term,
-        monthlyRate: rate,
+        monthlyRate: rate > 0 ? rate : undefined,
         vehicleYear,
       }),
     [price, downPct, term, rate, vehicleYear],
@@ -49,16 +45,15 @@ export default function CuotaSimulator({ price, vehicleYear, vehicleSlug }: Prop
 
   return (
     <div className="apple-glass-card rounded-3xl p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-base font-bold tracking-tight text-white">Simular crédito Autofin</h3>
         <span className="rounded-full border border-brand-400/30 bg-brand-400/10 px-3 py-1 text-[11px] font-semibold text-brand-300">
-          Referencial
+          {CREDIT_QUOTE_COPY.productBadge}
         </span>
       </div>
 
-      <div className="mb-4 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100/85">
-        Esta cuota es <b>referencial</b>. En sucursal, Autofin puede confirmarla o{" "}
-        <b>ajustarla</b> según evaluación y seguros.
+      <div className="mb-4 rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-[11px] leading-relaxed text-emerald-50/90">
+        {CREDIT_QUOTE_COPY.shortDisclaimer}
       </div>
 
       <div className="space-y-5">
@@ -102,7 +97,7 @@ export default function CuotaSimulator({ price, vehicleYear, vehicleSlug }: Prop
           {formatCLP(sim.monthlyPayment)}
         </p>
         <p className="mt-1 text-[10px] text-white/40">
-          Incluye desgravamen y cesantía · CAE ~{sim.caeApprox.toFixed(0)}%
+          Escenario normal · desgravamen + cesantía · CAE ~{sim.caeApprox.toFixed(0)}%
         </p>
         <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/10 pt-4 text-center text-xs">
           <div>

@@ -1082,8 +1082,9 @@ export function ConfigSection() {
                   className="w-full rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2 text-sm text-white focus:border-brand-500 outline-none"
                 />
                 <p className="mt-1 text-[10px] text-white/35">
-                  Piso Trinidad Autofin: {AUTOFIN_DEFAULT_MONTHLY_RATE} (3,21% all-in). Cualquier
-                  valor menor (p. ej. 0.019) se corrige solo en el simulador público.
+                  0 = tabla escenario normal Autofin (precio/pie/plazo). Solo valores mayores
+                  a ~{(AUTOFIN_DEFAULT_MONTHLY_RATE * 100).toFixed(2)}% suben la cuota. No uses
+                  tasas preferente/gold aquí: esas se reservan para cerrar en sucursal.
                 </p>
               </div>
             </div>

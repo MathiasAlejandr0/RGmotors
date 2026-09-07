@@ -1,23 +1,54 @@
 /**
  * Motor de simulación — RG Motors × Autofin (Trinidad / spider fee).
  *
- * Calibrado contra POST https://webapi.autofin.cl/v1/spider/fee
- * (producto AUTOPLAN USADOS, Desgravamen + Cesantía ON, sin AutoProtegido):
+ * Estrategia comercial (vitrina):
+ *   Cotizar escenario NORMAL + seguros (ValorCuota Trinidad público).
+ *   No publicar tasas preferente/gold (1,9% / 1,5%): en sala esas cuotas bajan
+ *   y la negociación cierra mejor; en web anclarían expectativas demasiado bajas.
  *
- *   $15.000.000 · pie $3.000.000 · 48m · usado → ValorCuota 493.197 · CAE 38,31%
+ * Tasas por tramo (precio · pie · plazo) calibradas a:
+ *   POST https://webapi.autofin.cl/v1/spider/fee  Producto 2 = AUTOPLAN USADOS
+ *   Seguros Desgravamen + Cesantía (cuota Trinidad all-in).
  *
- * La cuota Trinidad ya trae seguros desgravamen/cesantía; no sumamos prima
- * de daños del auto (AutoProtegido=false en el simulador público).
+ * Regenerar tabla:
+ *   node scripts/scrape-autofin-rate-matrix.mjs
+ *   node scripts/generate-autofin-rate-table.mjs
  */
 
-/** Tasa mensual all-in referencial (capital+interés+seguros incluidos en cuota Autofin). */
-export const AUTOFIN_DEFAULT_MONTHLY_RATE = 0.0321;
+/** Copy único para UI: cuota conservadora en web, mejora posible en sucursal. */
+export const CREDIT_QUOTE_COPY = {
+  productBadge: "Auto Plan Usados · escenario normal",
+  shortDisclaimer:
+    "Cuota referencial del escenario normal Autofin (incluye desgravamen y cesantía). En sucursal, según tu evaluación, la cuota puede mantenerse o mejorar.",
+  longDisclaimer:
+    "Simulamos el escenario normal de Autofin (Auto Plan Usados), con seguros típicos ya incluidos en la cuota. No usamos tasas preferentes de campaña: así llegas a sucursal con una referencia realista. Si tu perfil califica a una mejor condición, la cuota en sala puede bajar. No es aprobación de crédito.",
+  successHint:
+    "En sucursal Autofin evalúa tu caso; si calificas a una mejor tasa, la cuota puede ser menor a esta referencia.",
+} as const;
+
+import {
+  AUTOFIN_RATE_ANCHORS,
+  AUTOFIN_RATE_TABLE_META,
+  type AutofinRateAnchor,
+} from "@/lib/finance/autofin-rate-table";
+
+/** Fallback / legacy: mediana de la matriz Autofin (no usar como tasa única). */
+export const AUTOFIN_DEFAULT_MONTHLY_RATE = AUTOFIN_RATE_TABLE_META.fallbackRate;
 
 /** Tasa legada de partners (subestimaba vs autofin.cl). */
 export const AUTOFIN_LEGACY_PARTNER_RATE = 0.0185;
 
-/** Tasa intermedia 2,5% usada brevemente; también se normaliza al all-in. */
+/** Tasa intermedia 2,5% usada brevemente. */
 export const AUTOFIN_INTERMEDIATE_RATE = 0.025;
+
+/** Piso conservador (p90 matriz) — evita cuotas más baratas que sala si falta ancla. */
+export const AUTOFIN_CONSERVATIVE_FLOOR = AUTOFIN_RATE_TABLE_META.conservativeFloor;
+
+export const AUTOFIN_PRODUCT_AUTO_PLAN_USADOS = {
+  code: 2 as const,
+  name: "Auto Plan Usados",
+  spiderName: AUTOFIN_RATE_TABLE_META.productName,
+};
 
 export const CREDIT_RULES = {
   minDownPct: 20,
@@ -53,15 +84,14 @@ export const AUTOFIN_OPERATIONAL_FEES = {
   admin: 75000,
 };
 
-/**
- * En autofin.cl la cuota publicada YA incluye Desgravamen + Cesantía.
- * No añadimos AutoProtegido (daños) porque el spider lo trae en false.
- */
 export const AUTOFIN_PUBLIC_INSURANCE_FLAGS = {
   Desgravamen: true,
   Cesantia: true,
   AutoProtegido: false,
 } as const;
+
+const DOWN_BANDS = [20, 30, 40, 50] as const;
+const TERM_BANDS = [24, 36, 48] as const;
 
 export function frenchMonthlyPayment(
   financed: number,
@@ -109,13 +139,18 @@ export type CreditInsuranceBreakdown = {
   bakedIntoRate: boolean;
 };
 
+export type AutofinProductKind = "auto-plan-usados";
+
 export type CreditSimulationInput = {
   price: number;
   downPct: number;
   termMonths: number;
+  /** Override admin: solo aplica si es ≥ tasa de tabla (nunca baja la cuota). */
   monthlyRate?: number;
   vehicleYear?: number;
   vehicleType?: VehicleTypeId;
+  /** Por ahora solo Auto Plan Usados (Renuévate exige cuotón VFMG). */
+  productKind?: AutofinProductKind;
 };
 
 export type CreditSimulationResult = {
@@ -134,6 +169,9 @@ export type CreditSimulationResult = {
   totalCostWithDown: number;
   deferredFirstPaymentDays: number;
   vehicleType?: VehicleTypeId;
+  productCode: number;
+  productName: string;
+  rateSource: "table" | "table+admin-uplift" | "conservative-fallback";
   warnings: string[];
   ok: boolean;
 };
@@ -155,22 +193,154 @@ export function clampTermMonths(termMonths: number): number {
   );
 }
 
-/** Normaliza tasas: settings viejos (1.85%/1.9%/2.5%) subestiman vs Trinidad. */
-export function resolveMonthlyRate(requested?: number): number {
-  if (requested == null || !Number.isFinite(requested) || requested <= 0) {
-    return AUTOFIN_DEFAULT_MONTHLY_RATE;
+function snapDownBand(downPct: number): (typeof DOWN_BANDS)[number] {
+  let best: (typeof DOWN_BANDS)[number] = DOWN_BANDS[0];
+  for (const b of DOWN_BANDS) {
+    if (Math.abs(b - downPct) < Math.abs(best - downPct)) best = b;
   }
-  // Piso = tasa all-in calibrada a autofin.cl; no permitir tasas más bajas por settings.
-  if (requested < AUTOFIN_DEFAULT_MONTHLY_RATE - 0.00005) {
-    return AUTOFIN_DEFAULT_MONTHLY_RATE;
-  }
-  return requested;
+  // pie >50% usa banda 50 (tabla no tiene 60)
+  if (downPct >= 55) return 50;
+  return best;
 }
 
-/** Simulación referencial alineada a autofin.cl / Trinidad. */
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function rateAtPrice(
+  anchors: AutofinRateAnchor[],
+  price: number,
+): number | null {
+  if (!anchors.length) return null;
+  const sorted = [...anchors].sort((x, y) => x.price - y.price);
+  if (price <= sorted[0]!.price) return sorted[0]!.rate;
+  if (price >= sorted[sorted.length - 1]!.price) return sorted[sorted.length - 1]!.rate;
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const a = sorted[i]!;
+    const b = sorted[i + 1]!;
+    if (price >= a.price && price <= b.price) {
+      const t = (price - a.price) / (b.price - a.price);
+      return lerp(a.rate, b.rate, t);
+    }
+  }
+  return sorted[sorted.length - 1]!.rate;
+}
+
+function anchorsFor(productCode: number, downPct: number, termMonths: number) {
+  return AUTOFIN_RATE_ANCHORS.filter(
+    (a) =>
+      a.productCode === productCode &&
+      a.downPct === downPct &&
+      a.termMonths === termMonths,
+  );
+}
+
+/**
+ * Tasa mensual all-in por tramo (precio × pie × plazo) desde anclas Spider.
+ * Interpola precio; interpola plazo entre 24/36/48.
+ */
+export function lookupTableMonthlyRate(input: {
+  price: number;
+  downPct: number;
+  termMonths: number;
+  productCode?: number;
+}): { rate: number; source: "table" | "conservative-fallback" } {
+  const productCode = input.productCode ?? AUTOFIN_PRODUCT_AUTO_PLAN_USADOS.code;
+  const downBand = snapDownBand(input.downPct);
+  const term = input.termMonths;
+
+  const rateForTerm = (termMonths: number): number | null => {
+    const exact = rateAtPrice(anchorsFor(productCode, downBand, termMonths), input.price);
+    return exact;
+  };
+
+  // Plazo exacto en anclas
+  if ((TERM_BANDS as readonly number[]).includes(term)) {
+    const r = rateForTerm(term);
+    if (r != null) return { rate: r, source: "table" };
+  }
+
+  // Interpolación / clamp entre bandas de plazo
+  let loTerm: number = TERM_BANDS[0];
+  let hiTerm: number = TERM_BANDS[TERM_BANDS.length - 1];
+  for (let i = 0; i < TERM_BANDS.length - 1; i++) {
+    if (term >= TERM_BANDS[i]! && term <= TERM_BANDS[i + 1]!) {
+      loTerm = TERM_BANDS[i]!;
+      hiTerm = TERM_BANDS[i + 1]!;
+      break;
+    }
+  }
+  if (term < TERM_BANDS[0]!) {
+    loTerm = TERM_BANDS[0]!;
+    hiTerm = TERM_BANDS[0]!;
+  }
+  if (term > TERM_BANDS[TERM_BANDS.length - 1]!) {
+    loTerm = TERM_BANDS[TERM_BANDS.length - 1]!;
+    hiTerm = TERM_BANDS[TERM_BANDS.length - 1]!;
+  }
+
+  const rLo = rateForTerm(loTerm);
+  const rHi = rateForTerm(hiTerm);
+  if (rLo != null && rHi != null) {
+    if (loTerm === hiTerm) return { rate: rLo, source: "table" };
+    const t = (term - loTerm) / (hiTerm - loTerm);
+    return { rate: lerp(rLo, rHi, t), source: "table" };
+  }
+
+  return { rate: AUTOFIN_CONSERVATIVE_FLOOR, source: "conservative-fallback" };
+}
+
+export function resolveAutofinProduct(_input?: {
+  productKind?: AutofinProductKind;
+  price?: number;
+}): { code: number; name: string } {
+  // Renuévate (10/16/22) requiere MontoVFMG; Spider devolvió ValorCuota 0 sin cuotón.
+  return {
+    code: AUTOFIN_PRODUCT_AUTO_PLAN_USADOS.code,
+    name: AUTOFIN_PRODUCT_AUTO_PLAN_USADOS.name,
+  };
+}
+
+/**
+ * Resuelve tasa: tabla por tramo; override admin solo al alza.
+ */
+export function resolveMonthlyRate(
+  requested?: number,
+  ctx?: { price: number; downPct: number; termMonths: number; productCode?: number },
+): { rate: number; source: CreditSimulationResult["rateSource"] } {
+  const table = ctx
+    ? lookupTableMonthlyRate({
+        price: ctx.price,
+        downPct: ctx.downPct,
+        termMonths: ctx.termMonths,
+        productCode: ctx.productCode,
+      })
+    : { rate: AUTOFIN_DEFAULT_MONTHLY_RATE, source: "conservative-fallback" as const };
+
+  if (requested == null || !Number.isFinite(requested) || requested <= 0) {
+    return {
+      rate: table.rate,
+      source: table.source === "table" ? "table" : "conservative-fallback",
+    };
+  }
+
+  if (requested > table.rate + 0.00005) {
+    return { rate: requested, source: "table+admin-uplift" };
+  }
+
+  return {
+    rate: table.rate,
+    source: table.source === "table" ? "table" : "conservative-fallback",
+  };
+}
+
+/** Simulación referencial alineada a autofin.cl / Trinidad por tramo. */
 export function simulateCredit(input: CreditSimulationInput): CreditSimulationResult {
   const warnings: string[] = [];
-  const monthlyRate = resolveMonthlyRate(input.monthlyRate);
+  const product = resolveAutofinProduct({
+    productKind: input.productKind,
+    price: input.price,
+  });
   const downPct = clampDownPct(input.downPct);
   const termMonths = clampTermMonths(input.termMonths);
 
@@ -180,12 +350,22 @@ export function simulateCredit(input: CreditSimulationInput): CreditSimulationRe
   if (termMonths !== input.termMonths) {
     warnings.push(`Plazo ajustado a ${termMonths} meses (máx. ${CREDIT_RULES.maxTermMonths}).`);
   }
+
+  const resolved = resolveMonthlyRate(input.monthlyRate, {
+    price: input.price,
+    downPct,
+    termMonths,
+    productCode: product.code,
+  });
+  const monthlyRate = resolved.rate;
+
   if (
     input.monthlyRate != null &&
-    input.monthlyRate < AUTOFIN_DEFAULT_MONTHLY_RATE - 0.00005
+    Number.isFinite(input.monthlyRate) &&
+    input.monthlyRate + 0.00005 < monthlyRate
   ) {
     warnings.push(
-      `Tasa subía demasiado baja (${(input.monthlyRate * 100).toFixed(2)}%); se usa ${(AUTOFIN_DEFAULT_MONTHLY_RATE * 100).toFixed(2)}% Trinidad Autofin.`,
+      `Tasa admin ${(input.monthlyRate * 100).toFixed(2)}% ignorada (menor al tramo Autofin ${(monthlyRate * 100).toFixed(2)}%).`,
     );
   }
 
@@ -206,7 +386,6 @@ export function simulateCredit(input: CreditSimulationInput): CreditSimulationRe
     AUTOFIN_OPERATIONAL_FEES.registration +
     AUTOFIN_OPERATIONAL_FEES.admin;
 
-  // Cuota all-in (como ValorCuota Trinidad: ya incluye desgravamen + cesantía).
   const monthlyPayment = frenchMonthlyPayment(financed, monthlyRate, termMonths);
   const capitalInstallment = monthlyPayment;
   const insurance: CreditInsuranceBreakdown = {
@@ -218,7 +397,6 @@ export function simulateCredit(input: CreditSimulationInput): CreditSimulationRe
   };
 
   const totalCreditCost = monthlyPayment * termMonths + fees;
-  // CAE público Autofin ~38% en muestras; usamos el de la tasa all-in.
   const caeApprox = annualCaeFromMonthlyRate(monthlyRate);
 
   return {
@@ -237,6 +415,9 @@ export function simulateCredit(input: CreditSimulationInput): CreditSimulationRe
     totalCostWithDown: totalCreditCost + downPayment,
     deferredFirstPaymentDays: CREDIT_RULES.deferredFirstPaymentDays,
     vehicleType: input.vehicleType,
+    productCode: product.code,
+    productName: product.name,
+    rateSource: resolved.source,
     warnings,
     ok: financed > 0 && monthlyPayment > 0,
   };
@@ -249,7 +430,7 @@ export function simulateAutofin(
   const r = simulateCredit(input);
   return {
     ...r,
-    product: { id: "autofin", name: "Crédito Autofin" },
+    product: { id: "autofin", name: r.productName },
   };
 }
 
@@ -257,7 +438,7 @@ export function estimateMonthlyAutofin(
   price: number,
   termMonths = 48,
   piePercent = 0.2,
-  monthlyRate = AUTOFIN_DEFAULT_MONTHLY_RATE,
+  monthlyRate?: number,
 ): number {
   if (!price || price <= 0) return 0;
   return simulateCredit({
@@ -272,12 +453,13 @@ export type AutofinProductId = "auto-plan" | "auto-facil";
 export const AUTOFIN_PRODUCTS = [
   {
     id: "auto-plan" as const,
-    name: "Crédito Autofin",
+    name: AUTOFIN_PRODUCT_AUTO_PLAN_USADOS.name,
     minDownPct: 20,
     maxTermMonths: 48,
     minTermMonths: 12,
     requiresIncomeProof: true,
-    description: "Financiamiento Autofin vía RG Motors",
+    description: "Financiamiento Autofin vía RG Motors (Auto Plan Usados)",
+    spiderCode: AUTOFIN_PRODUCT_AUTO_PLAN_USADOS.code,
   },
 ];
 export function getAutofinProduct() {

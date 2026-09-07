@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { formatCLP, vehicles as initialVehicles, type Vehicle } from "@/lib/vehicles";
 import {
-  AUTOFIN_DEFAULT_MONTHLY_RATE,
+  CREDIT_QUOTE_COPY,
   CREDIT_RULES,
   VEHICLE_TYPES,
   type VehicleTypeId,
@@ -40,7 +40,8 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
   const [price, setPrice] = useState(12_000_000);
   const [downPct, setDownPct] = useState(20);
   const [term, setTerm] = useState(48);
-  const [rate, setRate] = useState(AUTOFIN_DEFAULT_MONTHLY_RATE);
+  /** 0 = tabla por tramo; admin solo puede subir. */
+  const [rate, setRate] = useState(0);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -106,7 +107,7 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
         price,
         downPct,
         termMonths: term,
-        monthlyRate: rate,
+        monthlyRate: rate > 0 ? rate : undefined,
         vehicleYear: selectedVehicle?.year,
         vehicleType,
       }),
@@ -230,8 +231,8 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
         <h2 className="mt-4 text-xl font-bold text-emerald-400">Simulación recibida</h2>
         <p className="mt-2 text-xs leading-relaxed text-white/70">
           Gracias, <b>{name}</b>. Registramos tu cuota referencial de{" "}
-          <b>{formatCLP(sim.monthlyPayment)}</b>. Un asesor te contactará; en sucursal se
-          formaliza con Autofin.
+          <b>{formatCLP(sim.monthlyPayment)}</b>. Un asesor te contactará.{" "}
+          {CREDIT_QUOTE_COPY.successHint}
         </p>
         <a
           href={whatsappLink(
@@ -257,12 +258,10 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
   return (
     <div className="space-y-8">
       {/* Advertencia principal */}
-      <div className="rounded-2xl border border-amber-400/35 bg-amber-500/10 px-4 py-3.5 text-sm leading-relaxed text-amber-100/90 sm:px-5">
-        <p className="font-bold text-amber-200">Importante — simulación referencial</p>
-        <p className="mt-1 text-xs sm:text-[13px] text-amber-100/80">
-          El valor de cuota está calibrado contra el simulador de Autofin.cl (API Trinidad:
-          desgravamen + cesantía incluidos). Al evaluar en sucursal, la cuota{" "}
-          <b>puede coincidir o puede aumentar</b> según tu perfil y condiciones vigentes.
+      <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3.5 text-sm leading-relaxed text-emerald-50/90 sm:px-5">
+        <p className="font-bold text-emerald-200">Simulación del escenario normal Autofin</p>
+        <p className="mt-1 text-xs sm:text-[13px] text-emerald-50/85">
+          {CREDIT_QUOTE_COPY.longDisclaimer}
         </p>
       </div>
 
@@ -377,15 +376,20 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
 
         <div className="space-y-5">
           <div className="apple-glass-card relative overflow-hidden rounded-3xl border-brand-500/30 bg-gradient-to-br from-brand-500/15 via-ink-900/90 to-black p-7">
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
-              Cuota mensual referencial
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
+                Cuota mensual referencial
+              </p>
+              <span className="rounded-full border border-brand-400/30 bg-brand-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-brand-200">
+                {CREDIT_QUOTE_COPY.productBadge}
+              </span>
+            </div>
             <p className="mt-2 text-5xl font-extrabold tracking-tight text-brand-300">
               {formatCLP(sim.monthlyPayment)}
             </p>
             <p className="mt-1 text-[11px] text-white/45">
-              Primera cuota ~{sim.deferredFirstPaymentDays} días · tasa all-in{" "}
-              {(sim.monthlyRate * 100).toFixed(2)}% mens. (incluye desgravamen y cesantía)
+              Primera cuota ~{sim.deferredFirstPaymentDays} días · escenario normal con
+              desgravamen y cesantía
             </p>
 
             <div className="mt-6 space-y-3 border-t border-white/10 pt-5 text-xs">
@@ -398,9 +402,7 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
             </div>
 
             <p className="mt-4 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[10px] leading-relaxed text-white/45">
-              Calibrado contra el simulador de Autofin.cl (API Trinidad). La cuota incluye
-              seguros desgravamen y cesantía; en sucursal puede coincidir o aumentar según
-              evaluación y campaña.
+              {CREDIT_QUOTE_COPY.shortDisclaimer}
             </p>
           </div>
 
@@ -408,8 +410,8 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
             <div>
               <h3 className="text-sm font-bold text-white">¿Te contactamos con esta simulación?</h3>
               <p className="mt-1 text-[11px] text-white/45">
-                Un asesor de RG Motors te orientará con esta referencia y los pasos para evaluar
-                el crédito con Autofin.
+                Un asesor te orienta con esta referencia. En sucursal Autofin evalúa tu perfil;
+                si calificas mejor, la cuota puede bajar.
               </p>
             </div>
 

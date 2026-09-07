@@ -1,4 +1,5 @@
 import React from "react";
+import { CREDIT_QUOTE_COPY } from "@/lib/finance/autofin";
 
 export default function SernacDisclaimer({ className = "" }: { className?: string }) {
   return (
@@ -10,12 +11,7 @@ export default function SernacDisclaimer({ className = "" }: { className?: strin
         <span>Información Legal y Transparencia Financiera (SERNAC / Ley N° 19.496)</span>
       </div>
 
-      <p className="text-[11px] text-white/60">
-        Las simulaciones son referenciales y buscan acercarse al simulador de Autofin.cl
-        (pie desde 20%, hasta 48 cuotas, tasa de usados y seguros típicos en la cuota). La
-        cuota o el costo total <b className="text-white/70">puede coincidir o aumentar</b> al
-        formalizar con Autofin en sucursal (evaluación, perfil y campaña).
-      </p>
+      <p className="text-[11px] text-white/60">{CREDIT_QUOTE_COPY.longDisclaimer}</p>
 
       <p className="text-[11px] text-white/60">
         El crédito lo otorga Autofin. RG Motors comercializa el vehículo. Solicita siempre la
