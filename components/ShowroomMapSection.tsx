@@ -92,11 +92,13 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
       {/* Mapa + ficha */}
       <div className="mt-10 grid overflow-hidden rounded-2xl border border-white/[0.08] lg:grid-cols-[1.55fr_1fr]">
         {/* Mapa oscuro cinematográfico */}
-        <div className="relative min-h-[300px] bg-[#0a0b10] lg:min-h-[420px]">
+        <div className="relative min-h-[300px] bg-[#e8eaed] lg:min-h-[420px]">
           <iframe
             title="Ubicación RG Motors Puerto Montt - Av. El Tepual"
-            src={`https://maps.google.com/maps?q=${LAT},${LNG}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
-            className="absolute inset-0 h-full w-full border-0"
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(
+              `${LAT},${LNG}`,
+            )}&z=16&hl=es&output=embed`}
+            className="absolute inset-0 h-full w-full border-0 bg-[#e8eaed]"
             allowFullScreen
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
@@ -107,9 +109,14 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
           {/* Chip flotante */}
           <div className="absolute bottom-4 left-4 z-[1] flex items-center gap-2 rounded-full border border-white/10 bg-black/55 px-3.5 py-2 backdrop-blur-md">
             <span className="h-1.5 w-1.5 rounded-full bg-[#C9A84C] shadow-[0_0_8px_rgba(201,168,76,0.7)]" />
-            <span className="text-[11px] font-medium tracking-wide text-white/80">
-              RG Motors · en mapa
-            </span>
+            <a
+              href={gmapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-medium tracking-wide text-white/80 hover:text-white"
+            >
+              RG Motors · abrir mapa
+            </a>
           </div>
         </div>
 
