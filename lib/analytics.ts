@@ -20,7 +20,8 @@ export type Source =
   | "Instagram"
   | "Facebook"
   | "Referido"
-  | "Chatbot";
+  | "Chatbot"
+  | "Ejecutivo virtual";
 
 export type BodyType = Vehicle["bodyType"];
 

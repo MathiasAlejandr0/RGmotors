@@ -818,7 +818,7 @@ export function ClientsSection() {
       <Panel title="Clientes y Leads Capturados">
         {leads.length === 0 ? (
           <div className="p-8 text-center text-xs text-white/40">
-            Aún no hay leads capturados. Los contactos ingresados en el chatbot o formularios aparecerán aquí.
+            Aún no hay leads capturados. Los contactos del ejecutivo virtual o formularios aparecerán aquí.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -1097,7 +1097,7 @@ export function ConfigSection() {
                 />
               </li>
               <li className="flex items-center justify-between rounded-xl bg-ink-950 p-3">
-                <span className="text-white font-medium">Activar Chatbot Asesor IA</span>
+                <span className="text-white font-medium">Activar Ejecutivo virtual</span>
                 <input
                   type="checkbox"
                   checked={settings.preferences.enableChatbot}

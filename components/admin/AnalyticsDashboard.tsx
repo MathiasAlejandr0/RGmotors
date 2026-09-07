@@ -745,15 +745,15 @@ export default function AnalyticsDashboard() {
         </div>
       </Card>
 
-      {/* Leads capturados por el chatbot (en vivo) */}
+      {/* Leads capturados por el ejecutivo virtual (en vivo) */}
       <Card
-        title="Leads capturados por el chatbot (en vivo)"
+        title="Leads del ejecutivo virtual (en vivo)"
         hint="datos inferidos de la conversación, sin fricción para el cliente"
       >
         {captured.length === 0 ? (
           <p className="text-sm text-white/40">
-            Aún no hay leads capturados. Abre el chat del sitio, conversa sobre un
-            auto (tipo y presupuesto) y aparecerán aquí automáticamente.
+            Aún no hay leads. Abrí el ejecutivo virtual del sitio, pedí opciones
+            (marca, tipo o presupuesto) y aparecerán aquí automáticamente.
           </p>
         ) : (
           <div className="overflow-x-auto">
