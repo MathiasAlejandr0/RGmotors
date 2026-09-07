@@ -11,6 +11,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 html,
@@ -18,6 +19,7 @@ body {
   padding: 0;
   margin: 0;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+  max-width: 100%;
 }
 
 body {
@@ -28,6 +30,7 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   letter-spacing: -0.015em;
   text-rendering: optimizeLegibility;
+  overflow-x: clip;
 }
 
 * {

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope, Oswald } from "next/font/google";
 import "./globals.css";
 import TrafficTracker from "@/components/TrafficTracker";
@@ -14,6 +14,12 @@ const oswald = Oswald({
   variable: "--font-display",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://rgmotors.cl"),

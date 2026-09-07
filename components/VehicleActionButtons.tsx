@@ -47,8 +47,8 @@ export default function VehicleActionButtons({ vehicle: v }: { vehicle: Vehicle 
           🚗 Agendar prueba de manejo
         </Link>
 
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <VehiclePdfButton vehicle={v} className="w-full" />
+        <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
+          <VehiclePdfButton vehicle={v} className="w-full !text-[11px] !px-3" />
           <button
             onClick={() => setIsPriceAlertOpen(true)}
             className="apple-btn-secondary flex w-full items-center justify-center gap-1.5 rounded-full border-amber-400/20 py-2.5 text-center text-[11px] font-medium text-amber-300/90 transition hover:border-amber-400/50 hover:bg-amber-400/5"

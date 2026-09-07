@@ -9,9 +9,9 @@ export default function SiteLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen w-full max-w-[100vw] flex-col overflow-x-clip">
       <SiteHeader />
-      <div className="flex-1">{children}</div>
+      <div className="min-w-0 flex-1">{children}</div>
       <SiteFooter />
       <ChatWidget />
       <CookieConsent />

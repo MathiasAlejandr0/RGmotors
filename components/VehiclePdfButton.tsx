@@ -58,7 +58,7 @@ export default function VehiclePdfButton({
         </>
       ) : (
         <>
-          <span>📄</span> Descargar Ficha Técnica Oficial (PDF)
+          <span>📄</span> <span className="sm:hidden">Ficha PDF</span><span className="hidden sm:inline">Descargar ficha PDF</span>
         </>
       )}
     </button>
