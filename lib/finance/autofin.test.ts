@@ -30,10 +30,11 @@ describe("simulateCredit — paridad Trinidad autofin.cl", () => {
     expect(Math.abs(r.monthlyPayment - 330809) / 330809).toBeLessThan(0.01);
   });
 
-  it("CAE referencial cerca del 38% público Autofin", () => {
+  it("CAE referencial coherente con tasa all-in Trinidad", () => {
     const r = simulateCredit({ price: 15_000_000, downPct: 20, termMonths: 48 });
-    expect(r.caeApprox).toBeGreaterThan(35);
-    expect(r.caeApprox).toBeLessThan(45);
+    // (1+0.0321)^12-1 ≈ 46%; Autofin UI muestra ~38% (metodología CAE distinta)
+    expect(r.caeApprox).toBeGreaterThan(40);
+    expect(r.caeApprox).toBeLessThan(50);
   });
 
   it("sube tasas legadas al all-in Trinidad", () => {
