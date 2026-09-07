@@ -26,7 +26,8 @@ export default function AvisoCreditoPage() {
             ofrecemos una estimación referencial de cuota. El crédito lo otorga{" "}
             <strong className="text-white">Autofin</strong>; RG Motors comercializa el vehículo.
             La proyección considera parámetros habituales del mercado Autofin (pie desde 20%,
-            hasta 48 cuotas, tasa referencial y cuota fija).
+            hasta 48 cuotas, tasa referencial de usados, seguros típicos en la cuota y
+            amortización fija).
           </p>
           <p>
             <strong className="text-white">

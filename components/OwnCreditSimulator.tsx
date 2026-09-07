@@ -260,11 +260,11 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
       <div className="rounded-2xl border border-amber-400/35 bg-amber-500/10 px-4 py-3.5 text-sm leading-relaxed text-amber-100/90 sm:px-5">
         <p className="font-bold text-amber-200">Importante — simulación referencial</p>
         <p className="mt-1 text-xs sm:text-[13px] text-amber-100/80">
-          El valor de cuota que ves aquí es una <b>referencia</b> calculada con la misma lógica
-          de mercado que usa Autofin (pie desde 20%, hasta 48 cuotas, tasa referencial). Al
-          evaluar el crédito en sucursal con Autofin, la cuota o el costo total{" "}
+          El valor de cuota que ves aquí es una <b>referencia</b> alineada al simulador de
+          Autofin.cl: tasa de usados, amortización francesa y seguros típicos incluidos. Al
+          evaluar el crédito en sucursal, la cuota o el costo total{" "}
           <b>puede coincidir o puede aumentar</b> respecto a este precio de referencia, según
-          tu perfil, seguros y condiciones vigentes.
+          tu perfil, seguros contratados y condiciones vigentes.
         </p>
       </div>
 
@@ -387,20 +387,30 @@ export default function OwnCreditSimulator({ initialVehicleSlug }: Props) {
             </p>
             <p className="mt-1 text-[11px] text-white/45">
               Primera cuota ~{sim.deferredFirstPaymentDays} días · tasa{" "}
-              {(sim.monthlyRate * 100).toFixed(2)}% mens. (referencial Autofin)
+              {(sim.monthlyRate * 100).toFixed(2)}% mens. + seguros referenciales
             </p>
 
             <div className="mt-6 space-y-3 border-t border-white/10 pt-5 text-xs">
               <Row label="Financiamiento" value="Autofin vía RG Motors" />
               <Row label="Monto a financiar" value={formatCLP(sim.financed)} />
+              <Row label="Cuota capital + interés" value={formatCLP(sim.capitalInstallment)} />
+              <Row label="Seguros est. (en cuota)" value={formatCLP(sim.insurance.total)} />
+              <Row
+                label="— Daños / vehículo"
+                value={formatCLP(sim.insurance.vehicleDamage)}
+              />
+              <Row
+                label="— Desgravamen + cesantía"
+                value={formatCLP(sim.insurance.life + sim.insurance.unemployment)}
+              />
               <Row label="CAE aprox. c/gastos" value={`${sim.caeWithFeesApprox.toFixed(1)}%`} />
               <Row label="Gastos operacionales est." value={formatCLP(sim.operationalFees)} />
               <Row label="Costo total estimado" value={formatCLP(sim.totalCostWithDown)} highlight />
             </div>
 
             <p className="mt-4 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[10px] leading-relaxed text-white/45">
-              En sucursal, Autofin puede confirmar esta cuota o ajustarla según evaluación,
-              seguros y campaña vigente. Este valor es solo referencial.
+              Esta cuota busca acercarse al simulador de Autofin.cl (tasa de usados + seguros
+              típicos). En sucursal puede coincidir o aumentar según evaluación y campaña.
             </p>
           </div>
 

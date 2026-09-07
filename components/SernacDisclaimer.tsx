@@ -11,10 +11,10 @@ export default function SernacDisclaimer({ className = "" }: { className?: strin
       </div>
 
       <p className="text-[11px] text-white/60">
-        Las simulaciones de crédito de este sitio son referenciales. Usan la misma lógica de
-        mercado que partners Autofin (pie desde 20%, hasta 48 cuotas, tasa referencial). La
+        Las simulaciones son referenciales y buscan acercarse al simulador de Autofin.cl
+        (pie desde 20%, hasta 48 cuotas, tasa de usados y seguros típicos en la cuota). La
         cuota o el costo total <b className="text-white/70">puede coincidir o aumentar</b> al
-        formalizar con Autofin en sucursal (evaluación, seguros, campaña).
+        formalizar con Autofin en sucursal (evaluación, perfil y campaña).
       </p>
 
       <p className="text-[11px] text-white/60">

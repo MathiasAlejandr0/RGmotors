@@ -4,7 +4,6 @@ import {
   CREDIT_RULES,
   approximateCaeWithFees,
   annualCaeFromMonthlyRate,
-  frenchMonthlyPayment,
   matchVehicleType,
   simulateCredit,
 } from "@/lib/finance/autofin";
@@ -24,14 +23,14 @@ describe("autofin — reglas de negocio", () => {
 
   it("CAE anual desde tasa mensual es coherente", () => {
     const cae = annualCaeFromMonthlyRate(AUTOFIN_DEFAULT_MONTHLY_RATE);
-    expect(cae).toBeGreaterThan(20);
-    expect(cae).toBeLessThan(30);
+    expect(cae).toBeGreaterThan(30);
+    expect(cae).toBeLessThan(40);
   });
 
   it("approximateCaeWithFees sube el CAE vs tasa base", () => {
     const financed = 8_000_000;
-    const base = annualCaeFromMonthlyRate(0.0185);
-    const withFees = approximateCaeWithFees(financed, 0.0185, 36, 300_000);
+    const base = annualCaeFromMonthlyRate(0.025);
+    const withFees = approximateCaeWithFees(financed, 0.025, 36, 300_000);
     expect(withFees).toBeGreaterThan(base);
   });
 
@@ -43,7 +42,7 @@ describe("autofin — reglas de negocio", () => {
     });
     expect(r.financed).toBe(Math.round(15_000_000 * 0.75));
     expect(r.monthlyPayment).toBeGreaterThan(0);
-    expect(r.monthlyPayment).toBe(frenchMonthlyPayment(r.financed, r.monthlyRate, r.termMonths));
+    expect(r.monthlyPayment).toBe(r.capitalInstallment + r.insurance.total);
   });
 
   it("pie 0 o negativo se corrige al mínimo", () => {

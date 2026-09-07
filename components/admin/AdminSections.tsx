@@ -1062,7 +1062,9 @@ export function ConfigSection() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-white/60">Tasa Interés Mensual</label>
+                <label className="mb-1 block text-xs font-medium text-white/60">
+                  Tasa interés mensual (usados Autofin)
+                </label>
                 <input
                   type="number"
                   step={0.001}
@@ -1078,6 +1080,10 @@ export function ConfigSection() {
                   }
                   className="w-full rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2 text-sm text-white focus:border-brand-500 outline-none"
                 />
+                <p className="mt-1 text-[10px] text-white/35">
+                  Referencia recomendada 0.025 (2,5%). El valor 0.0185 se corrige solo porque
+                  subestimaba vs autofin.cl. La cuota pública también suma seguros típicos.
+                </p>
               </div>
             </div>
 
