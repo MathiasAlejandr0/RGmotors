@@ -1,24 +1,23 @@
 /**
- * Motor de simulación de crédito automotriz — RG Motors × Autofin.
+ * Motor de simulación — RG Motors × Autofin (Trinidad / spider fee).
  *
- * Cuota referencial alineada al simulador público de Autofin.cl (usados):
- * - Amortización francesa (cuota fija capital + interés)
- * - Tasa referencial conservadora para usados (no la tasa “marketing” baja de partners)
- * - Seguros típicos incluidos en la cuota mostrada (desgravamen + daño/vehículo),
- *   como suele devolver el simulador oficial al calcular.
+ * Calibrado contra POST https://webapi.autofin.cl/v1/spider/fee
+ * (producto AUTOPLAN USADOS, Desgravamen + Cesantía ON, sin AutoProtegido):
  *
- * No es cotización vinculante; Autofin confirma en evaluación.
+ *   $15.000.000 · pie $3.000.000 · 48m · usado → ValorCuota 493.197 · CAE 38,31%
+ *
+ * La cuota Trinidad ya trae seguros desgravamen/cesantía; no sumamos prima
+ * de daños del auto (AutoProtegido=false en el simulador público).
  */
 
-/**
- * Tasa mensual referencial para usados.
- * 1,85% era demasiado optimista vs autofin.cl (ej. $15M · 20% · 48m ≈ $380k vs ~$500k).
- * 2,5% + seguros típicos calibra cerca del simulador oficial.
- */
-export const AUTOFIN_DEFAULT_MONTHLY_RATE = 0.025;
+/** Tasa mensual all-in referencial (capital+interés+seguros incluidos en cuota Autofin). */
+export const AUTOFIN_DEFAULT_MONTHLY_RATE = 0.0321;
 
-/** Tasa legada (partners); no usar como default de UI. */
+/** Tasa legada de partners (subestimaba vs autofin.cl). */
 export const AUTOFIN_LEGACY_PARTNER_RATE = 0.0185;
+
+/** Tasa intermedia 2,5% usada brevemente; también se normaliza al all-in. */
+export const AUTOFIN_INTERMEDIATE_RATE = 0.025;
 
 export const CREDIT_RULES = {
   minDownPct: 20,
@@ -26,11 +25,10 @@ export const CREDIT_RULES = {
   minTermMonths: 12,
   maxTermMonths: 48,
   termStep: 6,
-  /** Primera cuota diferida típica Autofin (~60 días). */
   deferredFirstPaymentDays: 60,
 };
 
-/** Tipos de vehículo como en autofin.cl (adaptados al stock RG). */
+/** Tipos de vehículo como en autofin.cl */
 export const VEHICLE_TYPES = [
   { id: "auto", label: "Auto", match: ["Sedán", "Hatchback", "Coupé", "Deportivo"] },
   { id: "suv", label: "SUV", match: ["SUV", "Crossover"] },
@@ -49,7 +47,6 @@ export function matchVehicleType(bodyType?: string): VehicleTypeId {
   return "auto";
 }
 
-/** Gastos operacionales referenciales (CLP) — suelen ir al CTC, no siempre a la cuota. */
 export const AUTOFIN_OPERATIONAL_FEES = {
   notaryAndPledge: 180000,
   registration: 45000,
@@ -57,18 +54,14 @@ export const AUTOFIN_OPERATIONAL_FEES = {
 };
 
 /**
- * Seguros referenciales incluidos en la cuota del simulador Autofin.
- * Fuente de orden de magnitud: blog Autofin (seguro daños ~$60.000/mes en ejemplos;
- * desgravamen prorrateado sobre el saldo).
+ * En autofin.cl la cuota publicada YA incluye Desgravamen + Cesantía.
+ * No añadimos AutoProtegido (daños) porque el spider lo trae en false.
  */
-export const AUTOFIN_INSURANCE = {
-  /** Prima anual de daños / cobertura vehicular como % del precio del auto. */
-  vehicleDamageAnnualPctOfPrice: 0.048,
-  /** Desgravamen mensual aprox. sobre monto financiado. */
-  lifeMonthlyPctOfFinanced: 0.00035,
-  /** Cesantía / adicionales menores sobre financiado. */
-  unemploymentMonthlyPctOfFinanced: 0.00012,
-};
+export const AUTOFIN_PUBLIC_INSURANCE_FLAGS = {
+  Desgravamen: true,
+  Cesantia: true,
+  AutoProtegido: false,
+} as const;
 
 export function frenchMonthlyPayment(
   financed: number,
@@ -112,6 +105,8 @@ export type CreditInsuranceBreakdown = {
   life: number;
   unemployment: number;
   total: number;
+  /** true = ya van dentro de la cuota Trinidad (no se suman aparte). */
+  bakedIntoRate: boolean;
 };
 
 export type CreditSimulationInput = {
@@ -121,16 +116,12 @@ export type CreditSimulationInput = {
   monthlyRate?: number;
   vehicleYear?: number;
   vehicleType?: VehicleTypeId;
-  /** Si false, solo capital+interés (tests / comparación). Default true. */
-  includeInsurance?: boolean;
 };
 
 export type CreditSimulationResult = {
   downPayment: number;
   financed: number;
-  /** Cuota total referencial (capital+interés + seguros si aplica). */
   monthlyPayment: number;
-  /** Solo amortización francesa (sin seguros). */
   capitalInstallment: number;
   insurance: CreditInsuranceBreakdown;
   termMonths: number;
@@ -164,46 +155,26 @@ export function clampTermMonths(termMonths: number): number {
   );
 }
 
-/** Normaliza tasa: evita quedarse con el 1,85% legado demasiado bajo. */
+/** Normaliza tasas antiguas demasiado bajas vs Trinidad. */
 export function resolveMonthlyRate(requested?: number): number {
   if (requested == null || !Number.isFinite(requested) || requested <= 0) {
     return AUTOFIN_DEFAULT_MONTHLY_RATE;
   }
-  // Settings antiguos con 1,85% subestimaban fuerte vs autofin.cl
-  if (Math.abs(requested - AUTOFIN_LEGACY_PARTNER_RATE) < 0.00005) {
+  if (
+    Math.abs(requested - AUTOFIN_LEGACY_PARTNER_RATE) < 0.00005 ||
+    Math.abs(requested - AUTOFIN_INTERMEDIATE_RATE) < 0.00005
+  ) {
     return AUTOFIN_DEFAULT_MONTHLY_RATE;
   }
   return requested;
 }
 
-export function estimateInsurance(
-  price: number,
-  financed: number,
-): CreditInsuranceBreakdown {
-  const vehicleDamage = Math.round(
-    (Math.max(0, price) * AUTOFIN_INSURANCE.vehicleDamageAnnualPctOfPrice) / 12,
-  );
-  const life = Math.round(
-    Math.max(0, financed) * AUTOFIN_INSURANCE.lifeMonthlyPctOfFinanced,
-  );
-  const unemployment = Math.round(
-    Math.max(0, financed) * AUTOFIN_INSURANCE.unemploymentMonthlyPctOfFinanced,
-  );
-  return {
-    vehicleDamage,
-    life,
-    unemployment,
-    total: vehicleDamage + life + unemployment,
-  };
-}
-
-/** Simulación referencial estilo Autofin.cl (cuota con seguros típicos). */
+/** Simulación referencial alineada a autofin.cl / Trinidad. */
 export function simulateCredit(input: CreditSimulationInput): CreditSimulationResult {
   const warnings: string[] = [];
   const monthlyRate = resolveMonthlyRate(input.monthlyRate);
   const downPct = clampDownPct(input.downPct);
   const termMonths = clampTermMonths(input.termMonths);
-  const includeInsurance = input.includeInsurance !== false;
 
   if (downPct !== input.downPct) {
     warnings.push(`Pie ajustado al mínimo ${CREDIT_RULES.minDownPct}%.`);
@@ -213,10 +184,11 @@ export function simulateCredit(input: CreditSimulationInput): CreditSimulationRe
   }
   if (
     input.monthlyRate != null &&
-    Math.abs(input.monthlyRate - AUTOFIN_LEGACY_PARTNER_RATE) < 0.00005
+    (Math.abs(input.monthlyRate - AUTOFIN_LEGACY_PARTNER_RATE) < 0.00005 ||
+      Math.abs(input.monthlyRate - AUTOFIN_INTERMEDIATE_RATE) < 0.00005)
   ) {
     warnings.push(
-      `Tasa referencial actualizada a ${(AUTOFIN_DEFAULT_MONTHLY_RATE * 100).toFixed(2)}% (usados Autofin).`,
+      `Tasa all-in actualizada a ${(AUTOFIN_DEFAULT_MONTHLY_RATE * 100).toFixed(2)}% (Trinidad Autofin).`,
     );
   }
 
@@ -236,12 +208,21 @@ export function simulateCredit(input: CreditSimulationInput): CreditSimulationRe
     AUTOFIN_OPERATIONAL_FEES.notaryAndPledge +
     AUTOFIN_OPERATIONAL_FEES.registration +
     AUTOFIN_OPERATIONAL_FEES.admin;
-  const capitalInstallment = frenchMonthlyPayment(financed, monthlyRate, termMonths);
-  const insurance = includeInsurance
-    ? estimateInsurance(input.price, financed)
-    : { vehicleDamage: 0, life: 0, unemployment: 0, total: 0 };
-  const monthlyPayment = capitalInstallment + insurance.total;
+
+  // Cuota all-in (como ValorCuota Trinidad: ya incluye desgravamen + cesantía).
+  const monthlyPayment = frenchMonthlyPayment(financed, monthlyRate, termMonths);
+  const capitalInstallment = monthlyPayment;
+  const insurance: CreditInsuranceBreakdown = {
+    vehicleDamage: 0,
+    life: 0,
+    unemployment: 0,
+    total: 0,
+    bakedIntoRate: true,
+  };
+
   const totalCreditCost = monthlyPayment * termMonths + fees;
+  // CAE público Autofin ~38% en muestras; usamos el de la tasa all-in.
+  const caeApprox = annualCaeFromMonthlyRate(monthlyRate);
 
   return {
     downPayment,
@@ -252,13 +233,8 @@ export function simulateCredit(input: CreditSimulationInput): CreditSimulationRe
     termMonths,
     downPct,
     monthlyRate,
-    caeApprox: annualCaeFromMonthlyRate(monthlyRate),
-    caeWithFeesApprox: approximateCaeWithFees(
-      financed,
-      monthlyRate,
-      termMonths,
-      fees + insurance.total * termMonths,
-    ),
+    caeApprox,
+    caeWithFeesApprox: approximateCaeWithFees(financed, monthlyRate, termMonths, fees),
     operationalFees: fees,
     totalCreditCost,
     totalCostWithDown: totalCreditCost + downPayment,
@@ -295,7 +271,6 @@ export function estimateMonthlyAutofin(
   }).monthlyPayment;
 }
 
-/** Compat: productos ya no se muestran en UI. */
 export type AutofinProductId = "auto-plan" | "auto-facil";
 export const AUTOFIN_PRODUCTS = [
   {

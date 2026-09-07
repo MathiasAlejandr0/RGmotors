@@ -102,7 +102,7 @@ export default function CuotaSimulator({ price, vehicleYear, vehicleSlug }: Prop
           {formatCLP(sim.monthlyPayment)}
         </p>
         <p className="mt-1 text-[10px] text-white/40">
-          Incluye seguros referenciales · capital {formatCLP(sim.capitalInstallment)}
+          Incluye desgravamen y cesantía · CAE ~{sim.caeApprox.toFixed(0)}%
         </p>
         <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/10 pt-4 text-center text-xs">
           <div>
@@ -110,8 +110,8 @@ export default function CuotaSimulator({ price, vehicleYear, vehicleSlug }: Prop
             <p className="mt-0.5 font-bold text-white/90">{formatCLP(sim.financed)}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase text-white/40">Seguros est.</p>
-            <p className="mt-0.5 font-bold text-white/90">{formatCLP(sim.insurance.total)}</p>
+            <p className="text-[10px] uppercase text-white/40">CAE aprox.</p>
+            <p className="mt-0.5 font-bold text-white/90">{sim.caeApprox.toFixed(1)}%</p>
           </div>
           <div>
             <p className="text-[10px] uppercase text-white/40">Total est.</p>

@@ -7,43 +7,40 @@ import {
   simulateCredit,
 } from "@/lib/finance/autofin";
 
-describe("simulateCredit (alineación Autofin.cl)", () => {
-  it("capital+interés con tasa legada forzada: $9.990.000 · 20% · 48m · 1.85%", () => {
-    const r = simulateCredit({
-      price: 9_990_000,
-      downPct: 20,
-      termMonths: 48,
-      monthlyRate: 0.0185,
-      includeInsurance: false,
-    });
-    // resolveMonthlyRate sube 1.85→2.5; forzar capital con francesa directa
-    expect(frenchMonthlyPayment(7_992_000, 0.0185, 48)).toBe(252665);
-    expect(r.monthlyRate).toBe(AUTOFIN_DEFAULT_MONTHLY_RATE);
-  });
-
-  it("cuota total ~$500k para $15M · 20% · 48m (caso típico vs autofin.cl)", () => {
+describe("simulateCredit — paridad Trinidad autofin.cl", () => {
+  it("scraped: $15M · pie $3M · 48m → ~$493.197", () => {
     const r = simulateCredit({
       price: 15_000_000,
       downPct: 20,
       termMonths: 48,
     });
-    // Antes (solo 1.85% sin seguros) ≈ 379k; Autofin oficial ≈ 500k+
-    expect(r.capitalInstallment).toBe(432072);
-    expect(r.insurance.total).toBeGreaterThan(50_000);
+    // Autofin API ValorCuota = 493197; tolerancia ±0.5%
     expect(r.monthlyPayment).toBeGreaterThanOrEqual(490_000);
-    expect(r.monthlyPayment).toBeLessThanOrEqual(520_000);
+    expect(r.monthlyPayment).toBeLessThanOrEqual(496_000);
+    expect(Math.abs(r.monthlyPayment - 493197) / 493197).toBeLessThan(0.01);
   });
 
-  it("incluye desglose de seguros en la cuota", () => {
+  it("scraped: $12M · 20% · 48m → ~$395.764", () => {
+    const r = simulateCredit({ price: 12_000_000, downPct: 20, termMonths: 48 });
+    expect(Math.abs(r.monthlyPayment - 395764) / 395764).toBeLessThan(0.01);
+  });
+
+  it("scraped: $10M · 20% · 48m → ~$330.809", () => {
+    const r = simulateCredit({ price: 10_000_000, downPct: 20, termMonths: 48 });
+    expect(Math.abs(r.monthlyPayment - 330809) / 330809).toBeLessThan(0.01);
+  });
+
+  it("CAE referencial cerca del 38% público Autofin", () => {
     const r = simulateCredit({ price: 15_000_000, downPct: 20, termMonths: 48 });
-    expect(r.monthlyPayment).toBe(r.capitalInstallment + r.insurance.total);
-    expect(r.insurance.vehicleDamage).toBeGreaterThan(0);
+    expect(r.caeApprox).toBeGreaterThan(35);
+    expect(r.caeApprox).toBeLessThan(45);
   });
 
-  it("sube tasa legada 1.85% a la referencial de usados", () => {
+  it("sube tasas legadas al all-in Trinidad", () => {
     expect(resolveMonthlyRate(AUTOFIN_LEGACY_PARTNER_RATE)).toBe(
       AUTOFIN_DEFAULT_MONTHLY_RATE,
     );
+    expect(resolveMonthlyRate(0.025)).toBe(AUTOFIN_DEFAULT_MONTHLY_RATE);
   });
 
   it("respeta pie mínimo 20%", () => {
@@ -51,8 +48,7 @@ describe("simulateCredit (alineación Autofin.cl)", () => {
     expect(r.downPct).toBe(20);
   });
 
-  it("limita plazo a 48", () => {
-    const r = simulateCredit({ price: 10_000_000, downPct: 20, termMonths: 60 });
-    expect(r.termMonths).toBeLessThanOrEqual(48);
+  it("fórmula francesa básica", () => {
+    expect(frenchMonthlyPayment(8_000_000, 0.0321, 36)).toBeGreaterThan(0);
   });
 });

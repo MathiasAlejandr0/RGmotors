@@ -1081,8 +1081,8 @@ export function ConfigSection() {
                   className="w-full rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2 text-sm text-white focus:border-brand-500 outline-none"
                 />
                 <p className="mt-1 text-[10px] text-white/35">
-                  Referencia recomendada 0.025 (2,5%). El valor 0.0185 se corrige solo porque
-                  subestimaba vs autofin.cl. La cuota pública también suma seguros típicos.
+                  Referencia Trinidad Autofin: 0.0321 (3,21% all-in). Valores 0.0185 / 0.025 se
+                  corrigen solos. La cuota ya incluye desgravamen y cesantía.
                 </p>
               </div>
             </div>

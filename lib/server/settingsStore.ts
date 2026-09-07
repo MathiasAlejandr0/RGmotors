@@ -49,7 +49,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
     reserveAmount: 200000,
     defaultDownPct: 20,
     defaultTermMonths: 48,
-    monthlyInterestRate: 0.025,
+    monthlyInterestRate: 0.0321,
   },
 };
 
