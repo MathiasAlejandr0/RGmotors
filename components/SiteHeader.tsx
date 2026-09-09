@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Logo from "./Logo";
 import { COMPANY, whatsappLink } from "@/lib/company";
 import TradeInModal from "./TradeInModal";
@@ -16,138 +16,78 @@ const NAV_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ];
 
-/** Negro sólido solo al salir del hero (no al mínimo movimiento). */
+/** Píxeles de scroll para pasar de transparente → negro sólido. */
+const SCROLL_SOLID_AFTER = 24;
+
+function subscribeScroll(onStoreChange: () => void) {
+  const onScroll = () => onStoreChange();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+  return () => {
+    window.removeEventListener("scroll", onScroll);
+    window.removeEventListener("resize", onScroll);
+  };
+}
+
 function getScrollY() {
   return window.scrollY || document.documentElement.scrollTop || 0;
 }
 
-/** Sólido cuando ya casi saliste del hero a pantalla completa. */
-function shouldUseSolidHeader() {
-  const y = getScrollY();
-  const threshold = Math.max(280, Math.round(window.innerHeight * 0.85));
-  return y > threshold;
+function getScrolledSnapshot() {
+  return getScrollY() > SCROLL_SOLID_AFTER;
+}
+
+/** SSR + primer paint: siempre transparente (sin mismatch de hidratación). */
+function getScrolledServerSnapshot() {
+  return false;
+}
+
+/**
+ * Scroll reactivo (best practice React 18+).
+ * El header refleja la posición real: arriba = transparente, scrolleado = negro.
+ */
+function useScrolledPast() {
+  return useSyncExternalStore(
+    subscribeScroll,
+    getScrolledSnapshot,
+    getScrolledServerSnapshot,
+  );
 }
 
 export default function SiteHeader() {
   const pathname = usePathname();
+  const scrolledPast = useScrolledPast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tradeInOpen, setTradeInOpen] = useState(false);
   const [carRequestOpen, setCarRequestOpen] = useState(false);
-  // Siempre transparente al montar home; el scroll lo pone negro después
-  const [scrolled, setScrolled] = useState(false);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   const isHome = pathname === "/";
 
+  // Landing: el navegador no reabre a mitad de página (API estándar, sin scrollTo forzado).
   useEffect(() => {
-    let alive = true;
-    let scrollSyncReady = pathname !== "/";
-
-    const sync = () => {
-      if (!alive) return;
-      if (pathname !== "/") {
-        setScrolled(true);
-        return;
-      }
-      // Durante el arranque de Inicio forzamos transparente (evita restauración del browser)
-      if (!scrollSyncReady) {
-        setScrolled(false);
-        return;
-      }
-      setScrolled(shouldUseSolidHeader());
-    };
-
-    const pinHomeTop = () => {
-      if (!alive || pathname !== "/") return;
-      if (window.location.hash) return;
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      setScrolled(false);
-    };
-
-    if (pathname === "/") {
-      try {
-        history.scrollRestoration = "manual";
-      } catch {
-        /* ignore */
-      }
-      // Anula la restauración de scroll: cada apertura de Inicio empieza arriba + transparente
-      pinHomeTop();
-    } else {
-      try {
-        history.scrollRestoration = "auto";
-      } catch {
-        /* ignore */
-      }
-    }
-
-    sync();
-    const raf = requestAnimationFrame(() => {
-      if (pathname === "/") pinHomeTop();
-      sync();
-    });
-
-    const pinTimers =
-      pathname === "/"
-        ? [0, 40, 120, 250, 450].map((ms) => window.setTimeout(pinHomeTop, ms))
-        : [];
-
-    const readyTimer = window.setTimeout(() => {
-      scrollSyncReady = true;
-      sync();
-    }, pathname === "/" ? 500 : 0);
-
-    const onPageShow = (event: PageTransitionEvent) => {
-      if (pathname !== "/") {
-        sync();
-        return;
-      }
-      // bfcache: respetar posición; carga nueva: pin al top transparente
-      if (event.persisted) {
-        scrollSyncReady = true;
-        sync();
-      } else {
-        scrollSyncReady = false;
-        pinHomeTop();
-        window.setTimeout(() => {
-          if (!alive) return;
-          scrollSyncReady = true;
-          sync();
-        }, 500);
-      }
-    };
-
-    window.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("pageshow", onPageShow);
-    window.addEventListener("resize", sync);
-
+    if (!isHome) return;
+    const previous = history.scrollRestoration;
+    history.scrollRestoration = "manual";
     return () => {
-      alive = false;
-      cancelAnimationFrame(raf);
-      pinTimers.forEach((id) => window.clearTimeout(id));
-      window.clearTimeout(readyTimer);
-      window.removeEventListener("scroll", sync);
-      window.removeEventListener("pageshow", onPageShow);
-      window.removeEventListener("resize", sync);
+      history.scrollRestoration = previous;
     };
-  }, [pathname]);
+  }, [isHome]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
   const goHomeTop = () => {
-    if (pathname === "/") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      setScrolled(false);
-    }
+    if (pathname !== "/") return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // En inicio + arriba del hero: transparente. Al scrollear pasado el hero: negro sólido.
-  const homeFloating = isHome && !scrolled && !mobileMenuOpen;
+  // Solo en Inicio y arriba del todo: overlay transparente sobre el hero.
+  // Menú móvil abierto usa barra sólida para legibilidad.
+  const homeFloating = isHome && !scrolledPast && !mobileMenuOpen;
 
   return (
     <>
@@ -156,8 +96,8 @@ export default function SiteHeader() {
           isHome ? "fixed inset-x-0 top-0" : "sticky top-0"
         } ${
           homeFloating
-            ? "border-b border-transparent bg-gradient-to-b from-black/25 via-black/5 to-transparent"
-            : "border-b border-white/[0.08] bg-[#06070a] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)]"
+            ? "border-b border-transparent bg-transparent"
+            : "border-b border-white/[0.08] bg-[#06070a]"
         }`}
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
@@ -229,7 +169,7 @@ export default function SiteHeader() {
         </div>
 
         {mobileMenuOpen && (
-          <nav className="animate-fade-up border-t border-white/[0.06] bg-[#06070a]/96 px-4 py-5 backdrop-blur-2xl md:hidden">
+          <nav className="animate-fade-up border-t border-white/[0.06] bg-[#06070a] px-4 py-5 md:hidden">
             <div className="flex flex-col gap-1">
               {NAV_LINKS.map((item) => (
                 <Link
