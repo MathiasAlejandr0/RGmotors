@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from "@/lib/auth/session";
+import { requireAdminSession } from "@/lib/auth/requireAdmin";
 import { getVehicleBySlug } from "@/lib/server/vehiclesStore";
 import { markVehicleAsSold } from "@/lib/server/soldVehiclesStore";
 import { isSaleSupplier } from "@/lib/sales/suppliers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-async function requireAdmin(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const session = await verifyAdminSessionToken(
-    cookieStore.get(ADMIN_SESSION_COOKIE)?.value,
-  );
-  return Boolean(session && !session.mustChange);
-}
 
 /**
  * POST /api/vehicles/[slug]/sell
@@ -26,7 +17,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  if (!(await requireAdmin())) {
+  if (!(await requireAdminSession())) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 

@@ -5,6 +5,8 @@ import { timingSafeEqualString } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** Sync Sheets + Drive puede tardar; Hobby permite hasta 60s, Pro más. */
+export const maxDuration = 60;
 
 function authorizeCron(req: NextRequest): { ok: boolean } {
   const secret = process.env.CRON_SECRET?.trim();
@@ -34,16 +36,51 @@ function authorizeCron(req: NextRequest): { ok: boolean } {
   return { ok: true };
 }
 
+async function runDailySync() {
+  console.log("[CronSync] Ejecutando sincronización de Google Sheets e inventario...");
+  const sheetResult = await syncFromLiveGoogleSheet();
+  const driveResult = await runAutoSync();
+  return {
+    success: Boolean(sheetResult.success || driveResult.success),
+    sheetSync: sheetResult,
+    driveSync: driveResult,
+    status: getAutoSyncStatus(),
+    timestamp: new Date().toISOString(),
+  };
+}
+
+/**
+ * Vercel Cron llama GET con Authorization: Bearer CRON_SECRET.
+ * Antes solo devolvía status y el sync nunca corría.
+ */
 export async function GET(req: NextRequest) {
   const auth = authorizeCron(req);
   if (!auth.ok) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
-  const status = getAutoSyncStatus();
-  return NextResponse.json({
-    status: "ok",
-    ...status,
-  });
+
+  // ?status=1 → solo estado (para health manual sin disparar sync)
+  if (req.nextUrl.searchParams.get("status") === "1") {
+    return NextResponse.json({
+      status: "ok",
+      ...getAutoSyncStatus(),
+    });
+  }
+
+  try {
+    const result = await runDailySync();
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("[CronSync] Falló el sync diario:", err);
+    return NextResponse.json(
+      {
+        success: false,
+        error: err instanceof Error ? err.message : "Error en sync diario",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -52,14 +89,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  console.log("[CronSync] Ejecutando sincronización diaria de Google Sheets e inventario...");
-  const sheetResult = await syncFromLiveGoogleSheet();
-  const driveResult = await runAutoSync();
-
-  return NextResponse.json({
-    success: sheetResult.success || driveResult.success,
-    sheetSync: sheetResult,
-    driveSync: driveResult,
-    timestamp: new Date().toISOString(),
-  });
+  try {
+    const result = await runDailySync();
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("[CronSync] Falló el sync (POST):", err);
+    return NextResponse.json(
+      {
+        success: false,
+        error: err instanceof Error ? err.message : "Error en sync",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 },
+    );
+  }
 }

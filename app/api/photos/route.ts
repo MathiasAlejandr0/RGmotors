@@ -6,6 +6,7 @@ import { getVehicleBySlug, saveVehicle } from "@/lib/server/vehiclesStore";
 import { storeMediaFile } from "@/lib/server/mediaStorage";
 import { isBlobReady, isVercelProduction } from "@/lib/server/storageHealth";
 import { convertHeicToJpegBuffer, isHeicFile } from "@/lib/server/convertHeic";
+import { requireAdminSession } from "@/lib/auth/requireAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -197,6 +198,9 @@ export async function GET(req: NextRequest) {
  * Sube una o múltiples fotos para un vehículo (galería, portada o fotogramas 360°).
  */
 export async function POST(req: NextRequest) {
+  if (!(await requireAdminSession())) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
   if (isVercelProduction() && !isBlobReady()) {
     return NextResponse.json(
       {
@@ -403,6 +407,9 @@ export async function POST(req: NextRequest) {
  * Modifica el orden de la galería o la foto de portada de un vehículo.
  */
 export async function PUT(req: NextRequest) {
+  if (!(await requireAdminSession())) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
   try {
     const body = await req.json();
     const { slug, action, coverUrl, gallery } = body;
@@ -477,6 +484,9 @@ export async function PUT(req: NextRequest) {
  * Elimina una foto de la galería del vehículo.
  */
 export async function DELETE(req: NextRequest) {
+  if (!(await requireAdminSession())) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
   try {
     const body = await req.json();
     const { slug, filename, type = "gallery" } = body;

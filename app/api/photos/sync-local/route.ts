@@ -3,6 +3,7 @@ import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { getVehicles, saveVehicle } from "@/lib/server/vehiclesStore";
+import { requireAdminSession } from "@/lib/auth/requireAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +13,9 @@ export const dynamic = "force-dynamic";
  * en el sistema de archivos (por patente o por slug) y asignarlas a los vehículos.
  */
 export async function POST(req: NextRequest) {
+  if (!(await requireAdminSession())) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
   try {
     const uploadsBase = join(process.cwd(), "public", "cars", "uploads");
     if (!existsSync(uploadsBase)) {

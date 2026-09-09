@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/server/settingsStore";
+import { requireAdminSession } from "@/lib/auth/requireAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,9 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!(await requireAdminSession())) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
   try {
     const body = await req.json();
     const updated = await updateSettings(body);

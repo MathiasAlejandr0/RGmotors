@@ -3,6 +3,7 @@ import { syncCatalogFromDriveFolders, parseExcelStockBuffer } from "@/lib/server
 import { saveVehicle, getVehicles } from "@/lib/server/vehiclesStore";
 import { startAutoSyncScheduler, getAutoSyncStatus } from "@/lib/server/autoSyncScheduler";
 import { Vehicle } from "@/lib/vehicles";
+import { requireAdminSession } from "@/lib/auth/requireAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +16,9 @@ const DEFAULT_DRIVE_URLS = [
 ];
 
 export async function GET() {
+  if (!(await requireAdminSession())) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
   try {
     const list = await getVehicles();
     return NextResponse.json({
@@ -31,6 +35,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await requireAdminSession())) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
   try {
     const contentType = req.headers.get("content-type") || "";
 

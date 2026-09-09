@@ -11,7 +11,7 @@
  * Secret = el mismo CRON_SECRET o INVENTORY_SYNC_SECRET de Vercel.
  */
 
-var WEBHOOK_URL = "https://rg-motors.vercel.app/api/webhooks/inventory-sync";
+var WEBHOOK_URL = "https://www.rgmotorschile.cl/api/webhooks/inventory-sync";
 var WEBHOOK_SECRET = "PEGAR_AQUI_EL_MISMO_CRON_SECRET_DE_VERCEL";
 
 /** Evita spamear el webhook si editás muchas celdas seguidas (ms). */
