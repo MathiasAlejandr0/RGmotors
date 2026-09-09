@@ -16,7 +16,8 @@ function matchesBodyTypeQuery(vehicleBody: string, query: string): boolean {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    let list = await getVehicles();
+    const admin = searchParams.get("admin");
+    let list = await getVehicles({ bypassCache: admin === "true" });
 
     const featured = searchParams.get("featured");
     if (featured === "true") {
@@ -39,7 +40,6 @@ export async function GET(req: NextRequest) {
     }
 
     // Exclude drafts / sold unless admin mode
-    const admin = searchParams.get("admin");
     if (admin !== "true") {
       list = list.filter(isPublicCatalogVehicle);
     }

@@ -80,6 +80,7 @@ function guessMime(ext: string): string {
 
 /**
  * Obtiene las fotos subidas y recursos multimedia de un vehículo.
+ * Fuente de verdad en producción: vehicle.gallery / image en KV (URLs Blob).
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -95,54 +96,71 @@ export async function GET(req: NextRequest) {
   const gallery: Array<{ name: string; url: string; size: number; isCover?: boolean }> = [];
   let spinCount = 0;
 
-  const vehicle = await getVehicleBySlug(slug);
-  const currentCover = vehicle?.image || "";
+  // Siempre fresco: tras subir, otra instancia no debe servir caché vieja sin fotos
+  const vehicle = await getVehicleBySlug(slug, { bypassCache: true });
+  const currentCover = (vehicle?.image || "").split("?")[0];
 
+  const seen = new Set<string>();
+  const pushUrl = (url: string, size = 0) => {
+    const clean = url.split("?")[0];
+    if (!clean || seen.has(clean)) return;
+    seen.add(clean);
+    const name = clean.split("/").pop() || clean;
+    gallery.push({
+      name,
+      url: clean,
+      size,
+      isCover: Boolean(
+        currentCover &&
+          (currentCover === clean || currentCover.includes(name) || name.startsWith("cover_")),
+      ),
+    });
+  };
+
+  // 1) Metadata KV/Blob (producción)
+  if (vehicle?.gallery?.length) {
+    for (const url of vehicle.gallery) pushUrl(url);
+  }
+  if (currentCover) pushUrl(currentCover);
+
+  // 2) Disco local (solo dev): agregar archivos que aún no estén en metadata
   if (existsSync(uploadDir)) {
     try {
       const files = await readdir(uploadDir);
       for (const file of files) {
-        if (/\.(jpg|jpeg|png|webp|avif)$/i.test(file)) {
-          const filePath = join(uploadDir, file);
-          const st = await stat(filePath);
-          const rawUrl = `/cars/uploads/${slug}/${file}`;
-          gallery.push({
-            name: file,
-            url: `${rawUrl}?v=${st.mtimeMs}`,
-            size: st.size,
-            isCover: currentCover.includes(file) || file.startsWith("cover_"),
-          });
-        }
+        if (!/\.(jpg|jpeg|png|webp|avif)$/i.test(file)) continue;
+        const filePath = join(uploadDir, file);
+        const st = await stat(filePath);
+        pushUrl(`/cars/uploads/${slug}/${file}`, st.size);
       }
     } catch {
       /* noop */
     }
   }
 
-  if (gallery.length === 0 && vehicle?.gallery?.length) {
-    for (const url of vehicle.gallery) {
-      const name = url.split("?")[0].split("/").pop() || url;
-      gallery.push({
-        name,
-        url,
-        size: 0,
-        isCover: currentCover === url || currentCover.includes(name),
+  // Portada primero si está en la lista
+  if (currentCover && gallery.length > 1) {
+    gallery.sort((a, b) => {
+      const aCover = a.url === currentCover || a.isCover ? 0 : 1;
+      const bCover = b.url === currentCover || b.isCover ? 0 : 1;
+      if (aCover !== bCover) return aCover - bCover;
+      return 0;
+    });
+    // Respetar orden de vehicle.gallery si existe
+    if (vehicle?.gallery?.length) {
+      const orderMap = new Map<string, number>();
+      vehicle.gallery.forEach((url, idx) => {
+        orderMap.set(url.split("?")[0], idx);
+      });
+      gallery.sort((a, b) => {
+        const ia = orderMap.has(a.url) ? orderMap.get(a.url)! : 999;
+        const ib = orderMap.has(b.url) ? orderMap.get(b.url)! : 999;
+        if (ia !== ib) return ia - ib;
+        if (a.url === currentCover) return -1;
+        if (b.url === currentCover) return 1;
+        return 0;
       });
     }
-  }
-
-  if (vehicle && vehicle.gallery && vehicle.gallery.length > 0) {
-    const orderMap = new Map<string, number>();
-    vehicle.gallery.forEach((url, idx) => {
-      const baseName = url.split("?")[0].split("/").pop() || "";
-      orderMap.set(baseName, idx);
-    });
-
-    gallery.sort((a, b) => {
-      const idxA = orderMap.has(a.name) ? orderMap.get(a.name)! : 999;
-      const idxB = orderMap.has(b.name) ? orderMap.get(b.name)! : 999;
-      return idxA - idxB;
-    });
   }
 
   if (existsSync(spinDir)) {
@@ -153,6 +171,9 @@ export async function GET(req: NextRequest) {
       /* noop */
     }
   }
+  if (!spinCount && vehicle?.spin?.count) {
+    spinCount = vehicle.spin.count;
+  }
 
   return NextResponse.json(
     {
@@ -160,12 +181,13 @@ export async function GET(req: NextRequest) {
       gallery,
       spinCount,
       coverImage: currentCover,
-      orderedGalleryUrls: vehicle?.gallery || gallery.map((g) => g.url.split("?")[0]),
+      orderedGalleryUrls: gallery.map((g) => g.url),
       storage: isBlobReady() ? "blob" : "local",
     },
     {
       headers: {
-        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=600",
+        // Admin necesita ver fotos recién subidas; no cachear en edge
+        "Cache-Control": "private, no-store, max-age=0",
       },
     },
   );

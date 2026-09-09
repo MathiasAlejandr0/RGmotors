@@ -98,18 +98,23 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     if (!slug) return;
     setIsLoadingPhotos(true);
     try {
-      const res = await fetch(`/api/photos?slug=${encodeURIComponent(slug)}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(
+        `/api/photos?slug=${encodeURIComponent(slug)}&_=${Date.now()}`,
+        { cache: "no-store", headers: { Pragma: "no-cache" } },
+      );
       if (!res.ok) {
         setUploadError(await readApiError(res));
         setGallery([]);
         return;
       }
       const data = await res.json();
-      setGallery(data.gallery || []);
+      const items: PhotoItem[] = Array.isArray(data.gallery) ? data.gallery : [];
+      setGallery(items);
       setSpinCount(data.spinCount || 0);
-      setCoverImage(data.coverImage || "");
+      setCoverImage(data.coverImage || items[0]?.url || "");
+      if (items.length > 0) {
+        setUploadError(null);
+      }
     } catch {
       setUploadError("No se pudieron cargar las fotos de esta unidad.");
     } finally {
