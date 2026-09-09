@@ -16,72 +16,75 @@ const NAV_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ];
 
+/** Píxeles de scroll para pasar a negro sólido en Inicio. */
+const HOME_SOLID_AFTER_PX = 40;
+
+function getScrollY() {
+  if (typeof window === "undefined") return 0;
+  return window.scrollY || document.documentElement.scrollTop || 0;
+}
+
 /**
- * En Inicio: transparente mientras el sentinel del hero está visible;
- * negro sólido recién cuando el sentinel sale por arriba (scroll real).
- * Evita el flash negro por restauración de scroll del navegador.
+ * Solo en Inicio: true cuando el usuario ya scrolleó.
+ * - Al montar / reentrar a Inicio → siempre false (transparente).
+ * - Al volver arriba (scrollY ≈ 0) → false.
+ * - Nunca deja “solid” pegado al salir a otra ruta.
  */
-function useHomeHeaderSolid(isHome: boolean) {
-  const [solid, setSolid] = useState(false);
+function useHomeScrolled(isHome: boolean) {
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     if (!isHome) {
-      setSolid(true);
+      setScrolled(false);
       return;
     }
 
-    setSolid(false);
+    let alive = true;
+    const previousRestoration = history.scrollRestoration;
 
-    const previous = history.scrollRestoration;
     try {
       history.scrollRestoration = "manual";
     } catch {
       /* ignore */
     }
 
-    if (!window.location.hash) {
+    const sync = () => {
+      if (!alive) return;
+      setScrolled(getScrollY() > HOME_SOLID_AFTER_PX);
+    };
+
+    const pinTop = () => {
+      if (!alive) return;
+      if (window.location.hash) {
+        sync();
+        return;
+      }
       window.scrollTo(0, 0);
-    }
+      setScrolled(false);
+    };
 
-    const sentinel = document.getElementById("home-header-sentinel");
+    // Cada visita a Inicio empieza arriba y transparente.
+    pinTop();
 
-    if (!sentinel) {
-      const onScroll = () => {
-        setSolid(window.scrollY > Math.max(120, Math.round(window.innerHeight * 0.35)));
-      };
-      onScroll();
-      window.addEventListener("scroll", onScroll, { passive: true });
-      return () => {
-        window.removeEventListener("scroll", onScroll);
-        try {
-          history.scrollRestoration = previous;
-        } catch {
-          /* ignore */
-        }
-      };
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Transparente mientras el bloque superior del hero sigue visible.
-        setSolid(!entry.isIntersecting);
-      },
-      { root: null, threshold: 0 },
-    );
-
-    observer.observe(sentinel);
+    window.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("resize", sync, { passive: true });
+    window.addEventListener("pageshow", pinTop);
 
     return () => {
-      observer.disconnect();
+      alive = false;
+      window.removeEventListener("scroll", sync);
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("pageshow", pinTop);
       try {
-        history.scrollRestoration = previous;
+        history.scrollRestoration = previousRestoration;
       } catch {
         /* ignore */
       }
     };
   }, [isHome]);
 
-  return solid;
+  // Fuera de Inicio no usamos este flag (el header va sólido por ruta).
+  return isHome ? scrolled : false;
 }
 
 export default function SiteHeader() {
@@ -94,7 +97,7 @@ export default function SiteHeader() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   const isHome = pathname === "/";
-  const scrolledPast = useHomeHeaderSolid(isHome);
+  const homeScrolled = useHomeScrolled(isHome);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -105,12 +108,13 @@ export default function SiteHeader() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Solo Inicio + arriba del hero + menú cerrado → overlay transparente.
-  const homeFloating = isHome && !scrolledPast && !mobileMenuOpen;
+  // Inicio + arriba + menú cerrado → transparente sobre el hero.
+  const homeFloating = isHome && !homeScrolled && !mobileMenuOpen;
 
   return (
     <>
       <header
+        data-home-floating={homeFloating ? "true" : "false"}
         className={`z-40 transition-[background-color,border-color] duration-300 ease-out ${
           isHome ? "fixed inset-x-0 top-0" : "sticky top-0"
         } ${

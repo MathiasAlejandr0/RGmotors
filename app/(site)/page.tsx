@@ -24,12 +24,6 @@ export default async function Home() {
     <main className="relative overflow-x-clip">
       {/* HERO — mockup cinematográfico + acabado */}
       <section className="relative isolate rg-hero-min overflow-hidden">
-        {/* Sentinel: header transparente mientras esta zona del hero sigue en pantalla. */}
-        <div
-          id="home-header-sentinel"
-          className="pointer-events-none absolute inset-x-0 top-0 h-[min(70vh,520px)]"
-          aria-hidden
-        />
         <Image
           src={asset("/hero-l200-puerto-montt.png")}
           alt="Stock RG Motors Puerto Montt"
