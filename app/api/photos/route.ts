@@ -5,6 +5,7 @@ import { existsSync } from "node:fs";
 import { getVehicleBySlug, saveVehicle } from "@/lib/server/vehiclesStore";
 import { storeMediaFile } from "@/lib/server/mediaStorage";
 import { isBlobReady, isVercelProduction } from "@/lib/server/storageHealth";
+import { convertHeicToJpegBuffer, isHeicFile } from "@/lib/server/convertHeic";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,9 +14,9 @@ export const maxDuration = 60;
 /** Alineado con el cliente: techo seguro bajo el límite ~4.5 MB de Vercel. */
 const MAX_FILE_BYTES = 3_200_000;
 const MAX_FILES_PER_REQUEST = 8;
-const ALLOWED_EXT = /^(jpe?g|png|webp|avif)$/i;
+const ALLOWED_EXT = /^(jpe?g|png|webp|avif|heic|heif)$/i;
 const ALLOWED_MIME =
-  /^(image\/(jpeg|jpg|png|webp|avif)|application\/octet-stream)$/i;
+  /^(image\/(jpeg|jpg|png|webp|avif|heic|heif)|application\/octet-stream)$/i;
 
 function publicMediaUrl(stored: { url: string; relativePath: string }): string {
   if (stored.url.startsWith("http")) return stored.url;
@@ -27,18 +28,54 @@ function publicMediaUrl(stored: { url: string; relativePath: string }): string {
 
 function extOf(file: File): string {
   const fromName = (file.name.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (fromName === "heic" || fromName === "heif") return "jpg";
   if (fromName && ALLOWED_EXT.test(fromName)) return fromName === "jpeg" ? "jpg" : fromName;
   if (/webp/i.test(file.type)) return "webp";
   if (/png/i.test(file.type)) return "png";
   if (/avif/i.test(file.type)) return "avif";
+  if (/heic|heif/i.test(file.type)) return "jpg";
   return "jpg";
 }
 
 function isAllowedImage(file: File): boolean {
   const ext = (file.name.split(".").pop() || "").toLowerCase();
   if (ALLOWED_EXT.test(ext)) return true;
-  if (file.type && ALLOWED_MIME.test(file.type) && file.type.startsWith("image/")) return true;
+  if (file.type && ALLOWED_MIME.test(file.type)) return true;
   return false;
+}
+
+async function fileToStoredBytes(file: File): Promise<{
+  bytes: Buffer;
+  contentType: string;
+  ext: string;
+}> {
+  const raw = Buffer.from(await file.arrayBuffer());
+  if (isHeicFile(file.name, file.type)) {
+    const converted = await convertHeicToJpegBuffer(raw, 90);
+    return {
+      bytes: converted.buffer,
+      contentType: converted.contentType,
+      ext: converted.ext,
+    };
+  }
+  return {
+    bytes: raw,
+    contentType: file.type || guessMime(extOf(file)),
+    ext: extOf(file),
+  };
+}
+
+function guessMime(ext: string): string {
+  switch (ext) {
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    case "avif":
+      return "image/avif";
+    default:
+      return "image/jpeg";
+  }
 }
 
 /**
@@ -204,7 +241,7 @@ export async function POST(req: NextRequest) {
     }
     if (!isAllowedImage(file)) {
       return NextResponse.json(
-        { error: `«${file.name}» no es una imagen permitida (JPG, PNG, WebP).` },
+        { error: `«${file.name}» no es una imagen permitida (JPG, PNG, WebP o HEIC de iPhone).` },
         { status: 400 },
       );
     }
@@ -222,12 +259,12 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < sorted.length; i++) {
         const file = sorted[i]!;
         const num = String(i + 1).padStart(3, "0");
-        const ext = extOf(file);
-        const relativePath = `cars/spin/${slug}/${num}.${ext}`;
+        const prepared = await fileToStoredBytes(file);
+        const relativePath = `cars/spin/${slug}/${num}.${prepared.ext}`;
         const stored = await storeMediaFile({
-          bytes: Buffer.from(await file.arrayBuffer()),
+          bytes: prepared.bytes,
           relativePath,
-          contentType: file.type || undefined,
+          contentType: prepared.contentType,
         });
         publicUrls.push(publicMediaUrl(stored));
         savedFiles.push(stored.relativePath);
@@ -276,20 +313,21 @@ export async function POST(req: NextRequest) {
       const newPaths: string[] = [];
 
       for (const file of rawFiles) {
-        const ext = extOf(file);
-        const baseName = file.name
-          .replace(/\.[^/.]+$/, "")
-          .toLowerCase()
-          .replace(/[^a-z0-9_-]/g, "_")
-          .slice(0, 30) || "photo";
+        const prepared = await fileToStoredBytes(file);
+        const baseName =
+          file.name
+            .replace(/\.[^/.]+$/, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]/g, "_")
+            .slice(0, 30) || "photo";
 
         const prefix = type === "cover" ? "cover_" : "";
-        const filename = `${prefix}${Date.now()}_${baseName}.${ext}`;
+        const filename = `${prefix}${Date.now()}_${baseName}.${prepared.ext}`;
         const relativePath = `cars/uploads/${slug}/${filename}`;
         const stored = await storeMediaFile({
-          bytes: Buffer.from(await file.arrayBuffer()),
+          bytes: prepared.bytes,
           relativePath,
-          contentType: file.type || guessMime(ext),
+          contentType: prepared.contentType,
         });
         savedFiles.push(filename);
         newPaths.push(publicMediaUrl(stored));
@@ -336,19 +374,6 @@ export async function POST(req: NextRequest) {
     const msg = err instanceof Error ? err.message : "Error al guardar archivos en el servidor.";
     console.error("[api/photos POST]", err);
     return NextResponse.json({ error: msg }, { status: 500 });
-  }
-}
-
-function guessMime(ext: string): string {
-  switch (ext) {
-    case "png":
-      return "image/png";
-    case "webp":
-      return "image/webp";
-    case "avif":
-      return "image/avif";
-    default:
-      return "image/jpeg";
   }
 }
 

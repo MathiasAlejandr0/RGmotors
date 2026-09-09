@@ -27,6 +27,7 @@
     "cross-spawn": "^7.0.6",
     "exif-parser": "^0.1.12",
     "heic-decode": "^2.1.0",
+    "heic2any": "^0.0.4",
     "import-fresh": "^4.0.0",
     "next": "^16.2.12",
     "parent-module": "^3.2.0",

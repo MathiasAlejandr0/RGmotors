@@ -56,7 +56,7 @@ function loadImage(file: File): Promise<HTMLImageElement> {
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error(`No se pudo leer «${file.name}» (formato no soportado por el navegador, p. ej. HEIC). Usa JPG o PNG.`));
+      reject(new Error(`No se pudo leer «${file.name}». Prueba con otra foto.`));
     };
     img.src = url;
   });
@@ -89,8 +89,35 @@ function isAlreadyWebSafe(file: File): boolean {
   return webSafe && file.size > 32 && file.size <= VERCEL_SAFE_UPLOAD_BYTES;
 }
 
+export function isHeicLike(file: File): boolean {
+  return (
+    /image\/(heic|heif)/i.test(file.type) ||
+    /\.(heic|heif)$/i.test(file.name)
+  );
+}
+
+/** iPhone HEIC → JPEG vía heic2any (antes de canvas / WebP). */
+async function convertHeicToJpegFile(file: File): Promise<File> {
+  const heic2any = (await import("heic2any")).default;
+  const result = await heic2any({
+    blob: file,
+    toType: "image/jpeg",
+    quality: 0.92,
+  });
+  const blob = Array.isArray(result) ? result[0] : result;
+  if (!blob) {
+    throw new Error(`No se pudo convertir «${file.name}» de HEIC a JPEG.`);
+  }
+  const base = file.name.replace(/\.(heic|heif)$/i, "") || "photo";
+  return new File([blob], `${base}.jpg`, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+}
+
 /**
  * Prepara la imagen para subir priorizando calidad.
+ * - HEIC/HEIF (iPhone) → JPEG automático.
  * - Si ya es JPEG/WebP y cabe en Vercel, no se reprocesa.
  * - Si no, exporta WebP (o JPEG) a calidad alta; solo baja calidad/tamaño
  *   si hace falta para el límite de subida.
@@ -102,19 +129,28 @@ export async function convertImageToWebp(file: File): Promise<File> {
 
   const isImage =
     /^image\/(jpeg|jpg|png|webp|avif|heic|heif)$/i.test(file.type) ||
-    /\.(jpe?g|png|webp|avif|heic)$/i.test(file.name);
+    /\.(jpe?g|png|webp|avif|heic|heif)$/i.test(file.name);
   if (!isImage) {
     throw new Error(`«${file.name}» no es una imagen válida.`);
   }
 
-  if (file.size > VERCEL_SAFE_UPLOAD_BYTES && isAlreadyWebSafe(file) === false) {
-    /* convert below */
-  } else if (isAlreadyWebSafe(file)) {
-    return file;
+  let working = file;
+  if (isHeicLike(working)) {
+    try {
+      working = await convertHeicToJpegFile(working);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "error desconocido";
+      throw new Error(
+        `«${file.name}» es HEIC (iPhone) y no se pudo convertir: ${detail}`,
+      );
+    }
   }
 
-  // HEIC / AVIF: intentar decode; si falla, error claro
-  const img = await loadImage(file);
+  if (isAlreadyWebSafe(working)) {
+    return working;
+  }
+
+  const img = await loadImage(working);
   let { width, height } = img;
   if (!width || !height) {
     throw new Error(`«${file.name}» no tiene dimensiones válidas.`);
@@ -144,17 +180,17 @@ export async function convertImageToWebp(file: File): Promise<File> {
   const mime = useWebp ? "image/webp" : "image/jpeg";
   const ext = useWebp ? "webp" : "jpg";
   let quality = useWebp ? WEBP_QUALITY_START : JPEG_QUALITY_START;
-  let working: HTMLCanvasElement = canvas;
-  let blob = await canvasToBlob(working, mime, quality);
+  let surface: HTMLCanvasElement = canvas;
+  let blob = await canvasToBlob(surface, mime, quality);
 
   while (blob && blob.size > SOFT_TARGET_BYTES && quality > MIN_QUALITY_FOR_SIZE) {
     quality = Math.max(MIN_QUALITY_FOR_SIZE, quality - 0.03);
-    blob = await canvasToBlob(working, mime, quality);
+    blob = await canvasToBlob(surface, mime, quality);
   }
 
   while (blob && blob.size > VERCEL_SAFE_UPLOAD_BYTES && quality > MIN_QUALITY_HARD) {
     quality = Math.max(MIN_QUALITY_HARD, quality - 0.04);
-    blob = await canvasToBlob(working, mime, quality);
+    blob = await canvasToBlob(surface, mime, quality);
   }
 
   let scalePass = 0;
@@ -162,19 +198,19 @@ export async function convertImageToWebp(file: File): Promise<File> {
     scalePass++;
     const scale = 0.85;
     const c2 = document.createElement("canvas");
-    c2.width = Math.max(1, Math.round(working.width * scale));
-    c2.height = Math.max(1, Math.round(working.height * scale));
+    c2.width = Math.max(1, Math.round(surface.width * scale));
+    c2.height = Math.max(1, Math.round(surface.height * scale));
     const ctx2 = c2.getContext("2d");
     if (!ctx2) break;
     ctx2.imageSmoothingEnabled = true;
     ctx2.imageSmoothingQuality = "high";
-    ctx2.drawImage(working, 0, 0, c2.width, c2.height);
-    working = c2;
+    ctx2.drawImage(surface, 0, 0, c2.width, c2.height);
+    surface = c2;
     quality = Math.max(quality, 0.88);
-    blob = await canvasToBlob(working, mime, quality);
+    blob = await canvasToBlob(surface, mime, quality);
     while (blob && blob.size > VERCEL_SAFE_UPLOAD_BYTES && quality > MIN_QUALITY_HARD) {
       quality = Math.max(MIN_QUALITY_HARD, quality - 0.04);
-      blob = await canvasToBlob(working, mime, quality);
+      blob = await canvasToBlob(surface, mime, quality);
     }
   }
 
@@ -187,7 +223,7 @@ export async function convertImageToWebp(file: File): Promise<File> {
     );
   }
 
-  const base = file.name.replace(/\.[^/.]+$/, "") || "photo";
+  const base = file.name.replace(/\.(heic|heif|jpe?g|png|webp|avif)$/i, "") || "photo";
   return new File([blob], `${base}.${ext}`, {
     type: mime,
     lastModified: Date.now(),

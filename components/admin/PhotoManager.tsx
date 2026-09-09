@@ -146,10 +146,11 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
   const handleFilesChosen = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const valid = Array.from(files).filter(
-      (f) => /\.(jpe?g|png|webp|avif)$/i.test(f.name) || /^image\//i.test(f.type),
+      (f) =>
+        /\.(jpe?g|png|webp|avif|heic|heif)$/i.test(f.name) || /^image\//i.test(f.type),
     );
     if (valid.length === 0) {
-      setUploadError("Por favor selecciona imágenes válidas (JPG, PNG, WebP).");
+      setUploadError("Por favor selecciona imágenes válidas (JPG, PNG, WebP o HEIC).");
       return;
     }
 
@@ -506,7 +507,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,.heic,.heif"
                   className="hidden"
                   disabled={busy}
                   onChange={(e) => {
@@ -522,7 +523,8 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
                   <span className="text-brand-400 underline">haz clic para explorar</span>
                 </p>
                 <p className="mt-1 max-w-sm text-xs text-white/40">
-                  Verás miniaturas al instante. Luego ordenas y publicas al catálogo.
+                  Verás miniaturas al instante. HEIC de iPhone se convierte solo a
+                  JPEG/WebP. Luego ordenas y publicas.
                 </p>
               </div>
             ) : (
@@ -554,7 +556,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept="image/jpeg,image/png,image/webp,image/avif"
+                    accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,.heic,.heif"
                     className="hidden"
                     disabled={busy}
                     onChange={(e) => {
