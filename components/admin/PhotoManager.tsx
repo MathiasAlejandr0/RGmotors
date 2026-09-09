@@ -5,6 +5,7 @@ import { vehicles, Vehicle } from "@/lib/vehicles";
 import { asset } from "@/lib/asset";
 import PhotoSpin360 from "@/components/PhotoSpin360";
 import SpinUploader from "@/components/admin/SpinUploader";
+import { uploadPhotosSequentially, readApiError } from "@/lib/client/uploadPhotos";
 
 type PhotoItem = {
   name: string;
@@ -40,6 +41,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
   const [uploadType, setUploadType] = useState<"gallery" | "cover">("gallery");
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
@@ -91,6 +93,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
       setStagedFiles([]);
       setUploadSuccess(null);
       setUploadError(null);
+      setUploadProgress(null);
     }
   }, [selectedSlug, fetchPhotos]);
 
@@ -111,40 +114,39 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     setStagedFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  // Upload staged photos
+  // Upload staged photos — de a una (límite Vercel ~4.5 MB por request)
   const handleUploadGallery = async () => {
     if (stagedFiles.length === 0 || !selectedSlug) return;
     setIsUploading(true);
     setUploadError(null);
     setUploadSuccess(null);
-
-    const fd = new FormData();
-    fd.append("slug", selectedSlug);
-    fd.append("type", uploadType);
-    for (const f of stagedFiles) {
-      fd.append("files", f);
-    }
+    setUploadProgress(`Preparando 0/${stagedFiles.length}…`);
 
     try {
-      const res = await fetch("/api/photos", {
-        method: "POST",
-        body: fd,
+      const result = await uploadPhotosSequentially({
+        slug: selectedSlug,
+        type: uploadType,
+        files: stagedFiles,
+        onProgress: (p) => {
+          setUploadProgress(
+            p.done >= p.total
+              ? `Listo ${p.total}/${p.total}`
+              : `Subiendo ${p.done + 1}/${p.total}: ${p.currentName}`,
+          );
+        },
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Error al subir las imágenes.");
-      }
-      setUploadSuccess(data.message || "¡Fotos subidas con éxito!");
+      setUploadSuccess(result.message);
       setStagedFiles([]);
       await fetchPhotos(selectedSlug);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
-  // Upload 360 Spin Frames
+  // Upload 360 Spin Frames — de a una
   const handleUploadSpinFrames = async (files: FileList | null) => {
     if (!files || files.length === 0 || !selectedSlug) return;
     const valid = Array.from(files).filter((f) => /\.(jpe?g|png|webp)$/i.test(f.name));
@@ -156,29 +158,28 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     setIsUploading(true);
     setUploadError(null);
     setUploadSuccess(null);
-
-    const fd = new FormData();
-    fd.append("slug", selectedSlug);
-    fd.append("type", "spin");
-    for (const f of valid) {
-      fd.append("files", f);
-    }
+    setUploadProgress(`360° 0/${valid.length}…`);
 
     try {
-      const res = await fetch("/api/photos", {
-        method: "POST",
-        body: fd,
+      const result = await uploadPhotosSequentially({
+        slug: selectedSlug,
+        type: "spin",
+        files: valid,
+        onProgress: (p) => {
+          setUploadProgress(
+            p.done >= p.total
+              ? `360° listo ${p.total}/${p.total}`
+              : `360° ${p.done + 1}/${p.total}: ${p.currentName}`,
+          );
+        },
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Error al subir los fotogramas 360°.");
-      }
-      setUploadSuccess(`¡${valid.length} fotogramas 360° guardados correctamente!`);
+      setUploadSuccess(result.message || `¡${result.count} fotogramas 360° guardados!`);
       await fetchPhotos(selectedSlug);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -191,6 +192,10 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug: selectedSlug, filename, type }),
       });
+      if (!res.ok) {
+        alert(await readApiError(res));
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         fetchPhotos(selectedSlug);
@@ -468,11 +473,17 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
                 Arrastra las fotos aquí o <span className="text-brand-400 underline">haz clic para explorar</span>
               </p>
               <p className="mt-1 text-xs text-white/40">
-                Selección múltiple admitida · JPG, PNG o WebP (hasta 20MB cada una)
+                Se suben de a una y se comprimen si pesan mucho (límite Vercel ~4,5 MB por
+                request). JPG, PNG o WebP.
               </p>
             </div>
 
             {/* Mensajes de Alerta */}
+            {uploadProgress && (
+              <div className="rounded-xl border border-brand-400/30 bg-brand-500/10 px-4 py-3 text-xs text-brand-100">
+                {uploadProgress}
+              </div>
+            )}
             {uploadError && (
               <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300">
                 ❌ {uploadError}
@@ -531,11 +542,13 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
                 >
                   {isUploading ? (
                     <>
-                      <span className="animate-spin text-lg">⚙</span> Subiendo fotos al servidor...
+                      <span className="animate-spin text-lg">⚙</span>{" "}
+                      {uploadProgress || "Subiendo fotos…"}
                     </>
                   ) : (
                     <>
-                      <span>🚀</span> Guardar {stagedFiles.length} {stagedFiles.length === 1 ? "foto" : "fotos"} en el vehículo
+                      <span>🚀</span> Guardar {stagedFiles.length}{" "}
+                      {stagedFiles.length === 1 ? "foto" : "fotos"} en el vehículo
                     </>
                   )}
                 </button>

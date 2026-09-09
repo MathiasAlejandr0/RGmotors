@@ -8,6 +8,7 @@ import { isBlobReady } from "@/lib/server/storageHealth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /**
  * Obtiene las fotos subidas y recursos multimedia de un vehículo.
