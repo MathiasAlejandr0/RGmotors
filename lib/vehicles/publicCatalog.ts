@@ -3,7 +3,10 @@ import type { Vehicle } from "@/lib/vehicles";
 /** Estados visibles en catálogo / home (no borrador ni vendido). */
 export function isPublicCatalogVehicle(v: Vehicle): boolean {
   const status = v.status || "Disponible";
-  return status !== "Borrador" && status !== "Vendido";
+  if (status === "Borrador" || status === "Vendido") return false;
+  // Sin precio publicado (FALTA PRECIO) no sale a vitrina
+  if (status === "En preparación" && !(v.price > 0)) return false;
+  return true;
 }
 
 /** ¿Cuenta como camioneta en filtros rápidos? */
