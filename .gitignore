@@ -64,5 +64,10 @@ next-env.d.ts
 /scratch/
 /public/inspect_photos.html
 
+# Respaldos locales de fotos (NO subir a git / Vercel — usan Blob)
+/RESPALDO_FOTOS_DRIVE/
+/RESPALDO_FOTOS_DRIVE/**
+
 # Sesiones locales de herramientas (no versionar)
 .omo/
+.env*

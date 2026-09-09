@@ -54,6 +54,7 @@ export function isPublicApi(
   searchParams?: URLSearchParams | null,
 ): boolean {
   if (pathname.startsWith("/api/cron")) return true;
+  if (pathname.startsWith("/api/webhooks/inventory-sync")) return true;
 
   if (LEAD_OR_AUTH_PREFIXES.some((p) => matchesPrefix(pathname, p))) {
     // Listados con PII: solo POST (crear) es público; GET/PATCH/PUT/DELETE requieren auth
