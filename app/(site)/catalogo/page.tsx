@@ -367,8 +367,8 @@ function CatalogContent() {
           />
 
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <div className="relative w-full sm:max-w-xs">
-              <span className="absolute inset-y-0 left-3.5 flex items-center text-white/40 pointer-events-none">
+            <div className="relative w-full min-w-0 sm:max-w-xs">
+              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-white/40">
                 🔍
               </span>
               <input
@@ -378,14 +378,17 @@ function CatalogContent() {
                   updateUrlParams(brands, types, fuels, e.target.value);
                 }}
                 placeholder="Buscar marca o modelo…"
-                className="min-h-11 w-full rounded-full border border-white/15 bg-white/[0.05] pl-10 pr-4 py-2.5 text-[13px] text-white placeholder-white/40 outline-none focus:border-brand-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-brand-500/20 transition sm:text-xs"
+                enterKeyHint="search"
+                autoCorrect="off"
+                autoCapitalize="none"
+                className="min-h-11 w-full rounded-full border border-white/15 bg-white/[0.05] pl-10 pr-4 py-2.5 text-base text-white placeholder-white/40 outline-none focus:border-brand-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-brand-500/20 transition sm:text-sm"
               />
             </div>
 
-            <div className="flex w-full items-center gap-2.5 sm:w-auto">
+            <div className="flex w-full min-w-0 items-center gap-2.5 sm:w-auto">
               <button
                 onClick={() => setShowFilters((s) => !s)}
-                className="apple-btn-secondary min-h-11 flex-1 rounded-full px-4 py-2 text-xs font-medium lg:hidden sm:flex-none"
+                className="apple-btn-secondary min-h-11 flex-1 rounded-full px-4 py-2 text-sm font-medium lg:hidden sm:flex-none"
               >
                 Filtros {showFilters ? "▲" : "▼"}
               </button>
@@ -393,12 +396,12 @@ function CatalogContent() {
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as Sort)}
-                className="min-h-11 flex-1 rounded-full border border-white/15 bg-white/[0.06] px-3 py-2 text-xs font-medium text-white outline-none focus:border-brand-500 transition cursor-pointer backdrop-blur-md sm:flex-none sm:px-4"
+                className="min-h-11 min-w-0 flex-1 rounded-full border border-white/15 bg-white/[0.06] px-3 py-2 text-base font-medium text-white outline-none focus:border-brand-500 transition cursor-pointer backdrop-blur-md sm:flex-none sm:px-4 sm:text-sm"
               >
-                <option value="relevancia" className="bg-ink-900">Ordenar por: Relevancia</option>
-                <option value="precio-asc" className="bg-ink-900">Precio: menor a mayor</option>
-                <option value="precio-desc" className="bg-ink-900">Precio: mayor a menor</option>
-                <option value="km-asc" className="bg-ink-900">Menor kilometraje</option>
+                <option value="relevancia" className="bg-ink-900">Relevancia</option>
+                <option value="precio-asc" className="bg-ink-900">Precio ↑</option>
+                <option value="precio-desc" className="bg-ink-900">Precio ↓</option>
+                <option value="km-asc" className="bg-ink-900">Menor km</option>
                 <option value="year-desc" className="bg-ink-900">Más nuevos</option>
               </select>
             </div>

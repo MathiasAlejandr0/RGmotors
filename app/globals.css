@@ -215,6 +215,18 @@ input[type="range"].apple-range::-moz-range-thumb {
   min-width: 44px;
 }
 
+/*
+ * iOS Safari hace zoom al enfocar input/select con font-size < 16px.
+ * Forzamos 16px en móvil; en desktop se puede seguir compacto vía utilidades.
+ */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 .pb-safe {
   padding-bottom: max(0.75rem, var(--safe-bottom));
 }
