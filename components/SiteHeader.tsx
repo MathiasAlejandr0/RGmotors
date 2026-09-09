@@ -16,13 +16,24 @@ const NAV_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ];
 
-const SCROLL_SOLID_AT = 28;
+/** Negro sólido solo al salir del hero (no al mínimo movimiento). */
+function getScrollY() {
+  return window.scrollY || document.documentElement.scrollTop || 0;
+}
+
+function shouldUseSolidHeader() {
+  const y = getScrollY();
+  // ~35% del hero / mínimo 140px: arriba = transparente, más abajo = negro
+  const threshold = Math.max(140, Math.round(window.innerHeight * 0.35));
+  return y > threshold;
+}
 
 export default function SiteHeader() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tradeInOpen, setTradeInOpen] = useState(false);
   const [carRequestOpen, setCarRequestOpen] = useState(false);
+  // Arranca transparente en home; el effect sincroniza al montar
   const [scrolled, setScrolled] = useState(false);
 
   const isActive = (href: string) =>
@@ -34,14 +45,18 @@ export default function SiteHeader() {
     let alive = true;
     const sync = () => {
       if (!alive) return;
-      setScrolled(window.scrollY > SCROLL_SOLID_AT);
+      // Fuera de inicio el header siempre es barra sólida (sticky).
+      if (pathname !== "/") {
+        setScrolled(true);
+        return;
+      }
+      setScrolled(shouldUseSolidHeader());
     };
 
-    // Sync inmediato + tras restauración de scroll del navegador
     sync();
     const raf = requestAnimationFrame(sync);
     const t1 = window.setTimeout(sync, 50);
-    const t2 = window.setTimeout(sync, 250);
+    const t2 = window.setTimeout(sync, 300);
 
     window.addEventListener("scroll", sync, { passive: true });
     window.addEventListener("pageshow", sync);
@@ -62,13 +77,20 @@ export default function SiteHeader() {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // En inicio, arriba del todo: transparente sobre el hero. Al scrollear: barra sólida.
+  const goHomeTop = () => {
+    if (pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setScrolled(false);
+    }
+  };
+
+  // En inicio + arriba del hero: transparente. Al scrollear pasado el hero: negro sólido.
   const homeFloating = isHome && !scrolled && !mobileMenuOpen;
 
   return (
     <>
       <header
-        className={`z-40 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`z-40 transition-[background-color,border-color,box-shadow] duration-300 ease-out ${
           isHome ? "fixed inset-x-0 top-0" : "sticky top-0"
         } ${
           homeFloating
@@ -78,7 +100,11 @@ export default function SiteHeader() {
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-6 sm:px-6 sm:py-3.5">
-          <Link href="/" className="shrink-0 transition duration-300 hover:opacity-90 active:scale-[0.98]">
+          <Link
+            href="/"
+            onClick={goHomeTop}
+            className="shrink-0 transition duration-300 hover:opacity-90 active:scale-[0.98]"
+          >
             <Logo size={52} />
           </Link>
 
@@ -89,6 +115,7 @@ export default function SiteHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={item.href === "/" ? goHomeTop : undefined}
                   className={`relative rounded-full px-3.5 py-2 text-[13px] font-medium tracking-wide transition-colors duration-300 ${
                     active ? "text-white" : "text-white/65 hover:text-white"
                   }`}
@@ -146,7 +173,10 @@ export default function SiteHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (item.href === "/") goHomeTop();
+                  }}
                   className={`rounded-xl px-4 py-3.5 text-[15px] font-medium transition ${
                     isActive(item.href)
                       ? "bg-white/10 text-white"
