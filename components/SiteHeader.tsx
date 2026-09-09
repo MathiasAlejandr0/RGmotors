@@ -16,6 +16,8 @@ const NAV_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ];
 
+const SCROLL_SOLID_AT = 28;
+
 export default function SiteHeader() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,16 +31,38 @@ export default function SiteHeader() {
   const isHome = pathname === "/";
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    let alive = true;
+    const sync = () => {
+      if (!alive) return;
+      setScrolled(window.scrollY > SCROLL_SOLID_AT);
+    };
+
+    // Sync inmediato + tras restauración de scroll del navegador
+    sync();
+    const raf = requestAnimationFrame(sync);
+    const t1 = window.setTimeout(sync, 50);
+    const t2 = window.setTimeout(sync, 250);
+
+    window.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("pageshow", sync);
+    window.addEventListener("resize", sync);
+
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.removeEventListener("scroll", sync);
+      window.removeEventListener("pageshow", sync);
+      window.removeEventListener("resize", sync);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  // En inicio, arriba del todo: transparente sobre el hero. Al scrollear: barra sólida.
   const homeFloating = isHome && !scrolled && !mobileMenuOpen;
 
   return (
@@ -48,8 +72,8 @@ export default function SiteHeader() {
           isHome ? "fixed inset-x-0 top-0" : "sticky top-0"
         } ${
           homeFloating
-            ? "border-b border-transparent bg-gradient-to-b from-black/70 via-black/30 to-transparent"
-            : "border-b border-white/[0.08] bg-[#06070a]/90 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl"
+            ? "border-b border-transparent bg-gradient-to-b from-black/25 via-black/5 to-transparent"
+            : "border-b border-white/[0.08] bg-[#06070a]/92 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl"
         }`}
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >

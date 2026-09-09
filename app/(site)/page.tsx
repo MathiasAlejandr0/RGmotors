@@ -35,7 +35,7 @@ export default async function Home() {
         />
         {/* Más oscuro a la izquierda/abajo: el auto queda libre a la derecha */}
         <div className="rg-hero-vignette absolute inset-0 bg-[linear-gradient(105deg,rgba(0,0,0,0.88)_0%,rgba(0,0,0,0.72)_22%,rgba(0,0,0,0.28)_42%,rgba(0,0,0,0.05)_58%,transparent_72%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.55)_0%,transparent_18%,transparent_55%,rgba(6,7,10,0.95)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.28)_0%,transparent_14%,transparent_55%,rgba(6,7,10,0.95)_100%)]" />
         <div className="rg-grain" aria-hidden />
 
         <div className="relative mx-auto flex min-h-[100svh] max-w-7xl flex-col justify-end px-5 pb-[max(6.5rem,calc(env(safe-area-inset-bottom)+5.5rem))] pt-[max(7rem,calc(env(safe-area-inset-top)+5.5rem))] sm:px-8 sm:pb-32 lg:px-10 lg:pb-36">
