@@ -73,7 +73,7 @@ export default function SiteHeader() {
         } ${
           homeFloating
             ? "border-b border-transparent bg-gradient-to-b from-black/25 via-black/5 to-transparent"
-            : "border-b border-white/[0.08] bg-[#06070a]/92 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl"
+            : "border-b border-white/[0.08] bg-[#06070a] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)]"
         }`}
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
