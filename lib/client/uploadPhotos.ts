@@ -16,7 +16,12 @@ export const MIN_QUALITY_HARD = 0.72;
 
 /** Lee el cuerpo aunque no sea JSON (ej. "Request Entity Too Large"). */
 export async function readApiError(res: Response): Promise<string> {
-  const text = await res.text();
+  let text = "";
+  try {
+    text = await res.text();
+  } catch {
+    return `Error al subir (HTTP ${res.status}).`;
+  }
   try {
     const j = JSON.parse(text) as { error?: string; message?: string };
     if (j.error) return j.error;
@@ -26,12 +31,18 @@ export async function readApiError(res: Response): Promise<string> {
   }
   const t = text.trim();
   if (/request entity too large/i.test(t) || res.status === 413) {
-    return "El archivo sigue siendo demasiado grande para Vercel. Prueba con otra foto o baja la resolución.";
+    return "El archivo sigue siendo demasiado grande para Vercel. Sube de a una foto o reduce un poco el tamaño.";
+  }
+  if (res.status === 401 || res.status === 403) {
+    return "Sesión de admin expirada o sin permiso. Vuelve a iniciar sesión.";
+  }
+  if (res.status === 503) {
+    return t || "Storage no disponible (Blob/KV). Revisa las variables en Vercel.";
   }
   if (t.startsWith("<!") || t.toLowerCase().includes("<html")) {
     return `Error del servidor (HTTP ${res.status}). Intenta de nuevo.`;
   }
-  if (t.length > 0 && t.length < 200) return t;
+  if (t.length > 0 && t.length < 280) return t;
   return `Error al subir (HTTP ${res.status}).`;
 }
 
@@ -45,7 +56,7 @@ function loadImage(file: File): Promise<HTMLImageElement> {
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error("No se pudo leer la imagen"));
+      reject(new Error(`No se pudo leer «${file.name}» (formato no soportado por el navegador, p. ej. HEIC). Usa JPG o PNG.`));
     };
     img.src = url;
   });
@@ -75,7 +86,7 @@ function isAlreadyWebSafe(file: File): boolean {
     file.type === "image/webp" ||
     file.type === "image/jpeg" ||
     /\.(webp|jpe?g)$/i.test(file.name);
-  return webSafe && file.size <= VERCEL_SAFE_UPLOAD_BYTES;
+  return webSafe && file.size > 32 && file.size <= VERCEL_SAFE_UPLOAD_BYTES;
 }
 
 /**
@@ -85,18 +96,30 @@ function isAlreadyWebSafe(file: File): boolean {
  *   si hace falta para el límite de subida.
  */
 export async function convertImageToWebp(file: File): Promise<File> {
+  if (!file || file.size < 32) {
+    throw new Error(`«${file?.name || "archivo"}» está vacío o corrupto.`);
+  }
+
   const isImage =
     /^image\/(jpeg|jpg|png|webp|avif|heic|heif)$/i.test(file.type) ||
     /\.(jpe?g|png|webp|avif|heic)$/i.test(file.name);
-  if (!isImage) return file;
+  if (!isImage) {
+    throw new Error(`«${file.name}» no es una imagen válida.`);
+  }
 
-  // Ya apta para web y dentro del límite: no re-encode (evita pérdida de calidad)
-  if (isAlreadyWebSafe(file)) {
+  if (file.size > VERCEL_SAFE_UPLOAD_BYTES && isAlreadyWebSafe(file) === false) {
+    /* convert below */
+  } else if (isAlreadyWebSafe(file)) {
     return file;
   }
 
+  // HEIC / AVIF: intentar decode; si falla, error claro
   const img = await loadImage(file);
   let { width, height } = img;
+  if (!width || !height) {
+    throw new Error(`«${file.name}» no tiene dimensiones válidas.`);
+  }
+
   const maxEdge = Math.max(width, height);
   if (maxEdge > MAX_IMAGE_EDGE) {
     const scale = MAX_IMAGE_EDGE / maxEdge;
@@ -108,7 +131,9 @@ export async function convertImageToWebp(file: File): Promise<File> {
   canvas.width = Math.max(1, width);
   canvas.height = Math.max(1, height);
   const ctx = canvas.getContext("2d");
-  if (!ctx) return file;
+  if (!ctx) {
+    throw new Error("El navegador no pudo preparar la imagen (canvas).");
+  }
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.fillStyle = "#0a0a0a";
@@ -122,23 +147,16 @@ export async function convertImageToWebp(file: File): Promise<File> {
   let working: HTMLCanvasElement = canvas;
   let blob = await canvasToBlob(working, mime, quality);
 
-  // Solo bajar calidad si supera el techo blando / seguro
-  while (
-    blob &&
-    blob.size > SOFT_TARGET_BYTES &&
-    quality > MIN_QUALITY_FOR_SIZE
-  ) {
+  while (blob && blob.size > SOFT_TARGET_BYTES && quality > MIN_QUALITY_FOR_SIZE) {
     quality = Math.max(MIN_QUALITY_FOR_SIZE, quality - 0.03);
     blob = await canvasToBlob(working, mime, quality);
   }
 
-  // Si aún no cabe en Vercel, bajar un poco más (último recurso)
   while (blob && blob.size > VERCEL_SAFE_UPLOAD_BYTES && quality > MIN_QUALITY_HARD) {
     quality = Math.max(MIN_QUALITY_HARD, quality - 0.04);
     blob = await canvasToBlob(working, mime, quality);
   }
 
-  // Último recurso: reducir resolución manteniendo calidad alta
   let scalePass = 0;
   while (blob && blob.size > VERCEL_SAFE_UPLOAD_BYTES && scalePass < 3) {
     scalePass++;
@@ -160,7 +178,14 @@ export async function convertImageToWebp(file: File): Promise<File> {
     }
   }
 
-  if (!blob) return file;
+  if (!blob) {
+    throw new Error(`No se pudo convertir «${file.name}». Prueba JPG.`);
+  }
+  if (blob.size > VERCEL_SAFE_UPLOAD_BYTES) {
+    throw new Error(
+      `«${file.name}» sigue pesando ${(blob.size / 1024 / 1024).toFixed(1)} MB tras optimizar. Usa una foto más liviana.`,
+    );
+  }
 
   const base = file.name.replace(/\.[^/.]+$/, "") || "photo";
   return new File([blob], `${base}.${ext}`, {
@@ -174,23 +199,24 @@ export async function prepareImageForUpload(file: File): Promise<File> {
   return convertImageToWebp(file);
 }
 
-/** Convierte un lote al seleccionar (muestra progreso). */
+/** Convierte un lote al seleccionar (omite las que fallen y reporta). */
 export async function convertFilesToWebpBatch(
   files: File[],
   onProgress?: (done: number, total: number, name: string) => void,
-): Promise<File[]> {
+): Promise<{ files: File[]; errors: string[] }> {
   const out: File[] = [];
+  const errors: string[] = [];
   for (let i = 0; i < files.length; i++) {
     const f = files[i]!;
     onProgress?.(i, files.length, f.name);
     try {
       out.push(await convertImageToWebp(f));
-    } catch {
-      out.push(f);
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : `Falló ${f.name}`);
     }
   }
   onProgress?.(files.length, files.length, "");
-  return out;
+  return { files: out, errors };
 }
 
 export type UploadProgress = {
@@ -199,13 +225,64 @@ export type UploadProgress = {
   currentName: string;
 };
 
+async function postOnePhoto(
+  slug: string,
+  uploadType: string,
+  prepared: File,
+): Promise<void> {
+  const fd = new FormData();
+  fd.append("slug", slug);
+  fd.append("type", uploadType);
+  fd.append("files", prepared);
+
+  let res: Response;
+  try {
+    res = await fetch("/api/photos", { method: "POST", body: fd });
+  } catch {
+    throw new Error("Sin conexión al servidor. Revisa internet e intenta de nuevo.");
+  }
+
+  // Un reintento en 502/503/504 (cold start / blip)
+  if (res.status === 502 || res.status === 503 || res.status === 504) {
+    await new Promise((r) => setTimeout(r, 800));
+    try {
+      const fd2 = new FormData();
+      fd2.append("slug", slug);
+      fd2.append("type", uploadType);
+      fd2.append("files", prepared);
+      res = await fetch("/api/photos", { method: "POST", body: fd2 });
+    } catch {
+      throw new Error("Sin conexión al servidor tras reintento.");
+    }
+  }
+
+  if (!res.ok) {
+    throw new Error(await readApiError(res));
+  }
+
+  const text = await res.text();
+  let data: { success?: boolean; error?: string };
+  try {
+    data = JSON.parse(text) as { success?: boolean; error?: string };
+  } catch {
+    throw new Error(
+      /request entity too large/i.test(text)
+        ? "Archivo demasiado grande para Vercel."
+        : "Respuesta inválida del servidor al subir.",
+    );
+  }
+  if (!data.success) {
+    throw new Error(data.error || "La subida no se confirmó.");
+  }
+}
+
 /** Sube fotos de a una (ya deberían venir preparadas). */
 export async function uploadPhotosSequentially(opts: {
   slug: string;
   type: "gallery" | "cover" | "spin";
   files: File[];
   onProgress?: (p: UploadProgress) => void;
-}): Promise<{ count: number; message: string }> {
+}): Promise<{ count: number; message: string; errors: string[] }> {
   const { slug, type, files, onProgress } = opts;
   let uploaded = 0;
   const errors: string[] = [];
@@ -214,39 +291,25 @@ export async function uploadPhotosSequentially(opts: {
     const original = files[i]!;
     onProgress?.({ done: i, total: files.length, currentName: original.name });
 
-    // Por si llegó sin convertir (spin / arrastre)
-    const prepared = await convertImageToWebp(original);
-
-    if (prepared.size > VERCEL_SAFE_UPLOAD_BYTES) {
-      errors.push(`${original.name}: sigue pesando demasiado tras preparar la imagen.`);
-      continue;
-    }
-
-    const fd = new FormData();
-    fd.append("slug", slug);
-    let uploadType: string = type;
-    if (type === "cover") {
-      uploadType = i === 0 ? "cover" : "gallery";
-    }
-    fd.append("type", uploadType);
-    fd.append("files", prepared);
-
-    const res = await fetch("/api/photos", { method: "POST", body: fd });
-    if (!res.ok) {
-      errors.push(`${original.name}: ${await readApiError(res)}`);
-      continue;
-    }
     try {
-      const data = (await res.json()) as { success?: boolean; error?: string };
-      if (!data.success) {
-        errors.push(`${original.name}: ${data.error || "falló"}`);
+      const prepared = await convertImageToWebp(original);
+      if (prepared.size > VERCEL_SAFE_UPLOAD_BYTES) {
+        errors.push(`${original.name}: sigue pesando demasiado tras preparar.`);
         continue;
       }
-    } catch {
-      errors.push(`${original.name}: respuesta inválida del servidor`);
-      continue;
+      let uploadType: string = type;
+      if (type === "cover") {
+        uploadType = i === 0 && uploaded === 0 ? "cover" : "gallery";
+      }
+      await postOnePhoto(slug, uploadType, prepared);
+      uploaded++;
+      // Pequeña pausa para que KV no reciba writes pegados en la misma instancia
+      if (i < files.length - 1) {
+        await new Promise((r) => setTimeout(r, 120));
+      }
+    } catch (err) {
+      errors.push(`${original.name}: ${err instanceof Error ? err.message : "falló"}`);
     }
-    uploaded++;
   }
 
   onProgress?.({ done: files.length, total: files.length, currentName: "" });
@@ -257,10 +320,10 @@ export async function uploadPhotosSequentially(opts: {
 
   const msg =
     uploaded === files.length
-      ? `Se subieron ${uploaded} foto${uploaded === 1 ? "" : "s"} en alta calidad.`
+      ? `Se subieron ${uploaded} foto${uploaded === 1 ? "" : "s"} correctamente.`
       : `Se subieron ${uploaded} de ${files.length}. ${errors.slice(0, 2).join(" · ")}`;
 
-  return { count: uploaded, message: msg };
+  return { count: uploaded, message: msg, errors };
 }
 
 export function formatBytes(n: number): string {

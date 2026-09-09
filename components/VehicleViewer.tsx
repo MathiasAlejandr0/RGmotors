@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { asset } from "@/lib/asset";
 import PhotoSpin360 from "./PhotoSpin360";
+import SafeImage from "./SafeImage";
 
 type Tab = "exterior" | "fotos";
 
@@ -155,20 +156,14 @@ export default function VehicleViewer({
           </div>
         ) : (
           <div className="absolute inset-0 select-none">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={asset(currentPhoto)}
+            <SafeImage
+              src={currentPhoto}
               alt={`${name} - Foto ${selectedPhotoIdx + 1}`}
-              loading="eager"
-              decoding="async"
+              fill
+              priority
               sizes="(max-width: 1024px) 100vw, 60vw"
-              onError={(e) => {
-                const fallback = asset("/images/placeholder-pending-car.svg");
-                if (e.currentTarget.src !== fallback) {
-                  e.currentTarget.src = fallback;
-                }
-              }}
-              className="h-full w-full max-w-full object-cover object-center"
+              quality={88}
+              className="object-cover object-center"
             />
 
             {galleryImages.length > 1 && (
@@ -213,6 +208,10 @@ export default function VehicleViewer({
                 loading="lazy"
                 decoding="async"
                 className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = asset("/images/placeholder-pending-car.svg");
+                }}
               />
             </button>
           ))}

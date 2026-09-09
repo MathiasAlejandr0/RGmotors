@@ -10,6 +10,7 @@ import {
   type CatalogPdfImageMap,
 } from "@/components/CatalogPdfDoc";
 import type { Vehicle } from "@/lib/vehicles";
+import { clientKey, rateLimitAsync } from "@/lib/server/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -114,6 +115,14 @@ function parseSlugs(req: NextRequest): string[] | null {
 
 export async function GET(req: NextRequest) {
   try {
+    const rl = await rateLimitAsync(clientKey(req, "catalog-pdf"), 3, 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Demasiadas descargas de catálogo. Espera un minuto e intenta de nuevo." },
+        { status: 429 },
+      );
+    }
+
     const origin = siteOrigin(req);
     const all = (await getVehicles())
       .filter(isPublicCatalogVehicle)

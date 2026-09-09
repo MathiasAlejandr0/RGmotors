@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { asset } from "@/lib/asset";
 import { getVehicles } from "@/lib/server/vehiclesStore";
 import {
@@ -12,7 +13,7 @@ import ShowroomMapSection from "@/components/ShowroomMapSection";
 import HeroExploreHint from "@/components/HeroExploreHint";
 import TrustMarquee from "@/components/TrustMarquee";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
 
 export default async function Home() {
   const vehicles = await getVehicles();
@@ -23,11 +24,14 @@ export default async function Home() {
     <main className="relative overflow-hidden">
       {/* HERO — mockup cinematográfico + acabado */}
       <section className="relative isolate min-h-[100svh] overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={asset("/hero-l200-puerto-montt.png")}
           alt="Stock RG Motors Puerto Montt"
-          className="rg-hero-media absolute inset-0 h-full w-full object-cover object-[68%_center] sm:object-[78%_center]"
+          fill
+          priority
+          quality={85}
+          sizes="100vw"
+          className="rg-hero-media object-cover object-[68%_center] sm:object-[78%_center]"
         />
         {/* Más oscuro a la izquierda/abajo: el auto queda libre a la derecha */}
         <div className="rg-hero-vignette absolute inset-0 bg-[linear-gradient(105deg,rgba(0,0,0,0.88)_0%,rgba(0,0,0,0.72)_22%,rgba(0,0,0,0.28)_42%,rgba(0,0,0,0.05)_58%,transparent_72%)]" />

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { asset } from "@/lib/asset";
 import { Vehicle, formatCLP, estimateMonthly } from "@/lib/vehicles";
+import SafeImage from "@/components/SafeImage";
 
 type CardVehicle = Vehicle & {
   galleryCount?: number;
@@ -21,8 +21,8 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
       (card.hasRealPhotos || galleryCount > 0),
   );
   const displayImage = showRealPhoto
-    ? asset(card.image)
-    : asset("/images/placeholder-pending-car.svg");
+    ? card.image
+    : "/images/placeholder-pending-car.svg";
 
   return (
     <Link
@@ -32,18 +32,13 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-60" />
 
       <div className="relative aspect-[16/10] overflow-hidden bg-ink-900">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <SafeImage
           src={displayImage}
           alt={`${card.brand} ${card.model}`}
-          loading="lazy"
-          decoding="async"
-          fetchPriority="low"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = asset("/images/placeholder-pending-car.svg");
-          }}
-          className="h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          quality={82}
+          className="object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0e1016]/40 via-transparent to-black/10 opacity-80" />
         <div className="absolute inset-0 translate-x-[-120%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-[120%]" />

@@ -67,25 +67,36 @@ export function frontCoverUrl(slug: string): string | null {
   return `/cars/uploads/${slug}/${file}`;
 }
 
-/** Aplica portada delantera 3/4 si hay mapeo curado para el slug. */
+function fileNameFromUrl(url: string): string {
+  return (url.split("?")[0].split("/").pop() || "").toLowerCase();
+}
+
+/**
+ * Aplica portada delantera 3/4 SOLO si ese archivo ya está en la galería.
+ * Nunca inventa una ruta local `/cars/uploads/...` que no exista en metadata:
+ * en Vercel las fotos viven en Blob y forzar photo-XX.jpg rompía la ficha
+ * tras subir fotos nuevas.
+ */
 export function withFrontCover<T extends { slug: string; image: string; gallery?: string[]; hasRealPhotos?: boolean }>(
   vehicle: T,
 ): T {
-  const cover = frontCoverUrl(vehicle.slug);
-  if (!cover) return vehicle;
+  const coverFile = FRONT_COVER_BY_SLUG[vehicle.slug];
+  if (!coverFile) return vehicle;
 
   const gallery = Array.isArray(vehicle.gallery) ? vehicle.gallery : [];
-  // Solo forzar si la unidad ya tiene fotos reales / esa portada existe en galería o en uploads path
-  const hasUploads =
-    gallery.some((g) => g.includes(`/cars/uploads/${vehicle.slug}/`)) ||
-    vehicle.image.includes(`/cars/uploads/${vehicle.slug}/`);
-  if (!hasUploads && !gallery.includes(cover)) return vehicle;
+  const coverName = coverFile.toLowerCase();
 
-  const rest = gallery.filter((g) => g !== cover);
+  const match = gallery.find((g) => fileNameFromUrl(g) === coverName);
+  if (!match) {
+    // No pisar portadas Blob/admin con una ruta local inexistente
+    return vehicle;
+  }
+
+  const rest = gallery.filter((g) => g !== match);
   return {
     ...vehicle,
-    image: cover,
-    gallery: [cover, ...rest],
+    image: match,
+    gallery: [match, ...rest],
     hasRealPhotos: true,
   };
 }

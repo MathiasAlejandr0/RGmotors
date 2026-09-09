@@ -7,7 +7,8 @@ import { logStorageHealthOnce } from "./storageHealth";
 
 const FILENAME = "vehicles.json";
 const CACHE_KEY = "vehicles:list";
-const CACHE_TTL_MS = 15_000;
+/** Caché corta: lecturas de vitrina. Escrituras siempre bypasan caché. */
+const CACHE_TTL_MS = 60_000;
 
 /** RG Motors no ofrece garantía en usados: filtrar textos heredados. */
 function stripWarrantyClaims(vehicle: Vehicle): Vehicle {
@@ -28,10 +29,14 @@ function normalizeVehicle(vehicle: Vehicle): Vehicle {
   return withFrontCover(cleaned);
 }
 
-export async function getVehicles(): Promise<Vehicle[]> {
+export async function getVehicles(opts?: {
+  bypassCache?: boolean;
+}): Promise<Vehicle[]> {
   logStorageHealthOnce();
-  const cached = cacheGet<Vehicle[]>(CACHE_KEY);
-  if (cached) return cached;
+  if (!opts?.bypassCache) {
+    const cached = cacheGet<Vehicle[]>(CACHE_KEY);
+    if (cached) return cached;
+  }
 
   const list = await readJson<Vehicle[]>(FILENAME, initialVehicles);
   const cleaned = list.map(normalizeVehicle);
@@ -39,8 +44,11 @@ export async function getVehicles(): Promise<Vehicle[]> {
   return cleaned;
 }
 
-export async function getVehicleBySlug(slug: string): Promise<Vehicle | null> {
-  const list = await getVehicles();
+export async function getVehicleBySlug(
+  slug: string,
+  opts?: { bypassCache?: boolean },
+): Promise<Vehicle | null> {
+  const list = await getVehicles(opts);
   return list.find((v) => v.slug === slug) ?? null;
 }
 
@@ -59,26 +67,36 @@ export async function replaceAllVehicles(
 export async function saveVehicle(
   vehicle: Vehicle,
 ): Promise<{ success: boolean; vehicle?: Vehicle; error?: string }> {
-  const list = await getVehicles();
+  // Siempre leer fresco: subidas secuenciales no deben pisarse por caché stale
+  const list = await getVehicles({ bypassCache: true });
   const normalized = normalizeVehicle(vehicle);
-  const existingIdx = list.findIndex((v) => v.slug === normalized.slug);
+  const next = list.slice();
+  const existingIdx = next.findIndex((v) => v.slug === normalized.slug);
 
   if (existingIdx >= 0) {
-    list[existingIdx] = { ...list[existingIdx], ...normalized };
+    // Merge explícito: no perder gallery/image si normalize no los toca
+    next[existingIdx] = { ...next[existingIdx], ...normalized };
   } else {
-    list.unshift(normalized);
+    next.unshift(normalized);
   }
 
-  const ok = await writeJson(FILENAME, list);
+  const ok = await writeJson(FILENAME, next);
   cacheInvalidate("vehicles:");
-  if (!ok) return { success: false, error: "Error al guardar en el almacenamiento." };
+  if (!ok) {
+    return {
+      success: false,
+      error:
+        "No se pudo guardar el inventario (KV). La foto puede haberse subido; reintenta o revisa BLOB/KV.",
+    };
+  }
+  cacheSet(CACHE_KEY, next.map(normalizeVehicle), CACHE_TTL_MS);
   return { success: true, vehicle: normalized };
 }
 
 export async function deleteVehicle(
   slug: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const list = await getVehicles();
+  const list = await getVehicles({ bypassCache: true });
   const filtered = list.filter((v) => v.slug !== slug);
   if (filtered.length === list.length) {
     return { success: false, error: "Vehículo no encontrado." };

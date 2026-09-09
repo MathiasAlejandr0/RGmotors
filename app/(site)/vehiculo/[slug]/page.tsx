@@ -17,7 +17,7 @@ import VehicleHealthCard from "@/components/VehicleHealthCard";
 import VehicleActionButtons from "@/components/VehicleActionButtons";
 import MobileVehicleStickyBar from "@/components/MobileVehicleStickyBar";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
 
 export async function generateMetadata({
   params,

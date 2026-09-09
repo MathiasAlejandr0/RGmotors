@@ -74,15 +74,20 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     if (!slug) return;
     setIsLoadingPhotos(true);
     try {
-      const res = await fetch(`/api/photos?slug=${encodeURIComponent(slug)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setGallery(data.gallery || []);
-        setSpinCount(data.spinCount || 0);
-        setCoverImage(data.coverImage || "");
+      const res = await fetch(`/api/photos?slug=${encodeURIComponent(slug)}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        setUploadError(await readApiError(res));
+        setGallery([]);
+        return;
       }
+      const data = await res.json();
+      setGallery(data.gallery || []);
+      setSpinCount(data.spinCount || 0);
+      setCoverImage(data.coverImage || "");
     } catch {
-      /* ignore */
+      setUploadError("No se pudieron cargar las fotos de esta unidad.");
     } finally {
       setIsLoadingPhotos(false);
     }
@@ -112,14 +117,26 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     setIsConverting(true);
     setUploadProgress(`Preparando fotos 0/${valid.length}…`);
     try {
-      const converted = await convertFilesToWebpBatch(valid, (done, total, name) => {
-        setUploadProgress(
-          done >= total
-            ? `Listo ${total}/${total}`
-            : `Preparando ${done + 1}/${total}: ${name}`,
-        );
-      });
-      setStagedFiles((prev) => [...prev, ...converted]);
+      const { files: converted, errors } = await convertFilesToWebpBatch(
+        valid,
+        (done, total, name) => {
+          setUploadProgress(
+            done >= total
+              ? `Listo ${total}/${total}`
+              : `Preparando ${done + 1}/${total}: ${name}`,
+          );
+        },
+      );
+      if (converted.length === 0) {
+        setUploadError(errors[0] || "Ninguna foto se pudo preparar.");
+      } else {
+        setStagedFiles((prev) => [...prev, ...converted]);
+        if (errors.length > 0) {
+          setUploadError(
+            `${converted.length} listas; ${errors.length} omitidas: ${errors.slice(0, 2).join(" · ")}`,
+          );
+        }
+      }
       setUploadProgress(null);
     } catch {
       setUploadError("No se pudieron preparar algunas imágenes. Intenta de nuevo.");

@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       // CDN: cache corto tras sync de stock
       res.headers.set(
         "Cache-Control",
-        "public, s-maxage=15, stale-while-revalidate=60",
+        "public, s-maxage=60, stale-while-revalidate=120",
       );
     }
     return res;
