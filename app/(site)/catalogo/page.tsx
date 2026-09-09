@@ -308,38 +308,38 @@ function CatalogContent() {
   );
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-white/[0.08] pb-5 sm:mb-8 sm:pb-6">
+    <main className="mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-10">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-white/[0.08] pb-4 sm:mb-8 sm:gap-4 sm:pb-6">
         <div>
-          <h1 className="text-[1.65rem] font-extrabold tracking-tight text-white sm:text-4xl">
-            Catálogo de Vehículos
+          <h1 className="text-[1.35rem] font-extrabold tracking-tight text-white sm:text-4xl">
+            Catálogo
           </h1>
-          <p className="mt-1 text-[13px] text-white/50 sm:text-sm">
-            Explora y filtra nuestra selección de vehículos usados con inspección técnica.
+          <p className="mt-1 text-[12px] text-white/50 sm:text-sm">
+            Vehículos seleccionados con inspección técnica.
           </p>
         </div>
         <CatalogPdfButton vehicles={filtered} filterSummary={filterSummary} />
       </div>
 
-      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#12141c] p-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#12141c] p-3.5 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5">
         <div>
-          <h2 className="text-sm font-bold text-white">¿Quieres calcular tu financiamiento?</h2>
-          <p className="mt-0.5 text-xs text-white/55">
+          <h2 className="text-[13px] font-bold text-white sm:text-sm">¿Quieres calcular tu financiamiento?</h2>
+          <p className="mt-0.5 text-[11px] text-white/55 sm:text-xs">
             Simula tu cuota online y te respondemos con las opciones disponibles.
           </p>
         </div>
-        <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap shrink-0">
+        <div className="flex w-full flex-row gap-2 sm:w-auto sm:flex-wrap shrink-0">
           <button
             onClick={() => setIsPreApprovalOpen(true)}
-            className="apple-btn-primary min-h-11 w-full rounded-full px-5 py-2.5 text-xs font-bold text-white sm:w-auto sm:flex-none"
+            className="apple-btn-primary min-h-10 flex-1 rounded-full px-3 py-2 text-[11px] font-bold text-white sm:min-h-11 sm:flex-none sm:px-5 sm:py-2.5 sm:text-xs"
           >
-            Simular crédito online
+            Simular crédito
           </button>
           <button
             onClick={() => setIsCarRequestOpen(true)}
-            className="apple-btn-secondary min-h-11 w-full rounded-full px-4 py-2.5 text-xs font-semibold text-white/80 hover:text-white sm:w-auto sm:flex-none"
+            className="apple-btn-secondary min-h-10 flex-1 rounded-full px-3 py-2 text-[11px] font-semibold text-white/80 hover:text-white sm:min-h-11 sm:flex-none sm:px-4 sm:py-2.5 sm:text-xs"
           >
-            Pedir auto a medida
+            Pedir a medida
           </button>
         </div>
       </div>
@@ -418,7 +418,7 @@ function CatalogContent() {
           </p>
 
           {filtered.length ? (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {filtered.map((v) => (
                 <VehicleCard key={v.slug} vehicle={v} />
               ))}
