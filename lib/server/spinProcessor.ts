@@ -70,8 +70,12 @@ async function hasBinary(cmd: string): Promise<boolean> {
 async function loadBgRemover(): Promise<
   ((buf: Buffer) => Promise<Buffer>) | null
 > {
+  // En Vercel no cargamos imgly/onnx (~300MB): hincha Functions Storage del plan Hobby.
+  if (process.env.VERCEL) return null;
   try {
-    const mod: any = await import("@imgly/background-removal-node");
+    // Import dinámico por string: el paquete es opcional (solo scripts locales).
+    const pkg = "@imgly/background-removal-node";
+    const mod: any = await import(pkg);
     const removeBackground = mod.removeBackground ?? mod.default?.removeBackground;
     if (!removeBackground) return null;
     return async (buf: Buffer) => {

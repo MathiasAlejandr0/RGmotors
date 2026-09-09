@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Vehicle, BRANDS, BODY_TYPES, FUELS, TRANSMISSIONS } from "@/lib/vehicles";
 import { asset } from "@/lib/asset";
+import { SALE_SUPPLIERS, type SaleSupplier } from "@/lib/sales/suppliers";
 
 type Props = {
   vehicle: Vehicle | null; // null = creating new
@@ -52,6 +53,7 @@ export default function VehicleEditorModal({
 
   const [hasSpin, setHasSpin] = useState<boolean>(false);
   const [spinCount, setSpinCount] = useState<number>(36);
+  const [sellSupplier, setSellSupplier] = useState<SaleSupplier>("RG Motors");
   const [highlightInput, setHighlightInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -64,6 +66,14 @@ export default function VehicleEditorModal({
       setFormData({ ...vehicle });
       setHasSpin(!!vehicle.spin && vehicle.spin.count > 0);
       setSpinCount(vehicle.spin?.count || 36);
+      if (
+        vehicle.supplier &&
+        (SALE_SUPPLIERS as readonly string[]).includes(vehicle.supplier)
+      ) {
+        setSellSupplier(vehicle.supplier as SaleSupplier);
+      } else {
+        setSellSupplier("RG Motors");
+      }
 
       // Cargar todas las fotos disponibles de este vehículo
       setIsLoadingPhotos(true);
@@ -163,6 +173,31 @@ export default function VehicleEditorModal({
 
     setIsSaving(true);
     setErrorMsg("");
+
+    // Marcar vendido → archivar, borrar fotos y sacar del inventario
+    if (isEditing && vehicle && formData.status === "Vendido") {
+      try {
+        const res = await fetch(`/api/vehicles/${vehicle.slug}/sell`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            supplier: sellSupplier,
+            salePrice: formData.price ?? vehicle.price,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "No se pudo registrar la venta.");
+        }
+        onSaved({ ...vehicle, ...formData, status: "Vendido", supplier: sellSupplier } as Vehicle);
+        onClose();
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : "Error al registrar la venta.");
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
 
     // Asegurar que la portada elegida sea el primer elemento de la galería
     let updatedGallery = formData.gallery ? [...formData.gallery] : [];
@@ -663,8 +698,32 @@ export default function VehicleEditorModal({
                     <option value="En reserva">🟡 En proceso de reserva</option>
                     <option value="Vendido">🔴 Vendido / Entregado</option>
                     <option value="Borrador">⚪ Borrador (Oculto)</option>
+                    <option value="En preparación">🔧 En preparación</option>
                   </select>
                 </div>
+
+                {formData.status === "Vendido" && (
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-white/60">
+                      ¿Quién vendió?
+                    </label>
+                    <select
+                      value={sellSupplier}
+                      onChange={(e) => setSellSupplier(e.target.value as SaleSupplier)}
+                      className="w-full rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-sm text-white focus:border-brand-500 outline-none"
+                    >
+                      {SALE_SUPPLIERS.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-[11px] text-amber-300/90">
+                      Al guardar: se archiva la venta (fecha y hora), se borran las
+                      fotos y el auto sale del inventario activo.
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between rounded-xl border border-white/15 bg-ink-950 p-4">
                   <div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import Logo from "./Logo";
 import { COMPANY, whatsappLink } from "@/lib/company";
 import TradeInModal from "./TradeInModal";
@@ -16,47 +16,76 @@ const NAV_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ];
 
-/** Píxeles de scroll para pasar de transparente → negro sólido. */
-const SCROLL_SOLID_AFTER = 24;
-
-function subscribeScroll(onStoreChange: () => void) {
-  const onScroll = () => onStoreChange();
-  window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", onScroll, { passive: true });
-  return () => {
-    window.removeEventListener("scroll", onScroll);
-    window.removeEventListener("resize", onScroll);
-  };
-}
-
-function getScrollY() {
-  return window.scrollY || document.documentElement.scrollTop || 0;
-}
-
-function getScrolledSnapshot() {
-  return getScrollY() > SCROLL_SOLID_AFTER;
-}
-
-/** SSR + primer paint: siempre transparente (sin mismatch de hidratación). */
-function getScrolledServerSnapshot() {
-  return false;
-}
-
 /**
- * Scroll reactivo (best practice React 18+).
- * El header refleja la posición real: arriba = transparente, scrolleado = negro.
+ * En Inicio: transparente mientras el sentinel del hero está visible;
+ * negro sólido recién cuando el sentinel sale por arriba (scroll real).
+ * Evita el flash negro por restauración de scroll del navegador.
  */
-function useScrolledPast() {
-  return useSyncExternalStore(
-    subscribeScroll,
-    getScrolledSnapshot,
-    getScrolledServerSnapshot,
-  );
+function useHomeHeaderSolid(isHome: boolean) {
+  const [solid, setSolid] = useState(false);
+
+  useEffect(() => {
+    if (!isHome) {
+      setSolid(true);
+      return;
+    }
+
+    setSolid(false);
+
+    const previous = history.scrollRestoration;
+    try {
+      history.scrollRestoration = "manual";
+    } catch {
+      /* ignore */
+    }
+
+    if (!window.location.hash) {
+      window.scrollTo(0, 0);
+    }
+
+    const sentinel = document.getElementById("home-header-sentinel");
+
+    if (!sentinel) {
+      const onScroll = () => {
+        setSolid(window.scrollY > Math.max(120, Math.round(window.innerHeight * 0.35)));
+      };
+      onScroll();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      return () => {
+        window.removeEventListener("scroll", onScroll);
+        try {
+          history.scrollRestoration = previous;
+        } catch {
+          /* ignore */
+        }
+      };
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Transparente mientras el bloque superior del hero sigue visible.
+        setSolid(!entry.isIntersecting);
+      },
+      { root: null, threshold: 0 },
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+      try {
+        history.scrollRestoration = previous;
+      } catch {
+        /* ignore */
+      }
+    };
+  }, [isHome]);
+
+  return solid;
 }
 
 export default function SiteHeader() {
   const pathname = usePathname();
-  const scrolledPast = useScrolledPast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tradeInOpen, setTradeInOpen] = useState(false);
   const [carRequestOpen, setCarRequestOpen] = useState(false);
@@ -65,16 +94,7 @@ export default function SiteHeader() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   const isHome = pathname === "/";
-
-  // Landing: el navegador no reabre a mitad de página (API estándar, sin scrollTo forzado).
-  useEffect(() => {
-    if (!isHome) return;
-    const previous = history.scrollRestoration;
-    history.scrollRestoration = "manual";
-    return () => {
-      history.scrollRestoration = previous;
-    };
-  }, [isHome]);
+  const scrolledPast = useHomeHeaderSolid(isHome);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -85,14 +105,13 @@ export default function SiteHeader() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Solo en Inicio y arriba del todo: overlay transparente sobre el hero.
-  // Menú móvil abierto usa barra sólida para legibilidad.
+  // Solo Inicio + arriba del hero + menú cerrado → overlay transparente.
   const homeFloating = isHome && !scrolledPast && !mobileMenuOpen;
 
   return (
     <>
       <header
-        className={`z-40 transition-[background-color,border-color,box-shadow] duration-300 ease-out ${
+        className={`z-40 transition-[background-color,border-color] duration-300 ease-out ${
           isHome ? "fixed inset-x-0 top-0" : "sticky top-0"
         } ${
           homeFloating
@@ -101,13 +120,14 @@ export default function SiteHeader() {
         }`}
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-6 sm:px-6 sm:py-3.5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2.5 sm:gap-6 sm:px-6 sm:py-3.5">
           <Link
             href="/"
             onClick={goHomeTop}
             className="shrink-0 transition duration-300 hover:opacity-90 active:scale-[0.98]"
           >
-            <Logo size={52} />
+            <Logo size={44} className="sm:hidden" />
+            <Logo size={52} className="hidden sm:block" />
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
@@ -169,7 +189,7 @@ export default function SiteHeader() {
         </div>
 
         {mobileMenuOpen && (
-          <nav className="animate-fade-up border-t border-white/[0.06] bg-[#06070a] px-4 py-5 md:hidden">
+          <nav className="animate-fade-up max-h-[min(78dvh,640px)] overflow-y-auto border-t border-white/[0.06] bg-[#06070a] px-4 py-4 overscroll-contain md:hidden">
             <div className="flex flex-col gap-1">
               {NAV_LINKS.map((item) => (
                 <Link
@@ -179,7 +199,7 @@ export default function SiteHeader() {
                     setMobileMenuOpen(false);
                     if (item.href === "/") goHomeTop();
                   }}
-                  className={`rounded-xl px-4 py-3.5 text-[15px] font-medium transition ${
+                  className={`rounded-xl px-4 py-3.5 text-[15px] font-medium transition active:bg-white/10 ${
                     isActive(item.href)
                       ? "bg-white/10 text-white"
                       : "text-white/65 hover:bg-white/5 hover:text-white"

@@ -1,8 +1,11 @@
 import { readJson, writeJson } from "./db";
 import { Vehicle } from "@/lib/vehicles";
-import { unlink, readdir, rmdir } from "node:fs/promises";
-import { join } from "node:path";
-import { existsSync } from "node:fs";
+import { deleteVehicleMedia } from "./mediaStorage";
+import { deleteVehicle } from "./vehiclesStore";
+import {
+  isSaleSupplier,
+  type SaleSupplier,
+} from "@/lib/sales/suppliers";
 
 export interface SoldVehicleRecord {
   id: string;
@@ -19,25 +22,37 @@ export interface SoldVehicleRecord {
   transmission: string;
   bodyType: string;
   location: string;
-  supplier?: string;
+  /** Quién vendió: RG Motors | Unidades Chile | Salgado Automotoriz */
+  supplier: SaleSupplier | string;
+  /** ISO datetime de la venta (fecha + hora) */
   soldAt: string;
   status: "Vendido";
   notes?: string;
+  photosDeleted?: boolean;
 }
 
 const SOLD_FILENAME = "sold_vehicles.json";
 
 export async function getSoldVehicles(): Promise<SoldVehicleRecord[]> {
-  const records = await readJson<SoldVehicleRecord[]>(SOLD_FILENAME, []);
-  return records;
+  return readJson<SoldVehicleRecord[]>(SOLD_FILENAME, []);
 }
 
 export async function archiveSoldVehicle(
   vehicle: Vehicle,
   salePrice?: number,
-  notes?: string
+  notes?: string,
+  supplierOverride?: string,
 ): Promise<{ success: boolean; record?: SoldVehicleRecord; error?: string }> {
   const records = await getSoldVehicles();
+  const supplier =
+    (supplierOverride && isSaleSupplier(supplierOverride)
+      ? supplierOverride
+      : undefined) ||
+    (vehicle.supplier && isSaleSupplier(vehicle.supplier)
+      ? vehicle.supplier
+      : undefined) ||
+    vehicle.supplier ||
+    "RG Motors";
 
   const record: SoldVehicleRecord = {
     id: `sold-${vehicle.slug}-${Date.now()}`,
@@ -54,13 +69,14 @@ export async function archiveSoldVehicle(
     transmission: vehicle.transmission,
     bodyType: vehicle.bodyType,
     location: vehicle.location,
-    supplier: vehicle.supplier,
+    supplier,
     soldAt: new Date().toISOString(),
     status: "Vendido",
-    notes: notes || "Vendido y archivado para analítica y ciencia de datos",
+    notes: notes || "Vendido y archivado para historial comercial",
+    photosDeleted: false,
   };
 
-  // Avoid duplicate archives of same slug
+  // Evitar duplicados del mismo slug
   const filtered = records.filter((r) => r.slug !== vehicle.slug);
   filtered.unshift(record);
 
@@ -69,27 +85,57 @@ export async function archiveSoldVehicle(
     return { success: false, error: "No se pudo guardar en el registro de ventas." };
   }
 
-  // Delete physical photos to free storage space
   try {
-    const uploadDir = join(/*turbopackIgnore: true*/ process.cwd(), "public", "cars", "uploads", vehicle.slug);
-    if (existsSync(uploadDir)) {
-      const files = await readdir(uploadDir);
-      for (const file of files) {
-        try {
-          await unlink(join(uploadDir, file));
-        } catch {
-          /* ignore individual file unlink errors */
-        }
-      }
-      try {
-        await rmdir(uploadDir);
-      } catch {
-        /* ignore rmdir error */
-      }
-    }
+    const media = await deleteVehicleMedia(vehicle);
+    record.photosDeleted = media.deletedBlob > 0 || media.deletedLocal > 0;
+    // Persistir flag photosDeleted
+    filtered[0] = record;
+    await writeJson(SOLD_FILENAME, filtered);
   } catch (err) {
     console.error(`[ArchiveSold] Error al eliminar fotos de ${vehicle.slug}:`, err);
   }
 
   return { success: true, record };
+}
+
+/**
+ * Marca como vendido desde admin: archiva historial, borra fotos y saca del inventario activo.
+ */
+export async function markVehicleAsSold(opts: {
+  vehicle: Vehicle;
+  supplier: SaleSupplier;
+  salePrice?: number;
+  notes?: string;
+}): Promise<{
+  success: boolean;
+  record?: SoldVehicleRecord;
+  error?: string;
+}> {
+  const { vehicle, supplier, salePrice, notes } = opts;
+
+  const archived = await archiveSoldVehicle(
+    vehicle,
+    salePrice,
+    notes || `Vendido por ${supplier} desde panel admin`,
+    supplier,
+  );
+  if (!archived.success || !archived.record) {
+    return {
+      success: false,
+      error: archived.error || "No se pudo archivar la venta.",
+    };
+  }
+
+  const removed = await deleteVehicle(vehicle.slug);
+  if (!removed.success) {
+    return {
+      success: false,
+      error:
+        removed.error ||
+        "Venta archivada y fotos limpiadas, pero no se pudo sacar del inventario activo.",
+      record: archived.record,
+    };
+  }
+
+  return { success: true, record: archived.record };
 }

@@ -27,7 +27,7 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
   return (
     <Link
       href={`/vehiculo/${card.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0e1016] shadow-[0_16px_40px_-18px_rgba(0,0,0,0.8)] transition duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-brand-400/35 hover:shadow-[0_28px_60px_-20px_rgba(0,0,0,0.9)]"
+      className="rg-card-lift group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0e1016] shadow-[0_16px_40px_-18px_rgba(0,0,0,0.8)] transition duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-brand-400/35 hover:shadow-[0_28px_60px_-20px_rgba(0,0,0,0.9)] active:scale-[0.985]"
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-60" />
 
@@ -62,7 +62,7 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 border-t border-white/[0.06] bg-[#12141c] p-4 sm:p-5">
+      <div className="flex flex-1 flex-col gap-2.5 border-t border-white/[0.06] bg-[#12141c] p-3.5 sm:gap-3 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="truncate text-[15px] font-bold tracking-tight text-white transition-colors group-hover:text-brand-200 sm:text-base">
@@ -86,21 +86,21 @@ export default function VehicleCard({ vehicle: v }: { vehicle: Vehicle }) {
         </p>
 
         <div className="mt-auto flex items-end justify-between gap-3 pt-1">
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-wider text-white/35">
+          <div className="min-w-0">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-white/35 sm:text-[11px]">
               Precio
             </p>
-            <p className="text-lg font-extrabold tracking-tight text-white sm:text-xl">
+            <p className="truncate text-[1.05rem] font-extrabold tracking-tight text-white sm:text-xl">
               {formatCLP(card.price)}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-white/35">
+          <div className="shrink-0 text-right">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-white/35 sm:text-[11px]">
               Desde
             </p>
-            <p className="text-sm font-semibold text-brand-300">
+            <p className="text-[13px] font-semibold text-brand-300 sm:text-sm">
               {formatCLP(estimateMonthly(card.price))}
-              <span className="text-xs font-medium text-white/40">/mes</span>
+              <span className="text-[11px] font-medium text-white/40">/mes</span>
             </p>
           </div>
         </div>

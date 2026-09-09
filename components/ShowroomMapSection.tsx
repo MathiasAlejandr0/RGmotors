@@ -68,12 +68,12 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
               Showroom
             </p>
           </div>
-          <h2 className="mt-4 font-display text-[2.15rem] font-semibold uppercase leading-[1.05] tracking-[0.04em] text-white sm:text-[2.75rem]">
+          <h2 className="mt-4 font-display text-[clamp(1.75rem,8vw,2.15rem)] font-semibold uppercase leading-[1.05] tracking-[0.04em] text-white sm:text-[2.75rem]">
             Visítanos en
             <br />
             <span className="text-white/92">Puerto Montt</span>
           </h2>
-          <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/48">
+          <p className="mt-4 max-w-md text-[14px] leading-relaxed text-white/48 sm:text-[15px]">
             Av. El Tepual · Ex Banco de Chile. Revisa unidades en persona y agenda tu prueba de
             manejo.
           </p>
@@ -83,16 +83,16 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
           href={visitWhatsApp}
           target="_blank"
           rel="noopener noreferrer"
-          className="rg-btn-primary inline-flex w-fit items-center justify-center rounded-lg px-7 py-3.5 text-sm font-bold text-white"
+          className="rg-btn-primary inline-flex min-h-12 w-full items-center justify-center rounded-xl px-7 py-3.5 text-sm font-bold text-white sm:min-h-11 sm:w-fit sm:rounded-lg"
         >
           Coordinar visita
         </a>
       </div>
 
       {/* Mapa + ficha */}
-      <div className="mt-10 grid overflow-hidden rounded-2xl border border-white/[0.08] lg:grid-cols-[1.55fr_1fr]">
+      <div className="mt-8 grid overflow-hidden rounded-2xl border border-white/[0.08] lg:mt-10 lg:grid-cols-[1.55fr_1fr]">
         {/* Mapa oscuro cinematográfico */}
-        <div className="relative min-h-[300px] bg-[#e8eaed] lg:min-h-[420px]">
+        <div className="relative min-h-[240px] bg-[#e8eaed] sm:min-h-[300px] lg:min-h-[420px]">
           <iframe
             title="Ubicación RG Motors Puerto Montt - Av. El Tepual"
             src={`https://maps.google.com/maps?q=${encodeURIComponent(
@@ -121,7 +121,7 @@ export default function ShowroomMapSection({ className = "" }: { className?: str
         </div>
 
         {/* Ficha de dirección */}
-        <aside className="relative flex flex-col justify-between border-t border-white/[0.08] bg-gradient-to-b from-[#12141b] via-[#0d0e14] to-[#0a0b10] px-7 py-8 sm:px-9 sm:py-10 lg:border-l lg:border-t-0">
+        <aside className="relative flex flex-col justify-between border-t border-white/[0.08] bg-gradient-to-b from-[#12141b] via-[#0d0e14] to-[#0a0b10] px-5 py-7 sm:px-9 sm:py-10 lg:border-l lg:border-t-0">
           <div className="pointer-events-none absolute left-0 top-10 hidden h-24 w-px bg-gradient-to-b from-[#C9A84C] via-[#C9A84C]/40 to-transparent lg:block" />
 
           <div>

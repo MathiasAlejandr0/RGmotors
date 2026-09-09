@@ -15,6 +15,7 @@ import { PriceAlert } from "@/lib/server/priceAlertsStore";
 import { TestDrive } from "@/lib/server/testDrivesStore";
 import PhotoManager from "./PhotoManager";
 import DriveSyncModal from "./DriveSyncModal";
+import { SALE_SUPPLIERS, type SaleSupplier } from "@/lib/sales/suppliers";
 
 export function ChannelBadge({ source }: { source?: string }) {
   if (!source) return <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/50">Directo</span>;
@@ -94,6 +95,9 @@ export function VehiclesSection({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [sellTarget, setSellTarget] = useState<Vehicle | null>(null);
+  const [sellSupplier, setSellSupplier] = useState<SaleSupplier>("RG Motors");
+  const [isSelling, setIsSelling] = useState(false);
 
   const fetchVehicles = useCallback(async () => {
     setIsLoading(true);
@@ -163,6 +167,15 @@ export function VehiclesSection({
   };
 
   const handleQuickStatus = async (v: Vehicle, newStatus: Vehicle["status"]) => {
+    if (newStatus === "Vendido") {
+      setSellSupplier(
+        (v.supplier && (SALE_SUPPLIERS as readonly string[]).includes(v.supplier)
+          ? v.supplier
+          : "RG Motors") as SaleSupplier,
+      );
+      setSellTarget(v);
+      return;
+    }
     try {
       const res = await fetch(`/api/vehicles/${v.slug}`, {
         method: "PUT",
@@ -176,6 +189,34 @@ export function VehiclesSection({
       }
     } catch {
       alert("Error al actualizar estado.");
+    }
+  };
+
+  const confirmSell = async () => {
+    if (!sellTarget) return;
+    setIsSelling(true);
+    try {
+      const res = await fetch(`/api/vehicles/${sellTarget.slug}/sell`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supplier: sellSupplier,
+          salePrice: sellTarget.price,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "No se pudo registrar la venta.");
+      }
+      setVehicleList((prev) => prev.filter((item) => item.slug !== sellTarget.slug));
+      setSellTarget(null);
+      alert(
+        `Vendido por ${sellSupplier}. Fotos eliminadas. Quedó en el historial de ventas.`,
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al registrar la venta.");
+    } finally {
+      setIsSelling(false);
     }
   };
 
@@ -402,6 +443,54 @@ export function VehiclesSection({
           fetchVehicles();
         }}
       />
+
+      {/* Confirmar venta: vendedor + borrar fotos + historial */}
+      {sellTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-ink-900 p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white">Registrar venta</h3>
+            <p className="mt-2 text-sm text-white/60">
+              {sellTarget.brand} {sellTarget.model} · {sellTarget.plate || "sin placa"}
+            </p>
+            <p className="mt-3 text-xs text-amber-300/90">
+              Se eliminarán las fotos del almacenamiento y el auto saldrá del
+              inventario. Quedará solo el registro en el historial de ventas.
+            </p>
+            <label className="mt-4 mb-1 block text-xs font-medium text-white/60">
+              ¿Quién vendió?
+            </label>
+            <select
+              value={sellSupplier}
+              onChange={(e) => setSellSupplier(e.target.value as SaleSupplier)}
+              className="w-full rounded-xl border border-white/15 bg-ink-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-brand-500"
+            >
+              {SALE_SUPPLIERS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={isSelling}
+                onClick={() => setSellTarget(null)}
+                className="rounded-xl border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 hover:bg-white/5"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isSelling}
+                onClick={confirmSell}
+                className="rounded-xl bg-red-500 px-4 py-2 text-xs font-bold text-white hover:bg-red-400 disabled:opacity-50"
+              >
+                {isSelling ? "Registrando…" : "Confirmar venta"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1931,10 +2020,12 @@ export function InventoryHubSection({
   initialSubTab = "catalogo",
   initialSlug,
 }: {
-  initialSubTab?: "catalogo" | "multimedia";
+  initialSubTab?: "catalogo" | "multimedia" | "historial";
   initialSlug?: string;
 }) {
-  const [subTab, setSubTab] = useState<"catalogo" | "multimedia">(initialSubTab);
+  const [subTab, setSubTab] = useState<"catalogo" | "multimedia" | "historial">(
+    initialSubTab,
+  );
   const [photoSlug, setPhotoSlug] = useState<string>(initialSlug || "");
 
   const handleManagePhotos = (slug: string) => {
@@ -1967,18 +2058,185 @@ export function InventoryHubSection({
           >
             <span>📸</span> Estudio de Fotos & Visores 360°
           </button>
+          <button
+            onClick={() => setSubTab("historial")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+              subTab === "historial"
+                ? "bg-brand-500 text-white shadow-glow"
+                : "text-white/60 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <span>📜</span> Historial de Ventas
+          </button>
         </div>
         <p className="text-xs text-white/40 px-3 hidden sm:block">
-          {subTab === "catalogo" ? "Edición, estados y publicación de autos" : "Galería HD, portadas y giros 360° con IA"}
+          {subTab === "catalogo"
+            ? "Edición, estados y publicación de autos"
+            : subTab === "multimedia"
+              ? "Galería HD, portadas y giros 360° con IA"
+              : "Ventas archivadas: fecha, hora y quién vendió"}
         </p>
       </div>
 
       {subTab === "catalogo" ? (
         <VehiclesSection onManagePhotos={handleManagePhotos} />
-      ) : (
+      ) : subTab === "multimedia" ? (
         <PhotoManager initialSlug={photoSlug} />
+      ) : (
+        <SoldHistorySection />
       )}
     </div>
+  );
+}
+
+type SoldHistoryRow = {
+  id: string;
+  slug: string;
+  plate: string;
+  brand: string;
+  model: string;
+  version: string;
+  year: number;
+  salePrice: number;
+  supplier: string;
+  soldAt: string;
+  photosDeleted?: boolean;
+  notes?: string;
+};
+
+export function SoldHistorySection() {
+  const [rows, setRows] = useState<SoldHistoryRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/sold-vehicles");
+      if (!res.ok) throw new Error("No autorizado o error de red");
+      const data = await res.json();
+      setRows(data.sold || []);
+    } catch {
+      setRows([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const filtered = rows.filter((r) => {
+    const q = search.toLowerCase();
+    if (!q) return true;
+    return (
+      r.plate.toLowerCase().includes(q) ||
+      r.brand.toLowerCase().includes(q) ||
+      r.model.toLowerCase().includes(q) ||
+      r.supplier.toLowerCase().includes(q)
+    );
+  });
+
+  const formatSoldAt = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      return {
+        date: d.toLocaleDateString("es-CL", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }),
+        time: d.toLocaleTimeString("es-CL", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+    } catch {
+      return { date: iso, time: "—" };
+    }
+  };
+
+  return (
+    <Panel
+      title="Historial de vehículos vendidos"
+      action={
+        <button
+          onClick={load}
+          className="rounded-xl border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 hover:bg-white/5"
+        >
+          Actualizar
+        </button>
+      }
+    >
+      <p className="mb-3 text-xs text-white/50">
+        Solo queda el registro comercial (fecha, hora y quién vendió). Las fotos
+        se eliminan al marcar como vendido para liberar espacio.
+      </p>
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Buscar por patente, marca, modelo o vendedor…"
+        className="mb-4 w-full max-w-md rounded-xl border border-white/15 bg-ink-950 px-4 py-2 text-xs text-white placeholder-white/40 outline-none focus:border-brand-500"
+      />
+      {isLoading ? (
+        <p className="text-xs text-white/40 py-6">Cargando historial…</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-xs text-white/40 py-6">
+          Aún no hay ventas archivadas.
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="text-left text-white/40 border-b border-white/10">
+              <tr>
+                <th className="pb-2 pr-3">Fecha venta</th>
+                <th className="pb-2 pr-3">Hora</th>
+                <th className="pb-2 pr-3">Vehículo</th>
+                <th className="pb-2 pr-3">Patente</th>
+                <th className="pb-2 pr-3">Precio venta</th>
+                <th className="pb-2 pr-3">Vendido por</th>
+                <th className="pb-2">Fotos</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {filtered.map((r) => {
+                const { date, time } = formatSoldAt(r.soldAt);
+                return (
+                  <tr key={r.id} className="hover:bg-white/[0.02]">
+                    <td className="py-3 pr-3 font-medium text-white">{date}</td>
+                    <td className="py-3 pr-3 text-white/70">{time}</td>
+                    <td className="py-3 pr-3">
+                      <p className="font-semibold text-white">
+                        {r.brand} {r.model}
+                      </p>
+                      <p className="text-white/40">
+                        {r.year} · {r.version}
+                      </p>
+                    </td>
+                    <td className="py-3 pr-3 font-mono text-white/80">
+                      {r.plate}
+                    </td>
+                    <td className="py-3 pr-3 font-bold text-brand-300">
+                      {formatCLP(r.salePrice)}
+                    </td>
+                    <td className="py-3 pr-3">
+                      <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/90">
+                        {r.supplier || "—"}
+                      </span>
+                    </td>
+                    <td className="py-3 text-white/50">
+                      {r.photosDeleted ? "Eliminadas" : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
   );
 }
 

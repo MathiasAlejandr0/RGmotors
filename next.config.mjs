@@ -10,7 +10,22 @@ const nextConfig = {
       "public/cars/**/*",
       "public/cars/inventory/**/*",
       "public/cars/uploads/**/*",
-      "public/cars/spin/**/*"
+      "public/cars/spin/**/*",
+      // IA de fondo / ONNX: solo para scripts locales; no deben ir en Functions.
+      "node_modules/@imgly/**/*",
+      "node_modules/onnxruntime-node/**/*",
+      "node_modules/onnxruntime-common/**/*",
+      "node_modules/@imgly/background-removal-node/**/*",
+      // Binarios nativos de otras plataformas (Vercel = linux x64).
+      "node_modules/@napi-rs/canvas-android-arm64/**/*",
+      "node_modules/@napi-rs/canvas-darwin-arm64/**/*",
+      "node_modules/@napi-rs/canvas-darwin-x64/**/*",
+      "node_modules/@napi-rs/canvas-linux-arm-gnueabihf/**/*",
+      "node_modules/@napi-rs/canvas-linux-arm64-gnu/**/*",
+      "node_modules/@napi-rs/canvas-linux-arm64-musl/**/*",
+      "node_modules/@napi-rs/canvas-linux-riscv64-gnu/**/*",
+      "node_modules/@napi-rs/canvas-win32-arm64-msvc/**/*",
+      "node_modules/@napi-rs/canvas-win32-x64-msvc/**/*",
     ],
   },
   // Permite HMR cuando Playwright abre el origen por 127.0.0.1
@@ -37,8 +52,6 @@ const nextConfig = {
   // Módulos nativos que no deben empaquetarse: se cargan directo en el server.
   serverExternalPackages: [
     "@napi-rs/canvas",
-    "@imgly/background-removal-node",
-    "onnxruntime-node",
     "sharp",
   ],
   env: {

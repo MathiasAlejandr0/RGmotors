@@ -286,12 +286,12 @@ const TRUST_ITEMS: TrustItem[] = [
 
 function TrustCard({ item }: { item: TrustItem }) {
   return (
-    <article className="flex w-[186px] shrink-0 flex-col items-center rounded-xl border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-transparent px-3.5 py-3 text-center transition duration-300 hover:border-[#C9A84C]/22 hover:from-white/[0.055]">
-      <h3 className="text-[12px] font-semibold leading-tight tracking-tight text-white/95">
+    <article className="flex w-[158px] shrink-0 flex-col items-center rounded-xl border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-transparent px-2.5 py-2.5 text-center transition duration-300 hover:border-[#C9A84C]/22 hover:from-white/[0.055] sm:w-[186px] sm:px-3.5 sm:py-3">
+      <h3 className="text-[11px] font-semibold leading-tight tracking-tight text-white/95 sm:text-[12px]">
         {item.label}
       </h3>
-      <p className="mt-1 text-[10.5px] leading-snug text-white/40">{item.detail}</p>
-      <div className="mt-2.5 w-full">{item.mark}</div>
+      <p className="mt-1 text-[10px] leading-snug text-white/40 sm:text-[10.5px]">{item.detail}</p>
+      <div className="mt-2 w-full sm:mt-2.5">{item.mark}</div>
     </article>
   );
 }

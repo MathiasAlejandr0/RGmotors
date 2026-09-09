@@ -19,7 +19,6 @@
     "spin:video": "node scripts/video-to-spin.mjs"
   },
   "dependencies": {
-    "@imgly/background-removal-node": "^1.4.5",
     "@napi-rs/canvas": "^1.0.3",
     "@react-pdf/renderer": "^4.5.1",
     "@vercel/blob": "^2.8.0",

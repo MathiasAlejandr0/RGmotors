@@ -6,9 +6,14 @@ fotos y videos
 tmp-heic
 tmp-spin-raw
 data
+scratch
+RESPALDO_FOTOS_DRIVE
 *.MOV
 *.mov
 *.mp4
 .env*
 README.md
 scripts
+# Modelos / deps de IA local (no deben subir al deploy)
+**/onnxruntime-node/**
+**/@imgly/**

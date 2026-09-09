@@ -45,6 +45,18 @@ export async function PUT(
     }
 
     const body = (await req.json()) as Partial<Vehicle>;
+
+    if (body.status === "Vendido" && existing.status !== "Vendido") {
+      return NextResponse.json(
+        {
+          error:
+            "Para marcar como vendido usá el flujo de venta (elige quién vendió). Se borrarán las fotos y quedará en el historial.",
+          useEndpoint: `/api/vehicles/${slug}/sell`,
+        },
+        { status: 400 },
+      );
+    }
+
     const updated: Vehicle = {
       ...existing,
       ...body,

@@ -308,36 +308,36 @@ function CatalogContent() {
   );
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/[0.08] pb-6">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-white/[0.08] pb-5 sm:mb-8 sm:pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
+          <h1 className="text-[1.65rem] font-extrabold tracking-tight text-white sm:text-4xl">
             Catálogo de Vehículos
           </h1>
-          <p className="mt-1 text-sm text-white/50">
+          <p className="mt-1 text-[13px] text-white/50 sm:text-sm">
             Explora y filtra nuestra selección de vehículos usados con inspección técnica.
           </p>
         </div>
         <CatalogPdfButton vehicles={filtered} filterSummary={filterSummary} />
       </div>
 
-      <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#12141c] p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#12141c] p-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div>
           <h2 className="text-sm font-bold text-white">¿Quieres calcular tu financiamiento?</h2>
           <p className="mt-0.5 text-xs text-white/55">
             Simula tu cuota online y te respondemos con las opciones disponibles.
           </p>
         </div>
-        <div className="flex w-full flex-wrap gap-2.5 sm:w-auto shrink-0">
+        <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap shrink-0">
           <button
             onClick={() => setIsPreApprovalOpen(true)}
-            className="apple-btn-primary flex-1 rounded-full px-5 py-2.5 text-xs font-bold text-white sm:flex-none"
+            className="apple-btn-primary min-h-11 w-full rounded-full px-5 py-2.5 text-xs font-bold text-white sm:w-auto sm:flex-none"
           >
             Simular crédito online
           </button>
           <button
             onClick={() => setIsCarRequestOpen(true)}
-            className="apple-btn-secondary flex-1 rounded-full px-4 py-2.5 text-xs font-semibold text-white/80 hover:text-white sm:flex-none"
+            className="apple-btn-secondary min-h-11 w-full rounded-full px-4 py-2.5 text-xs font-semibold text-white/80 hover:text-white sm:w-auto sm:flex-none"
           >
             Pedir auto a medida
           </button>
@@ -366,7 +366,7 @@ function CatalogContent() {
             counts={categoryCounts}
           />
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="relative w-full sm:max-w-xs">
               <span className="absolute inset-y-0 left-3.5 flex items-center text-white/40 pointer-events-none">
                 🔍
@@ -378,14 +378,14 @@ function CatalogContent() {
                   updateUrlParams(brands, types, fuels, e.target.value);
                 }}
                 placeholder="Buscar marca o modelo…"
-                className="w-full rounded-full border border-white/15 bg-white/[0.05] pl-10 pr-4 py-2.5 text-xs text-white placeholder-white/40 outline-none focus:border-brand-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-brand-500/20 transition"
+                className="min-h-11 w-full rounded-full border border-white/15 bg-white/[0.05] pl-10 pr-4 py-2.5 text-[13px] text-white placeholder-white/40 outline-none focus:border-brand-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-brand-500/20 transition sm:text-xs"
               />
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex w-full items-center gap-2.5 sm:w-auto">
               <button
                 onClick={() => setShowFilters((s) => !s)}
-                className="apple-btn-secondary rounded-full px-4 py-2 text-xs font-medium lg:hidden"
+                className="apple-btn-secondary min-h-11 flex-1 rounded-full px-4 py-2 text-xs font-medium lg:hidden sm:flex-none"
               >
                 Filtros {showFilters ? "▲" : "▼"}
               </button>
@@ -393,7 +393,7 @@ function CatalogContent() {
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as Sort)}
-                className="rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-xs font-medium text-white outline-none focus:border-brand-500 transition cursor-pointer backdrop-blur-md"
+                className="min-h-11 flex-1 rounded-full border border-white/15 bg-white/[0.06] px-3 py-2 text-xs font-medium text-white outline-none focus:border-brand-500 transition cursor-pointer backdrop-blur-md sm:flex-none sm:px-4"
               >
                 <option value="relevancia" className="bg-ink-900">Ordenar por: Relevancia</option>
                 <option value="precio-asc" className="bg-ink-900">Precio: menor a mayor</option>

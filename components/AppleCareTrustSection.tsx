@@ -32,29 +32,29 @@ export default function AppleCareTrustSection() {
 
       <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16">
         {/* Financiamiento — banda útil */}
-        <div className="flex flex-col gap-5 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#12151e] to-[#0b0c11] px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-7">
+        <div className="flex flex-col gap-5 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#12151e] to-[#0b0c11] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-7">
           <div className="max-w-xl">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#C9A84C]/90">
               Financiamiento Autofin
             </p>
-            <h2 className="mt-2 font-display text-2xl font-semibold uppercase tracking-[0.04em] text-white sm:text-[1.75rem]">
+            <h2 className="mt-2 font-display text-[1.45rem] font-semibold uppercase tracking-[0.04em] text-white sm:text-[1.75rem]">
               Simula tu cuota en minutos
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-white/48">
+            <p className="mt-2 text-[13px] leading-relaxed text-white/48 sm:text-sm">
               Pie, plazo y cuota del escenario normal Autofin. En sucursal, según tu
               evaluación, la cuota puede mantenerse o mejorar.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="rg-cta-row sm:w-auto">
             <Link
               href="/simulador"
-              className="rg-btn-primary inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-bold text-white"
+              className="rg-btn-primary inline-flex min-h-12 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white sm:min-h-11 sm:rounded-lg"
             >
               Ir al simulador
             </Link>
             <Link
               href="/catalogo"
-              className="inline-flex items-center justify-center rounded-lg border border-white/15 px-6 py-3 text-sm font-semibold text-white/80 transition hover:border-white/30 hover:text-white"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 px-6 py-3 text-sm font-semibold text-white/80 transition hover:border-white/30 hover:text-white sm:min-h-11 sm:rounded-lg"
             >
               Ver vehículos
             </Link>
@@ -106,17 +106,17 @@ export default function AppleCareTrustSection() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-200/80">
               Siguiente paso
             </p>
-            <h2 className="relative mt-3 font-display text-[1.7rem] font-semibold uppercase tracking-[0.04em] text-white sm:text-[2.1rem]">
+            <h2 className="relative mt-3 font-display text-[clamp(1.35rem,6vw,1.7rem)] font-semibold uppercase tracking-[0.04em] text-white sm:text-[2.1rem]">
               ¿Listo para tu próximo vehículo?
             </h2>
-            <p className="relative mx-auto mt-3 max-w-md text-sm leading-relaxed text-white/55">
+            <p className="relative mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-white/55 sm:text-sm">
               Explora el stock, simula el crédito o escribe a un asesor. Te acompañamos en Puerto
               Montt.
             </p>
-            <div className="relative mt-8 flex flex-wrap items-center justify-center gap-3">
+            <div className="rg-cta-row relative mx-auto mt-8 max-w-md sm:max-w-none sm:justify-center">
               <Link
                 href="/catalogo"
-                className="rg-btn-primary inline-flex rounded-lg px-7 py-3.5 text-sm font-bold text-white"
+                className="rg-btn-primary inline-flex min-h-12 items-center justify-center rounded-xl px-7 py-3.5 text-sm font-bold text-white sm:min-h-11 sm:rounded-lg"
               >
                 Explorar catálogo
               </Link>
@@ -124,7 +124,7 @@ export default function AppleCareTrustSection() {
                 href={whatsappLink("Hola RG Motors, quiero información sobre un vehículo.")}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex rounded-lg border border-white/20 bg-white/[0.03] px-7 py-3.5 text-sm font-semibold text-white transition hover:border-white/35 hover:bg-white/[0.06]"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 bg-white/[0.03] px-7 py-3.5 text-sm font-semibold text-white transition hover:border-white/35 hover:bg-white/[0.06] sm:min-h-11 sm:rounded-lg"
               >
                 Hablar por WhatsApp
               </a>

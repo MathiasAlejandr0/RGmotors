@@ -23,7 +23,7 @@ export default function QuickCategoryFilter({
   ];
 
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none select-none">
+    <div className="flex items-center gap-2 overflow-x-auto overscroll-x-contain pb-2 scrollbar-none select-none snap-x snap-mandatory">
       {pills.map((p) => {
         const active = activeCategory === p.id;
         const count = counts[p.id] || 0;
@@ -31,7 +31,7 @@ export default function QuickCategoryFilter({
           <button
             key={p.id}
             onClick={() => onSelectCategory(p.id)}
-            className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-200 ${
+            className={`flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full px-3.5 py-2 text-[12px] font-semibold tracking-wide transition-all duration-200 sm:px-4 sm:text-xs ${
               active
                 ? "bg-white text-ink-950 shadow-glow"
                 : "border border-white/12 bg-white/[0.05] text-white/70 hover:border-white/25 hover:bg-white/10 hover:text-white"

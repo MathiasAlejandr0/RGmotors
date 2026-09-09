@@ -4,8 +4,8 @@ import { COMPANY, whatsappLink } from "@/lib/company";
 
 export default function SiteFooter() {
   return (
-    <footer className="mt-0 border-t border-white/[0.08] bg-ink-950/80 backdrop-blur-xl">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className="mt-0 border-t border-white/[0.08] bg-ink-950/80 backdrop-blur-xl pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 sm:py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-3">
           <Logo size={50} />
           <p className="max-w-xs text-xs leading-relaxed text-white/45">

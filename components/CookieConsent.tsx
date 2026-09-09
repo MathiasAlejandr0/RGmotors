@@ -47,29 +47,30 @@ export default function CookieConsent() {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:p-4 sm:pb-4">
-      <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-white/12 bg-[#0c0d12]/95 px-4 py-4 shadow-[0_-8px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:flex-row sm:items-center sm:gap-5 sm:px-5">
-        <p className="flex-1 text-[13px] leading-relaxed text-white/70">
-          Usamos cookies técnicas y, con tu permiso, medición de tráfico para mejorar el sitio.{" "}
+      {/* pr reserva el FAB del chat en móvil */}
+      <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-white/12 bg-[#0c0d12]/95 px-3.5 py-3.5 shadow-[0_-8px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl pr-[4.25rem] sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:pr-5">
+        <p className="flex-1 text-[12px] leading-snug text-white/70 sm:text-[13px] sm:leading-relaxed">
+          Usamos cookies técnicas y, con tu permiso, medición de tráfico.{" "}
           <Link
             href="/cookies"
             className="font-semibold text-brand-300 underline-offset-2 hover:underline"
           >
-            Política de cookies
+            Más info
           </Link>
           .
         </p>
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="flex shrink-0 gap-2">
           <button
             type="button"
             onClick={() => save("essential")}
-            className="touch-target min-h-11 rounded-lg border border-white/15 px-4 py-2.5 text-[13px] font-semibold text-white/80 transition hover:border-white/30 hover:text-white"
+            className="touch-target min-h-11 flex-1 rounded-xl border border-white/15 px-3 py-2.5 text-[12px] font-semibold text-white/80 transition hover:border-white/30 hover:text-white sm:flex-none sm:rounded-lg sm:px-4 sm:text-[13px]"
           >
             Solo esenciales
           </button>
           <button
             type="button"
             onClick={() => save("accepted")}
-            className="rg-btn-primary touch-target min-h-11 rounded-lg px-4 py-2.5 text-[13px] font-bold text-white"
+            className="rg-btn-primary touch-target min-h-11 flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-white sm:flex-none sm:rounded-lg sm:px-4 sm:text-[13px]"
           >
             Aceptar
           </button>

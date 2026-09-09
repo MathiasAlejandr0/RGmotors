@@ -16,6 +16,8 @@
 html {
   scroll-behavior: smooth;
   overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 html,
@@ -35,10 +37,18 @@ body {
   letter-spacing: -0.015em;
   text-rendering: optimizeLegibility;
   overflow-x: clip;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 * {
   box-sizing: border-box;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
 }
 
 ::selection {
@@ -216,6 +226,56 @@ input[type="range"].apple-range::-moz-range-thumb {
   padding-right: max(0px, var(--safe-right));
 }
 
+/* Contenedor de página: gutters consistentes + safe-area lateral */
+.rg-page-x {
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
+}
+@media (min-width: 640px) {
+  .rg-page-x {
+    padding-left: max(1.5rem, var(--safe-left));
+    padding-right: max(1.5rem, var(--safe-right));
+  }
+}
+
+/* Hero full-bleed estable en iOS/Android (dvh + fallback) */
+.rg-hero-min {
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+}
+
+/* CTAs apilados a ancho completo en móvil */
+.rg-cta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+.rg-cta-row > a,
+.rg-cta-row > button {
+  width: 100%;
+  justify-content: center;
+}
+@media (min-width: 480px) {
+  .rg-cta-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: auto;
+  }
+  .rg-cta-row > a,
+  .rg-cta-row > button {
+    width: auto;
+  }
+}
+
+/* Evitar “hover fantasma” en touch: el lift solo en puntero fino */
+@media (hover: hover) and (pointer: fine) {
+  .rg-card-lift:hover {
+    transform: translateY(-4px);
+  }
+}
+
 .apple-glass-glow {
   position: relative;
   overflow: hidden;
@@ -369,6 +429,26 @@ input[type="range"].apple-range::-moz-range-thumb {
 }
 .rg-stagger > *:nth-child(4) {
   animation-delay: 0.54s;
+}
+.rg-stagger > *:nth-child(5) {
+  animation-delay: 0.68s;
+}
+
+/* Móvil: menos motion (batería + menos crop raro en pantallas altas) */
+@media (max-width: 639px) {
+  .rg-hero-media {
+    animation: none;
+    transform: scale(1.04);
+  }
+  .reveal-on-scroll {
+    transform: translateY(12px);
+  }
+}
+
+@supports (padding: max(0px)) {
+  .rg-fab-clearance {
+    padding-bottom: max(5.5rem, calc(var(--safe-bottom) + 4.5rem));
+  }
 }
 
 .rg-grain {

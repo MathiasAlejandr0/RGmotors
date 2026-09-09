@@ -14,7 +14,7 @@ export default function MobileVehicleStickyBar({ vehicle: v }: { vehicle: Vehicl
       className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#06070a]/94 px-3 pt-2.5 backdrop-blur-xl lg:hidden"
       style={{ paddingBottom: "max(0.65rem, env(safe-area-inset-bottom))" }}
     >
-      <div className="mx-auto flex max-w-7xl items-center gap-2.5 pr-[4.75rem]">
+      <div className="mx-auto flex max-w-7xl items-center gap-2.5 pr-[4.25rem] sm:pr-[4.75rem]">
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-bold text-white">
             {v.brand} {v.model}
@@ -25,7 +25,7 @@ export default function MobileVehicleStickyBar({ vehicle: v }: { vehicle: Vehicl
           href={wa}
           target="_blank"
           rel="noopener noreferrer"
-          className="touch-target inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[#25D366] px-4 text-[13px] font-bold text-white"
+          className="touch-target inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[#25D366] px-4 text-[13px] font-bold text-white active:scale-[0.98]"
         >
           WhatsApp
         </a>

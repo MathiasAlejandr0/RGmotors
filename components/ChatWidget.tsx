@@ -152,27 +152,27 @@ export default function ChatWidget() {
 
   const fabOffsetClass = (() => {
     if (cookieBannerOpen && pageSlug) {
-      return "bottom-[max(9.5rem,calc(env(safe-area-inset-bottom)+8.5rem))]";
+      return "bottom-[max(10.5rem,calc(env(safe-area-inset-bottom)+9.25rem))]";
     }
     if (cookieBannerOpen) {
-      return "bottom-[max(7.5rem,calc(env(safe-area-inset-bottom)+6.5rem))]";
+      return "bottom-[max(8.25rem,calc(env(safe-area-inset-bottom)+7rem))]";
     }
     if (pageSlug) {
       return "bottom-[max(5.25rem,calc(env(safe-area-inset-bottom)+4.5rem))]";
     }
-    return "bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+1rem))]";
+    return "bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.85rem))]";
   })();
   const panelOffsetClass = (() => {
     if (cookieBannerOpen && pageSlug) {
-      return "bottom-[max(11.5rem,calc(env(safe-area-inset-bottom)+10.5rem))]";
+      return "bottom-[max(1rem,calc(env(safe-area-inset-bottom)+0.5rem))] sm:bottom-[max(11.5rem,calc(env(safe-area-inset-bottom)+10.5rem))]";
     }
     if (cookieBannerOpen) {
-      return "bottom-[max(9.5rem,calc(env(safe-area-inset-bottom)+8.5rem))]";
+      return "bottom-[max(1rem,calc(env(safe-area-inset-bottom)+0.5rem))] sm:bottom-[max(9.5rem,calc(env(safe-area-inset-bottom)+8.5rem))]";
     }
     if (pageSlug) {
-      return "bottom-[max(7.25rem,calc(env(safe-area-inset-bottom)+6.5rem))]";
+      return "bottom-[max(5.75rem,calc(env(safe-area-inset-bottom)+5rem))] sm:bottom-[max(7.25rem,calc(env(safe-area-inset-bottom)+6.5rem))]";
     }
-    return "bottom-[max(5.5rem,calc(env(safe-area-inset-bottom)+5rem))]";
+    return "bottom-[max(4.75rem,calc(env(safe-area-inset-bottom)+4.25rem))] sm:bottom-[max(5.5rem,calc(env(safe-area-inset-bottom)+5rem))]";
   })();
   const teaserOffsetClass = fabOffsetClass;
 
@@ -352,7 +352,7 @@ export default function ChatWidget() {
           setOpen((o) => !o);
           if (!open) setShowTeaser(false);
         }}
-        className={`fixed ${fabOffsetClass} right-[max(1rem,env(safe-area-inset-right))] z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-2xl text-white shadow-glow transition-all duration-300 hover:scale-105 active:scale-95 border border-white/20 backdrop-blur-xl`}
+        className={`fixed ${fabOffsetClass} right-[max(0.85rem,env(safe-area-inset-right))] z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-xl text-white shadow-glow transition-all duration-300 hover:scale-105 active:scale-95 border border-white/20 backdrop-blur-xl sm:h-14 sm:w-14 sm:text-2xl`}
         aria-label="Ejecutivo virtual RG Motors"
       >
         {open ? "✕" : "💬"}
@@ -360,7 +360,7 @@ export default function ChatWidget() {
 
       {open && (
         <div
-          className={`fixed ${panelOffsetClass} right-[max(1rem,env(safe-area-inset-right))] z-50 flex h-[min(520px,70dvh)] max-h-[78vh] w-[min(92vw,375px)] flex-col overflow-hidden rounded-3xl border border-white/15 bg-ink-950/90 backdrop-blur-2xl shadow-2xl animate-fade-up`}
+          className={`fixed ${panelOffsetClass} left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] z-50 flex h-[min(560px,78dvh)] max-h-[85dvh] flex-col overflow-hidden rounded-2xl border border-white/15 bg-ink-950/95 backdrop-blur-2xl shadow-2xl animate-fade-up sm:left-auto sm:right-[max(1rem,env(safe-area-inset-right))] sm:h-[min(520px,70dvh)] sm:max-h-[78vh] sm:w-[min(92vw,375px)] sm:rounded-3xl`}
         >          <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-3.5 backdrop-blur-md">
             <div className="flex items-center gap-3">
               <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-[10px] font-bold tracking-tight shadow-glow">
