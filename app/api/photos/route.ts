@@ -453,10 +453,17 @@ export async function DELETE(req: NextRequest) {
     const v = await getVehicleBySlug(slug, { bypassCache: true });
     if (v && !isSpin) {
       const currentGallery = v.gallery || [];
-      const updatedGallery = currentGallery.filter((u) => !u.includes(safeFilename));
+      const urlHint = typeof body.url === "string" ? body.url.split("?")[0] : "";
+      const updatedGallery = currentGallery.filter((u) => {
+        if (urlHint && u.split("?")[0] === urlHint) return false;
+        return !u.includes(safeFilename);
+      });
 
       let updatedImage = v.image;
-      if (updatedImage.includes(safeFilename)) {
+      if (
+        updatedImage.includes(safeFilename) ||
+        (urlHint && updatedImage.split("?")[0] === urlHint)
+      ) {
         updatedImage =
           updatedGallery.length > 0 ? updatedGallery[0]! : "/images/placeholder-pending-car.svg";
       }

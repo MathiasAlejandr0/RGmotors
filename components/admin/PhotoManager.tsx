@@ -5,7 +5,12 @@ import { vehicles, Vehicle } from "@/lib/vehicles";
 import { asset } from "@/lib/asset";
 import PhotoSpin360 from "@/components/PhotoSpin360";
 import SpinUploader from "@/components/admin/SpinUploader";
-import { uploadPhotosSequentially, readApiError, convertFilesToWebpBatch, formatBytes } from "@/lib/client/uploadPhotos";
+import {
+  uploadPhotosSequentially,
+  readApiError,
+  convertImageToWebp,
+  formatBytes,
+} from "@/lib/client/uploadPhotos";
 
 type PhotoItem = {
   name: string;
@@ -14,7 +19,25 @@ type PhotoItem = {
   isCover?: boolean;
 };
 
+type StagedPhoto = {
+  id: string;
+  file: File;
+  previewUrl: string;
+  ready: boolean;
+  error?: string;
+};
+
 type SubTab = "gallery" | "spin" | "video" | "guide";
+
+function revokeAll(items: StagedPhoto[]) {
+  for (const s of items) {
+    try {
+      URL.revokeObjectURL(s.previewUrl);
+    } catch {
+      /* noop */
+    }
+  }
+}
 
 export default function PhotoManager({ initialSlug }: { initialSlug?: string }) {
   const [vehiclesData, setVehiclesData] = useState<Vehicle[]>(vehicles);
@@ -36,29 +59,25 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
       .catch(console.error);
   }, [initialSlug]);
 
-  // Staged files (pre-upload)
-  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
-  const [uploadType, setUploadType] = useState<"gallery" | "cover">("gallery");
+  const [staged, setStaged] = useState<StagedPhoto[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isConverting, setIsConverting] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Existing uploaded photos
   const [gallery, setGallery] = useState<PhotoItem[]>([]);
   const [spinCount, setSpinCount] = useState<number>(0);
   const [coverImage, setCoverImage] = useState<string>("");
   const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
-
-  // Preview Modal
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const spinInputRef = useRef<HTMLInputElement>(null);
+  const galleryPanelRef = useRef<HTMLDivElement>(null);
 
   const selectedVehicle = vehiclesData.find((v) => v.slug === selectedSlug) || vehiclesData[0] || {
     slug: "",
@@ -67,8 +86,15 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     model: "",
     version: "",
     year: 2024,
-    image: "/images/placeholder-pending-car.svg"
+    image: "/images/placeholder-pending-car.svg",
   };
+
+  const clearStaged = useCallback(() => {
+    setStaged((prev) => {
+      revokeAll(prev);
+      return [];
+    });
+  }, []);
 
   const fetchPhotos = useCallback(async (slug: string) => {
     if (!slug) return;
@@ -93,76 +119,129 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     }
   }, []);
 
+  const refreshVehicleMeta = useCallback(async () => {
+    try {
+      const res = await fetch("/api/vehicles?admin=true", { cache: "no-store" });
+      const data = await res.json();
+      if (data?.vehicles) setVehiclesData(data.vehicles);
+    } catch {
+      /* noop */
+    }
+  }, []);
+
   useEffect(() => {
     if (selectedSlug) {
       fetchPhotos(selectedSlug);
-      setStagedFiles([]);
+      clearStaged();
       setUploadSuccess(null);
       setUploadError(null);
       setUploadProgress(null);
     }
-  }, [selectedSlug, fetchPhotos]);
+  }, [selectedSlug, fetchPhotos, clearStaged]);
+
+  useEffect(() => {
+    return () => revokeAll(staged);
+    // solo al desmontar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleFilesChosen = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const valid = Array.from(files).filter((f) =>
-      /\.(jpe?g|png|webp|avif)$/i.test(f.name) || /^image\//i.test(f.type),
+    const valid = Array.from(files).filter(
+      (f) => /\.(jpe?g|png|webp|avif)$/i.test(f.name) || /^image\//i.test(f.type),
     );
     if (valid.length === 0) {
       setUploadError("Por favor selecciona imágenes válidas (JPG, PNG, WebP).");
       return;
     }
+
     setUploadError(null);
     setUploadSuccess(null);
-    setIsConverting(true);
-    setUploadProgress(`Preparando fotos 0/${valid.length}…`);
-    try {
-      const { files: converted, errors } = await convertFilesToWebpBatch(
-        valid,
-        (done, total, name) => {
-          setUploadProgress(
-            done >= total
-              ? `Listo ${total}/${total}`
-              : `Preparando ${done + 1}/${total}: ${name}`,
-          );
-        },
-      );
-      if (converted.length === 0) {
-        setUploadError(errors[0] || "Ninguna foto se pudo preparar.");
-      } else {
-        setStagedFiles((prev) => [...prev, ...converted]);
-        if (errors.length > 0) {
-          setUploadError(
-            `${converted.length} listas; ${errors.length} omitidas: ${errors.slice(0, 2).join(" · ")}`,
-          );
+    setIsPreparing(true);
+
+    // Miniaturas al instante (antes de optimizar)
+    const draft: StagedPhoto[] = valid.map((file, i) => ({
+      id: `${Date.now()}-${i}-${file.name}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      ready: false,
+    }));
+    setStaged((prev) => [...prev, ...draft]);
+    setUploadProgress(`Preparando miniaturas 0/${draft.length}…`);
+
+    for (let i = 0; i < draft.length; i++) {
+      const item = draft[i]!;
+      setUploadProgress(`Preparando ${i + 1}/${draft.length}: ${item.file.name}`);
+      try {
+        const prepared = await convertImageToWebp(item.file);
+        const newPreview = URL.createObjectURL(prepared);
+        setStaged((prev) =>
+          prev.map((s) => {
+            if (s.id !== item.id) return s;
+            try {
+              URL.revokeObjectURL(s.previewUrl);
+            } catch {
+              /* noop */
+            }
+            return { ...s, file: prepared, previewUrl: newPreview, ready: true };
+          }),
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "No se pudo preparar";
+        setStaged((prev) =>
+          prev.map((s) => (s.id === item.id ? { ...s, ready: false, error: msg } : s)),
+        );
+      }
+    }
+
+    setUploadProgress(null);
+    setIsPreparing(false);
+  };
+
+  const removeStaged = (id: string) => {
+    setStaged((prev) => {
+      const target = prev.find((s) => s.id === id);
+      if (target) {
+        try {
+          URL.revokeObjectURL(target.previewUrl);
+        } catch {
+          /* noop */
         }
       }
-      setUploadProgress(null);
-    } catch {
-      setUploadError("No se pudieron preparar algunas imágenes. Intenta de nuevo.");
-      setUploadProgress(null);
-    } finally {
-      setIsConverting(false);
-    }
+      return prev.filter((s) => s.id !== id);
+    });
   };
 
-  const removeStagedFile = (idx: number) => {
-    setStagedFiles((prev) => prev.filter((_, i) => i !== idx));
+  const moveStaged = (index: number, direction: -1 | 1) => {
+    setStaged((prev) => {
+      const target = index + direction;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      const tmp = next[index]!;
+      next[index] = next[target]!;
+      next[target] = tmp;
+      return next;
+    });
   };
 
-  // Upload staged photos — de a una (límite Vercel ~4.5 MB por request)
   const handleUploadGallery = async () => {
-    if (stagedFiles.length === 0 || !selectedSlug) return;
+    const ready = staged.filter((s) => s.ready && !s.error);
+    if (ready.length === 0 || !selectedSlug) {
+      setUploadError("No hay fotos listas para publicar. Espera a que terminen de prepararse.");
+      return;
+    }
+
     setIsUploading(true);
     setUploadError(null);
     setUploadSuccess(null);
-    setUploadProgress(`Preparando 0/${stagedFiles.length}…`);
+    setUploadProgress(`Subiendo 0/${ready.length}…`);
 
     try {
+      // Primera = portada siempre
       const result = await uploadPhotosSequentially({
         slug: selectedSlug,
-        type: uploadType,
-        files: stagedFiles,
+        type: "cover",
+        files: ready.map((s) => s.file),
         onProgress: (p) => {
           setUploadProgress(
             p.done >= p.total
@@ -172,17 +251,19 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
         },
       });
       setUploadSuccess(result.message);
-      setStagedFiles([]);
+      clearStaged();
       await fetchPhotos(selectedSlug);
+      await refreshVehicleMeta();
+      galleryPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Error desconocido");
+      await fetchPhotos(selectedSlug);
     } finally {
       setIsUploading(false);
       setUploadProgress(null);
     }
   };
 
-  // Upload 360 Spin Frames — de a una
   const handleUploadSpinFrames = async (files: FileList | null) => {
     if (!files || files.length === 0 || !selectedSlug) return;
     const valid = Array.from(files).filter((f) => /\.(jpe?g|png|webp)$/i.test(f.name));
@@ -219,14 +300,18 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     }
   };
 
-  // Delete an existing photo
-  const handleDeletePhoto = async (filename: string, type: "gallery" | "spin" = "gallery") => {
-    if (!confirm(`¿Eliminar esta foto (${filename})?`)) return;
+  const handleDeletePhoto = async (photo: PhotoItem) => {
+    if (!confirm(`¿Eliminar esta foto (${photo.name})?`)) return;
     try {
       const res = await fetch("/api/photos", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: selectedSlug, filename, type }),
+        body: JSON.stringify({
+          slug: selectedSlug,
+          filename: photo.name,
+          url: photo.url.split("?")[0],
+          type: "gallery",
+        }),
       });
       if (!res.ok) {
         alert(await readApiError(res));
@@ -234,7 +319,8 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
       }
       const data = await res.json();
       if (data.success) {
-        fetchPhotos(selectedSlug);
+        await fetchPhotos(selectedSlug);
+        await refreshVehicleMeta();
       } else {
         alert(data.error || "No se pudo eliminar la foto.");
       }
@@ -243,18 +329,22 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     }
   };
 
-  // Set a photo as the cover image (primera foto del auto)
   const handleSetAsCover = async (url: string) => {
     try {
       const res = await fetch("/api/photos", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: selectedSlug, action: "set_cover", coverUrl: url }),
+        body: JSON.stringify({
+          slug: selectedSlug,
+          action: "set_cover",
+          coverUrl: url.split("?")[0],
+        }),
       });
       const data = await res.json();
       if (data.success) {
-        setUploadSuccess("¡Portada principal actualizada correctamente!");
-        fetchPhotos(selectedSlug);
+        setUploadSuccess("Portada actualizada: esa foto queda primera en el catálogo.");
+        await fetchPhotos(selectedSlug);
+        await refreshVehicleMeta();
       } else {
         alert(data.error || "No se pudo actualizar la portada.");
       }
@@ -263,20 +353,19 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     }
   };
 
-  // Reorder photos in the gallery (mover hacia la izquierda o derecha)
   const handleMovePhoto = async (index: number, direction: -1 | 1) => {
     const targetIdx = index + direction;
     if (targetIdx < 0 || targetIdx >= gallery.length) return;
 
     const newGallery = [...gallery];
-    const temp = newGallery[index];
-    newGallery[index] = newGallery[targetIdx];
+    const temp = newGallery[index]!;
+    newGallery[index] = newGallery[targetIdx]!;
     newGallery[targetIdx] = temp;
-
     setGallery(newGallery);
 
+    // Usar URLs reales (Blob o local), no reconstruir rutas que rompen el catálogo
+    const urls = newGallery.map((g) => g.url.split("?")[0]);
     try {
-      const urls = newGallery.map(g => `/cars/uploads/${selectedSlug}/${g.name}`);
       const res = await fetch("/api/photos", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -284,14 +373,16 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
       });
       const data = await res.json();
       if (!data.success) {
-        fetchPhotos(selectedSlug); // revert on failure
+        await fetchPhotos(selectedSlug);
+      } else {
+        setCoverImage(urls[0] || "");
+        await refreshVehicleMeta();
       }
     } catch {
-      fetchPhotos(selectedSlug);
+      await fetchPhotos(selectedSlug);
     }
   };
 
-  // Sincronizar fotos desde carpetas locales en Windows
   const handleSyncLocal = async () => {
     setIsSyncing(true);
     setSyncStatus(null);
@@ -300,16 +391,20 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
       const data = await res.json();
       if (data.success) {
         setSyncStatus(data.message);
-        fetchPhotos(selectedSlug);
+        await fetchPhotos(selectedSlug);
+        await refreshVehicleMeta();
       } else {
         setSyncStatus("Error: " + (data.error || "No se pudo sincronizar"));
       }
-    } catch (e: any) {
-      setSyncStatus("Error de red: " + e.message);
+    } catch (e: unknown) {
+      setSyncStatus("Error de red: " + (e instanceof Error ? e.message : "desconocido"));
     } finally {
       setIsSyncing(false);
     }
   };
+
+  // DELETE API: también filtrar por URL completa si viene en body
+  // (ya soporta filename; mejoramos el route por separado si hace falta)
 
   const filteredVehicles = vehiclesData.filter((v) => {
     if (!searchCar) return true;
@@ -321,322 +416,345 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     );
   });
 
+  const readyCount = staged.filter((s) => s.ready && !s.error).length;
+  const busy = isPreparing || isUploading;
+
   return (
     <div className="space-y-6">
-      {/* Selector de Vehículo y Header */}
       <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-ink-800/60 p-5 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={asset(coverImage || selectedVehicle.image)}
             alt={selectedVehicle.model}
-            className="h-16 w-24 rounded-xl border border-white/10 object-cover shadow-md bg-ink-950"
+            className="h-16 w-24 rounded-xl border border-white/10 bg-ink-950 object-cover shadow-md"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = asset("/images/placeholder-pending-car.svg");
+            }}
           />
           <div>
             <div className="flex items-center gap-2">
-              <span className="rounded-md bg-brand-500/20 border border-brand-500/40 px-2 py-0.5 text-xs font-extrabold tracking-wider text-brand-300">
+              <span className="rounded-md border border-brand-500/40 bg-brand-500/20 px-2 py-0.5 text-xs font-extrabold tracking-wider text-brand-300">
                 {selectedVehicle.plate || "SIN PLACA"}
               </span>
               <span className="text-[11px] text-white/50">{selectedVehicle.location}</span>
             </div>
-            <h2 className="text-xl font-bold text-white mt-0.5">
+            <h2 className="mt-0.5 text-xl font-bold text-white">
               {selectedVehicle.brand} {selectedVehicle.model} · {selectedVehicle.year}
             </h2>
             <p className="text-xs text-white/50">{selectedVehicle.version}</p>
           </div>
         </div>
 
-        {/* Buscador y Selector rápido */}
-        <div className="w-full md:w-80 space-y-1.5">
-          <label className="block text-xs font-medium text-white/70">
-            Buscar vehículo (78 en stock):
-          </label>
+        <div className="flex w-full flex-col gap-2 md:w-80">
           <input
-            type="text"
-            placeholder="Filtrar por patente o modelo..."
+            type="search"
             value={searchCar}
             onChange={(e) => setSearchCar(e.target.value)}
-            className="w-full rounded-lg border border-white/15 bg-ink-900 px-3 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:border-brand-500"
+            placeholder="Buscar placa, marca o modelo…"
+            className="w-full rounded-xl border border-white/10 bg-ink-900 px-3 py-2 text-sm text-white outline-none focus:border-brand-400"
           />
           <select
             value={selectedSlug}
             onChange={(e) => setSelectedSlug(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-ink-900 px-3 py-2 text-xs font-semibold text-white outline-none transition focus:border-brand-500"
+            className="w-full rounded-xl border border-white/10 bg-ink-900 px-3 py-2 text-sm text-white outline-none focus:border-brand-400"
           >
             {filteredVehicles.map((v) => (
               <option key={v.slug} value={v.slug}>
-                [{v.plate || "S/P"}] {v.brand} {v.model} ({v.year})
+                [{v.plate || "—"}] {v.brand} {v.model} ({v.year})
               </option>
             ))}
           </select>
+          <p className="text-[11px] text-white/40">{filteredVehicles.length} en stock</p>
         </div>
       </div>
 
-      {/* Barra de herramientas y Sincronización Local */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs">
-        <div className="flex items-center gap-2 text-white/70">
-          <span>📁</span>
-          <span>Carpeta en Windows:</span>
-          <code className="rounded bg-black/40 px-2 py-0.5 text-[11px] text-brand-300">
-            public\cars\uploads\{selectedSlug}
-          </code>
-        </div>
+      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-ink-800/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <code className="break-all text-[11px] text-white/45">
+          public\cars\uploads\{selectedSlug || "…"}
+        </code>
         <button
-          onClick={handleSyncLocal}
+          type="button"
           disabled={isSyncing}
-          className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-500 transition disabled:opacity-50"
+          onClick={handleSyncLocal}
+          className="rounded-xl border border-white/15 bg-ink-900 px-4 py-2 text-xs font-semibold text-white/80 hover:bg-white/5 disabled:opacity-50"
         >
-          <span>{isSyncing ? "⚙️" : "🔄"}</span>
-          {isSyncing ? "Escaneando..." : "Sincronizar carpetas locales"}
+          {isSyncing ? "Sincronizando…" : "Sincronizar carpetas locales"}
         </button>
       </div>
+      {syncStatus && <p className="text-xs text-white/60">{syncStatus}</p>}
 
-      {syncStatus && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs text-emerald-300">
-          ✓ {syncStatus}
-        </div>
-      )}
-
-      {/* Tabs de Modo de Subida */}
       <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3">
-        <button
-          onClick={() => setActiveTab("gallery")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
-            activeTab === "gallery"
-              ? "bg-brand-500 text-white shadow-glow"
-              : "bg-ink-800/60 text-white/60 hover:bg-white/5 hover:text-white"
-          }`}
-        >
-          <span>🖼️</span> Galería y Fotos ({gallery.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("spin")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
-            activeTab === "spin"
-              ? "bg-brand-500 text-white shadow-glow"
-              : "bg-ink-800/60 text-white/60 hover:bg-white/5 hover:text-white"
-          }`}
-        >
-          <span>🔄</span> Fotogramas 360° ({spinCount > 0 ? `${spinCount} fotos` : "Sin 360"})
-        </button>
-        <button
-          onClick={() => setActiveTab("guide")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
-            activeTab === "guide"
-              ? "bg-brand-500 text-white shadow-glow"
-              : "bg-ink-800/60 text-white/60 hover:bg-white/5 hover:text-white"
-          }`}
-        >
-          <span>📋</span> Guía de Tomas Recomendadas
-        </button>
+        {(
+          [
+            ["gallery", `Galería y Fotos (${gallery.length})`],
+            ["spin", `Fotogramas 360° (${spinCount > 0 ? `${spinCount} fotos` : "Sin 360"})`],
+            ["guide", "Guía de Tomas Recomendadas"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setActiveTab(id)}
+            className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
+              activeTab === id
+                ? "bg-brand-500 text-white shadow-glow"
+                : "bg-ink-800/60 text-white/60 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* TAB 1: GALERÍA DE FOTOS */}
       {activeTab === "gallery" && (
         <div className="grid gap-6 lg:grid-cols-[1.05fr_1.2fr]">
-          {/* Zona de Subida y Arrastre */}
           <div className="space-y-4 rounded-2xl border border-white/10 bg-ink-800/60 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-white">Subir fotos del vehículo</h3>
-                <p className="text-xs text-white/50">
-                  Arrastra las fotos aquí o selecciónalas de tu equipo.
+            <div>
+              <h3 className="font-semibold text-white">1. Elegir y ordenar fotos</h3>
+              <p className="text-xs text-white/50">
+                La <span className="text-brand-300">primera miniatura</span> será la portada del
+                catálogo. Reordénalas antes de publicar.
+              </p>
+            </div>
+
+            {staged.length === 0 ? (
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (!busy) setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  if (!busy) void handleFilesChosen(e.dataTransfer.files);
+                }}
+                onClick={() => {
+                  if (!busy) fileInputRef.current?.click();
+                }}
+                className={`relative flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition ${
+                  busy ? "cursor-wait opacity-70" : "cursor-pointer"
+                } ${
+                  isDragging
+                    ? "border-brand-400 bg-brand-500/15"
+                    : "border-white/15 bg-ink-900/50 hover:border-brand-500/50 hover:bg-ink-900"
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  className="hidden"
+                  disabled={busy}
+                  onChange={(e) => {
+                    void handleFilesChosen(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                <div className="mb-2 grid h-12 w-12 place-items-center rounded-full bg-brand-500/20 text-2xl text-brand-300">
+                  📥
+                </div>
+                <p className="text-sm font-medium text-white">
+                  Arrastra las fotos aquí o{" "}
+                  <span className="text-brand-400 underline">haz clic para explorar</span>
+                </p>
+                <p className="mt-1 max-w-sm text-xs text-white/40">
+                  Verás miniaturas al instante. Luego ordenas y publicas al catálogo.
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 rounded-lg bg-ink-900 p-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setUploadType("gallery")}
-                  className={`rounded-md px-2.5 py-1 transition ${
-                    uploadType === "gallery"
-                      ? "bg-brand-500 text-white font-medium"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  Galería
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUploadType("cover")}
-                  className={`rounded-md px-2.5 py-1 transition ${
-                    uploadType === "cover"
-                      ? "bg-brand-500 text-white font-medium"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  Portada (1ª foto)
-                </button>
-              </div>
-            </div>
-
-            {/* Drag & Drop Area */}
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                if (!isConverting && !isUploading) setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsDragging(false);
-                if (!isConverting && !isUploading) handleFilesChosen(e.dataTransfer.files);
-              }}
-              onClick={() => {
-                if (!isConverting && !isUploading) fileInputRef.current?.click();
-              }}
-              className={`relative flex min-h-[160px] flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition ${
-                isConverting || isUploading ? "cursor-wait opacity-70" : "cursor-pointer"
-              } ${
-                isDragging
-                  ? "border-brand-400 bg-brand-500/15"
-                  : "border-white/15 bg-ink-900/50 hover:border-brand-500/50 hover:bg-ink-900"
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/webp,image/avif"
-                className="hidden"
-                disabled={isConverting || isUploading}
-                onChange={(e) => {
-                  handleFilesChosen(e.target.files);
-                  e.target.value = "";
-                }}
-              />
-              <div className="mb-2 grid h-12 w-12 place-items-center rounded-full bg-brand-500/20 text-2xl text-brand-300">
-                {isConverting ? "⚙" : "📥"}
-              </div>
-              <p className="text-sm font-medium text-white">
-                {isConverting
-                  ? "Preparando fotos…"
-                  : (
-                    <>
-                      Arrastra las fotos aquí o{" "}
-                      <span className="text-brand-400 underline">haz clic para explorar</span>
-                    </>
-                  )}
-              </p>
-              <p className="mt-1 text-xs text-white/40">
-                JPEG/WebP se suben tal cual si caben; el resto pasa a WebP de alta calidad
-                (hasta ~3200 px) y se sube de a una. Puedes cargar el lote completo de una vez.
-              </p>
-            </div>
-
-            {/* Mensajes de Alerta */}
-            {uploadProgress && (
-              <div className="rounded-xl border border-brand-400/30 bg-brand-500/10 px-4 py-3 text-xs text-brand-100">
-                {uploadProgress}
-              </div>
-            )}
-            {uploadError && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300">
-                ❌ {uploadError}
-              </div>
-            )}
-            {uploadSuccess && (
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-300">
-                ✓ {uploadSuccess}
-              </div>
-            )}
-
-            {/* Cola de archivos seleccionados (Staged) */}
-            {stagedFiles.length > 0 && (
-              <div className="space-y-3 rounded-xl border border-white/10 bg-ink-900/60 p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white/70">
-                    {stagedFiles.length} {stagedFiles.length === 1 ? "foto lista" : "fotos listas"} para subir:
-                  </span>
-                  <button
-                    onClick={() => setStagedFiles([])}
-                    className="text-xs text-white/40 hover:text-red-400"
-                  >
-                    Limpiar selección
-                  </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-white/80">
+                    {staged.length} seleccionada{staged.length === 1 ? "" : "s"}
+                    {readyCount < staged.length ? ` · ${readyCount} lista${readyCount === 1 ? "" : "s"}` : ""}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="rounded-lg border border-white/15 bg-ink-900 px-3 py-1.5 text-xs text-white/80 hover:bg-white/5 disabled:opacity-50"
+                    >
+                      + Agregar más
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={clearStaged}
+                      className="rounded-lg px-3 py-1.5 text-xs text-red-300/80 hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp,image/avif"
+                    className="hidden"
+                    disabled={busy}
+                    onChange={(e) => {
+                      void handleFilesChosen(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
                 </div>
 
-                <div className="grid max-h-44 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
-                  {stagedFiles.map((file, idx) => (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {staged.map((item, idx) => (
                     <div
-                      key={idx}
-                      className="group relative flex items-center gap-2 rounded-lg border border-white/10 bg-ink-800 p-2 text-xs"
+                      key={item.id}
+                      className={`relative overflow-hidden rounded-xl border bg-ink-950 ${
+                        idx === 0
+                          ? "border-brand-400 ring-1 ring-brand-400/40"
+                          : item.error
+                            ? "border-red-500/50"
+                            : "border-white/10"
+                      }`}
                     >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-white/90">{file.name}</p>
-                        <p className="text-[10px] text-white/40">{formatBytes(file.size)}</p>
+                      <div className="relative aspect-[4/3] bg-black/50">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.previewUrl}
+                          alt={item.file.name}
+                          className="h-full w-full object-cover"
+                        />
+                        {idx === 0 && (
+                          <span className="absolute left-2 top-2 rounded-md bg-brand-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                            PORTADA
+                          </span>
+                        )}
+                        <span className="absolute right-2 top-2 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[10px] text-white/90">
+                          #{idx + 1}
+                        </span>
+                        {!item.ready && !item.error && (
+                          <div className="absolute inset-0 grid place-items-center bg-black/55 text-[11px] text-white">
+                            Preparando…
+                          </div>
+                        )}
+                        {item.error && (
+                          <div className="absolute inset-0 grid place-items-center bg-red-950/80 p-2 text-center text-[10px] text-red-200">
+                            {item.error}
+                          </div>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeStagedFile(idx);
-                        }}
-                        className="grid h-5 w-5 place-items-center rounded bg-white/10 text-white/60 hover:bg-red-500/20 hover:text-red-300"
-                      >
-                        ✕
-                      </button>
+                      <div className="flex items-center justify-between gap-1 border-t border-white/10 px-1.5 py-1.5">
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            disabled={idx === 0 || busy}
+                            onClick={() => moveStaged(idx, -1)}
+                            className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-brand-500 disabled:opacity-25"
+                            title="Antes"
+                          >
+                            ←
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === staged.length - 1 || busy}
+                            onClick={() => moveStaged(idx, 1)}
+                            className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-brand-500 disabled:opacity-25"
+                            title="Después"
+                          >
+                            →
+                          </button>
+                        </div>
+                        <p className="truncate text-[9px] text-white/40">{formatBytes(item.file.size)}</p>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => removeStaged(item.id)}
+                          className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] text-red-200 hover:bg-red-500/40 disabled:opacity-50"
+                        >
+                          Quitar
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
 
                 <button
                   type="button"
-                  disabled={isUploading || isConverting || stagedFiles.length === 0}
-                  onClick={handleUploadGallery}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3 text-sm font-semibold text-white transition hover:bg-brand-400 disabled:opacity-50 shadow-glow"
+                  disabled={busy || readyCount === 0}
+                  onClick={() => void handleUploadGallery()}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3.5 text-sm font-semibold text-white shadow-glow transition hover:bg-brand-400 disabled:opacity-50"
                 >
-                  {isUploading ? (
-                    <>
-                      <span className="animate-spin text-lg">⚙</span>{" "}
-                      {uploadProgress || "Subiendo fotos…"}
-                    </>
-                  ) : (
-                    <>
-                      <span>🚀</span> Guardar {stagedFiles.length}{" "}
-                      {stagedFiles.length === 1 ? "foto" : "fotos"} en el vehículo
-                    </>
-                  )}
+                  {isUploading
+                    ? uploadProgress || "Publicando…"
+                    : isPreparing
+                      ? "Preparando fotos…"
+                      : `2. Publicar ${readyCount} foto${readyCount === 1 ? "" : "s"} en el catálogo`}
                 </button>
+              </div>
+            )}
+
+            {uploadProgress && !isUploading && (
+              <div className="rounded-xl border border-brand-400/30 bg-brand-500/10 px-4 py-3 text-xs text-brand-100">
+                {uploadProgress}
+              </div>
+            )}
+            {uploadError && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300">
+                {uploadError}
+              </div>
+            )}
+            {uploadSuccess && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-300">
+                {uploadSuccess}
               </div>
             )}
           </div>
 
-          {/* Galería de fotos subidas con Ordenamiento y Portada */}
-          <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-5 space-y-4">
-            <div className="flex items-center justify-between">
+          <div
+            ref={galleryPanelRef}
+            className="space-y-4 rounded-2xl border border-white/10 bg-ink-800/60 p-5"
+          >
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="font-semibold text-white">Fotos en el catálogo</h3>
+                <h3 className="font-semibold text-white">Fotos ya publicadas</h3>
                 <p className="text-xs text-white/50">
-                  {gallery.length} fotos · Portada = perfil delantero 3/4 (frente + costado)
+                  {gallery.length} en catálogo · Arrastra el orden con ← → · #1 = portada
                 </p>
               </div>
               <button
-                onClick={() => fetchPhotos(selectedSlug)}
+                type="button"
+                onClick={() => void fetchPhotos(selectedSlug)}
                 className="rounded-lg border border-white/10 bg-ink-900 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5 hover:text-white"
               >
-                🔄 Refrescar
+                Refrescar
               </button>
             </div>
 
             {isLoadingPhotos ? (
               <div className="grid h-48 place-items-center rounded-xl bg-ink-900/50 text-xs text-white/40">
-                Cargando fotos del vehículo...
+                Cargando fotos del vehículo…
               </div>
             ) : gallery.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-ink-900/50 p-8 text-center">
-                <span className="text-4xl">📸</span>
-                <p className="mt-2 text-sm font-medium text-white/70">Aún no hay fotos subidas para este vehículo</p>
+                <p className="text-sm font-medium text-white/70">
+                  Aún no hay fotos publicadas para este vehículo
+                </p>
                 <p className="mt-1 max-w-xs text-xs text-white/40">
-                  Usa el panel de la izquierda para subir las fotos reales o arrástralas a la carpeta local.
+                  Elige fotos a la izquierda, ordénalas y pulsa Publicar. Aquí verás las
+                  miniaturas finales.
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {gallery.map((photo, idx) => {
-                  const isCover = photo.isCover || (coverImage && coverImage.includes(photo.name)) || idx === 0;
+                  const isCover =
+                    idx === 0 ||
+                    photo.isCover ||
+                    (coverImage &&
+                      (coverImage === photo.url.split("?")[0] ||
+                        coverImage.includes(photo.name)));
                   return (
                     <div
-                      key={photo.name}
+                      key={`${photo.url}-${idx}`}
                       className={`group relative flex flex-col overflow-hidden rounded-xl border transition ${
                         isCover
                           ? "border-brand-400 bg-brand-500/10 shadow-glow"
@@ -649,72 +767,69 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
                           src={photo.url}
                           alt={photo.name}
                           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = asset(
+                              "/images/placeholder-pending-car.svg",
+                            );
+                          }}
                         />
-
                         {isCover && (
-                          <span className="absolute left-2 top-2 rounded-md bg-brand-500 px-2 py-0.5 text-[10px] font-bold text-white shadow z-10">
-                            ⭐ PORTADA
+                          <span className="absolute left-2 top-2 z-10 rounded-md bg-brand-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">
+                            PORTADA
                           </span>
                         )}
-
-                        <span className="absolute right-2 top-2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-mono text-white/80 z-10">
+                        <span className="absolute right-2 top-2 z-10 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[10px] text-white/80">
                           #{idx + 1}
                         </span>
-
-                        {/* Overlay Actions */}
-                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 backdrop-blur-sm transition group-hover:opacity-100 z-20">
+                        <div className="absolute inset-0 z-20 flex items-center justify-center gap-2 bg-black/60 opacity-0 backdrop-blur-sm transition group-hover:opacity-100">
                           <button
                             type="button"
                             onClick={() => setPreviewImage(photo.url)}
-                            title="Ver en grande"
-                            className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-sm text-white hover:bg-white/30 hover:scale-110 transition"
+                            className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-sm text-white hover:bg-white/30"
+                            title="Ver grande"
                           >
                             🔍
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDeletePhoto(photo.name, "gallery")}
-                            title="Eliminar foto"
-                            className="grid h-8 w-8 place-items-center rounded-full bg-red-500/80 text-sm text-white hover:bg-red-500 hover:scale-110 transition"
+                            onClick={() => void handleDeletePhoto(photo)}
+                            className="grid h-8 w-8 place-items-center rounded-full bg-red-500/80 text-sm text-white hover:bg-red-500"
+                            title="Eliminar"
                           >
-                            🗑️
+                            🗑
                           </button>
                         </div>
                       </div>
-
-                      {/* Barra de Control de Orden y Portada */}
                       <div className="flex items-center justify-between border-t border-white/10 bg-ink-950/80 px-2 py-1.5 text-[10px]">
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
                             disabled={idx === 0}
-                            onClick={() => handleMovePhoto(idx, -1)}
-                            title="Mover antes en la galería"
-                            className="rounded bg-white/10 px-1.5 py-0.5 font-bold text-white hover:bg-brand-500 disabled:opacity-20 transition"
+                            onClick={() => void handleMovePhoto(idx, -1)}
+                            className="rounded bg-white/10 px-1.5 py-0.5 font-bold text-white hover:bg-brand-500 disabled:opacity-20"
                           >
                             ←
                           </button>
                           <button
                             type="button"
                             disabled={idx === gallery.length - 1}
-                            onClick={() => handleMovePhoto(idx, 1)}
-                            title="Mover después en la galería"
-                            className="rounded bg-white/10 px-1.5 py-0.5 font-bold text-white hover:bg-brand-500 disabled:opacity-20 transition"
+                            onClick={() => void handleMovePhoto(idx, 1)}
+                            className="rounded bg-white/10 px-1.5 py-0.5 font-bold text-white hover:bg-brand-500 disabled:opacity-20"
                           >
                             →
                           </button>
                         </div>
-
                         {!isCover ? (
                           <button
                             type="button"
-                            onClick={() => handleSetAsCover(photo.url)}
-                            className="text-brand-300 hover:text-white font-semibold underline"
+                            onClick={() => void handleSetAsCover(photo.url)}
+                            className="font-semibold text-brand-300 underline hover:text-white"
                           >
-                            Poner Portada
+                            Poner portada
                           </button>
                         ) : (
-                          <span className="text-emerald-400 font-bold">Principal</span>
+                          <span className="font-bold text-emerald-400">Principal</span>
                         )}
                       </div>
                     </div>
@@ -726,16 +841,14 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
         </div>
       )}
 
-      {/* TAB 2: FOTOGRAMAS 360° MANUALES */}
       {activeTab === "spin" && (
         <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
           <div className="space-y-4 rounded-2xl border border-white/10 bg-ink-800/60 p-5">
             <h3 className="font-semibold text-white">Subir fotogramas 360° directos</h3>
             <p className="text-xs text-white/50">
-              Si tienes fotos individuales de la vuelta 360° (ej: 001.jpg, 002.jpg ... 024.jpg),
-              súbelas aquí para activar el giro interactivo.
+              Si tienes fotos individuales de la vuelta 360° (ej: 001.jpg … 024.jpg), súbelas
+              aquí.
             </p>
-
             <div
               onClick={() => spinInputRef.current?.click()}
               className="flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/15 bg-ink-900/50 p-6 text-center transition hover:border-brand-500 hover:bg-ink-900"
@@ -746,27 +859,29 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
                 multiple
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
-                onChange={(e) => handleUploadSpinFrames(e.target.files)}
+                onChange={(e) => void handleUploadSpinFrames(e.target.files)}
               />
               <span className="text-3xl">🔄</span>
               <p className="mt-2 text-sm font-medium text-white">
                 Haz clic para elegir los fotogramas 360°
               </p>
-              <p className="text-xs text-white/40">Se ordenarán automáticamente y crearán el giro interactivo.</p>
             </div>
-
+            <SpinUploader />
             {isUploading && (
               <div className="flex items-center justify-center gap-2 rounded-xl bg-brand-500/10 p-3 text-xs text-brand-300">
-                <span className="animate-spin">⚙</span> Guardando fotogramas 360° en el servidor...
+                Guardando fotogramas 360°…
               </div>
             )}
           </div>
-
           <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-5">
-            <h3 className="font-semibold text-white mb-2">Visor 360° en Vivo</h3>
+            <h3 className="mb-2 font-semibold text-white">Visor 360° en vivo</h3>
             {spinCount > 0 ? (
               <PhotoSpin360
-                frames={Array.from({ length: spinCount }, (_, i) => `/cars/spin/${selectedSlug}/${String(i + 1).padStart(3, "0")}.jpg`)}
+                frames={Array.from(
+                  { length: spinCount },
+                  (_, i) =>
+                    `/cars/spin/${selectedSlug}/${String(i + 1).padStart(3, "0")}.jpg`,
+                )}
               />
             ) : (
               <div className="grid h-64 place-items-center rounded-xl border border-white/10 bg-ink-900/50 text-xs text-white/40">
@@ -777,53 +892,36 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
         </div>
       )}
 
-      {/* TAB 3: GUÍA DE FOTOS RECOMENDADAS */}
       {activeTab === "guide" && (
-        <div className="rounded-2xl border border-white/10 bg-ink-800/60 p-6 space-y-6">
+        <div className="space-y-6 rounded-2xl border border-white/10 bg-ink-800/60 p-6">
           <div>
-            <h3 className="text-lg font-bold text-white">📸 Guía Oficial de Tomas Fotográficas para RG Motors</h3>
-            <p className="text-xs text-white/50 mt-1">
-              Sigue esta secuencia estándar para lograr que el catálogo transmita máxima confianza y profesionalismo:
+            <h3 className="text-lg font-bold text-white">Guía de tomas fotográficas</h3>
+            <p className="mt-1 text-xs text-white/50">
+              Secuencia estándar para el catálogo RG Motors.
             </p>
           </div>
-
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-brand-500/30 bg-brand-500/10 p-4 space-y-2">
-              <span className="rounded-full bg-brand-500 px-2 py-0.5 text-[10px] font-bold text-white">1. PORTADA</span>
-              <h4 className="font-bold text-sm text-white">3/4 Frontal Exterior</h4>
-              <p className="text-xs text-white/70">
-                Ángulo frontal en 45°, mostrando la parrilla, focos delanteros y el lateral completo. Con las ruedas ligeramente giradas hacia la cámara.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-ink-900 p-4 space-y-2">
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/70">2. EXTERIOR</span>
-              <h4 className="font-bold text-sm text-white">Lateral & Trasera</h4>
-              <p className="text-xs text-white/70">
-                Foto lateral perpendicular (perfil completo) y 3/4 trasera mostrando portalón, luces traseras y escape/pick-up.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-ink-900 p-4 space-y-2">
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/70">3. INTERIOR</span>
-              <h4 className="font-bold text-sm text-white">Tablero & Kilometraje</h4>
-              <p className="text-xs text-white/70">
-                Foto desde el asiento trasero mostrando el tablero entero, volante y consola. Foto de cerca del tacómetro con el kilometraje encendido.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-ink-900 p-4 space-y-2">
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/70">4. DETALLES</span>
-              <h4 className="font-bold text-sm text-white">Motor, Ruedas & Asientos</h4>
-              <p className="text-xs text-white/70">
-                Vano motor limpio, estado de los neumáticos/llantas y tapicería de asientos delanteros y traseros.
-              </p>
-            </div>
+            {[
+              ["1. PORTADA", "3/4 Frontal Exterior", "Ángulo frontal en 45°, parrilla y lateral."],
+              ["2. EXTERIOR", "Lateral & Trasera", "Perfil completo y 3/4 trasera."],
+              ["3. INTERIOR", "Tablero & Km", "Tablero entero y kilometraje encendido."],
+              ["4. DETALLES", "Motor, ruedas, asientos", "Vano motor, neumáticos y tapicería."],
+            ].map(([badge, title, desc]) => (
+              <div
+                key={badge}
+                className="space-y-2 rounded-xl border border-white/10 bg-ink-900 p-4"
+              >
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/70">
+                  {badge}
+                </span>
+                <h4 className="text-sm font-bold text-white">{title}</h4>
+                <p className="text-xs text-white/70">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Modal Preview */}
       {previewImage && (
         <div
           onClick={() => setPreviewImage(null)}
@@ -833,7 +931,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
           <img
             src={previewImage}
             alt="Preview"
-            className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain border border-white/20"
+            className="max-h-[90vh] max-w-[90vw] rounded-2xl border border-white/20 object-contain"
           />
         </div>
       )}
