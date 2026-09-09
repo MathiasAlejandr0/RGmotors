@@ -21,10 +21,10 @@ function getScrollY() {
   return window.scrollY || document.documentElement.scrollTop || 0;
 }
 
+/** Sólido cuando ya casi saliste del hero a pantalla completa. */
 function shouldUseSolidHeader() {
   const y = getScrollY();
-  // ~35% del hero / mínimo 140px: arriba = transparente, más abajo = negro
-  const threshold = Math.max(140, Math.round(window.innerHeight * 0.35));
+  const threshold = Math.max(280, Math.round(window.innerHeight * 0.85));
   return y > threshold;
 }
 
@@ -33,7 +33,7 @@ export default function SiteHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tradeInOpen, setTradeInOpen] = useState(false);
   const [carRequestOpen, setCarRequestOpen] = useState(false);
-  // Arranca transparente en home; el effect sincroniza al montar
+  // Siempre transparente al montar home; el scroll lo pone negro después
   const [scrolled, setScrolled] = useState(false);
 
   const isActive = (href: string) =>
@@ -43,32 +43,94 @@ export default function SiteHeader() {
 
   useEffect(() => {
     let alive = true;
+    let scrollSyncReady = pathname !== "/";
+
     const sync = () => {
       if (!alive) return;
-      // Fuera de inicio el header siempre es barra sólida (sticky).
       if (pathname !== "/") {
         setScrolled(true);
+        return;
+      }
+      // Durante el arranque de Inicio forzamos transparente (evita restauración del browser)
+      if (!scrollSyncReady) {
+        setScrolled(false);
         return;
       }
       setScrolled(shouldUseSolidHeader());
     };
 
+    const pinHomeTop = () => {
+      if (!alive || pathname !== "/") return;
+      if (window.location.hash) return;
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      setScrolled(false);
+    };
+
+    if (pathname === "/") {
+      try {
+        history.scrollRestoration = "manual";
+      } catch {
+        /* ignore */
+      }
+      // Anula la restauración de scroll: cada apertura de Inicio empieza arriba + transparente
+      pinHomeTop();
+    } else {
+      try {
+        history.scrollRestoration = "auto";
+      } catch {
+        /* ignore */
+      }
+    }
+
     sync();
-    const raf = requestAnimationFrame(sync);
-    const t1 = window.setTimeout(sync, 50);
-    const t2 = window.setTimeout(sync, 300);
+    const raf = requestAnimationFrame(() => {
+      if (pathname === "/") pinHomeTop();
+      sync();
+    });
+
+    const pinTimers =
+      pathname === "/"
+        ? [0, 40, 120, 250, 450].map((ms) => window.setTimeout(pinHomeTop, ms))
+        : [];
+
+    const readyTimer = window.setTimeout(() => {
+      scrollSyncReady = true;
+      sync();
+    }, pathname === "/" ? 500 : 0);
+
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (pathname !== "/") {
+        sync();
+        return;
+      }
+      // bfcache: respetar posición; carga nueva: pin al top transparente
+      if (event.persisted) {
+        scrollSyncReady = true;
+        sync();
+      } else {
+        scrollSyncReady = false;
+        pinHomeTop();
+        window.setTimeout(() => {
+          if (!alive) return;
+          scrollSyncReady = true;
+          sync();
+        }, 500);
+      }
+    };
 
     window.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("pageshow", sync);
+    window.addEventListener("pageshow", onPageShow);
     window.addEventListener("resize", sync);
 
     return () => {
       alive = false;
       cancelAnimationFrame(raf);
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
+      pinTimers.forEach((id) => window.clearTimeout(id));
+      window.clearTimeout(readyTimer);
       window.removeEventListener("scroll", sync);
-      window.removeEventListener("pageshow", sync);
+      window.removeEventListener("pageshow", onPageShow);
       window.removeEventListener("resize", sync);
     };
   }, [pathname]);
