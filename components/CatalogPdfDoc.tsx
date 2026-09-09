@@ -139,17 +139,25 @@ const s = StyleSheet.create({
   },
   title: { fontSize: 22, fontWeight: 700, color: C.white, marginBottom: 2 },
   version: { fontSize: 10, color: C.muted, marginBottom: 12 },
-  hero: {
+  heroWrap: {
     width: "100%",
-    height: 280,
+    height: 300,
     borderRadius: 12,
-    objectFit: "cover",
     marginBottom: 14,
     backgroundColor: C.panel,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  /** contain = auto completo visible; cover cortaba frente/ruedas */
+  hero: {
+    width: "100%",
+    height: 300,
+    objectFit: "contain",
   },
   heroPlaceholder: {
     width: "100%",
-    height: 280,
+    height: 300,
     borderRadius: 12,
     marginBottom: 14,
     backgroundColor: C.panel,
@@ -322,7 +330,9 @@ function VehiclePage({
       </Text>
 
       {heroSrc ? (
-        <Image style={s.hero} src={heroSrc} />
+        <View style={s.heroWrap}>
+          <Image style={s.hero} src={heroSrc} />
+        </View>
       ) : (
         <View style={s.heroPlaceholder}>
           <Text style={s.heroPlaceholderText}>Fotografías en preparación</Text>
