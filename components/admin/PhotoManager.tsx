@@ -5,7 +5,7 @@ import { vehicles, Vehicle } from "@/lib/vehicles";
 import { asset } from "@/lib/asset";
 import PhotoSpin360 from "@/components/PhotoSpin360";
 import SpinUploader from "@/components/admin/SpinUploader";
-import { uploadPhotosSequentially, readApiError } from "@/lib/client/uploadPhotos";
+import { uploadPhotosSequentially, readApiError, convertFilesToWebpBatch, formatBytes } from "@/lib/client/uploadPhotos";
 
 type PhotoItem = {
   name: string;
@@ -41,6 +41,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
   const [uploadType, setUploadType] = useState<"gallery" | "cover">("gallery");
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -97,17 +98,35 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     }
   }, [selectedSlug, fetchPhotos]);
 
-  const handleFilesChosen = (files: FileList | null) => {
+  const handleFilesChosen = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const valid = Array.from(files).filter((f) =>
-      /\.(jpe?g|png|webp|avif)$/i.test(f.name)
+      /\.(jpe?g|png|webp|avif)$/i.test(f.name) || /^image\//i.test(f.type),
     );
     if (valid.length === 0) {
       setUploadError("Por favor selecciona imágenes válidas (JPG, PNG, WebP).");
       return;
     }
     setUploadError(null);
-    setStagedFiles((prev) => [...prev, ...valid]);
+    setUploadSuccess(null);
+    setIsConverting(true);
+    setUploadProgress(`Optimizando a WebP 0/${valid.length}…`);
+    try {
+      const converted = await convertFilesToWebpBatch(valid, (done, total, name) => {
+        setUploadProgress(
+          done >= total
+            ? `WebP listo ${total}/${total}`
+            : `Optimizando a WebP ${done + 1}/${total}: ${name}`,
+        );
+      });
+      setStagedFiles((prev) => [...prev, ...converted]);
+      setUploadProgress(null);
+    } catch {
+      setUploadError("No se pudieron optimizar algunas imágenes. Intenta de nuevo.");
+      setUploadProgress(null);
+    } finally {
+      setIsConverting(false);
+    }
   };
 
   const removeStagedFile = (idx: number) => {
@@ -275,12 +294,6 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     }
   };
 
-  const formatBytes = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
   const filteredVehicles = vehiclesData.filter((v) => {
     if (!searchCar) return true;
     const q = searchCar.toLowerCase();
@@ -443,16 +456,20 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
             <div
               onDragOver={(e) => {
                 e.preventDefault();
-                setIsDragging(true);
+                if (!isConverting && !isUploading) setIsDragging(true);
               }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={(e) => {
                 e.preventDefault();
                 setIsDragging(false);
-                handleFilesChosen(e.dataTransfer.files);
+                if (!isConverting && !isUploading) handleFilesChosen(e.dataTransfer.files);
               }}
-              onClick={() => fileInputRef.current?.click()}
-              className={`relative flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition ${
+              onClick={() => {
+                if (!isConverting && !isUploading) fileInputRef.current?.click();
+              }}
+              className={`relative flex min-h-[160px] flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition ${
+                isConverting || isUploading ? "cursor-wait opacity-70" : "cursor-pointer"
+              } ${
                 isDragging
                   ? "border-brand-400 bg-brand-500/15"
                   : "border-white/15 bg-ink-900/50 hover:border-brand-500/50 hover:bg-ink-900"
@@ -464,17 +481,28 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
                 multiple
                 accept="image/jpeg,image/png,image/webp,image/avif"
                 className="hidden"
-                onChange={(e) => handleFilesChosen(e.target.files)}
+                disabled={isConverting || isUploading}
+                onChange={(e) => {
+                  handleFilesChosen(e.target.files);
+                  e.target.value = "";
+                }}
               />
               <div className="mb-2 grid h-12 w-12 place-items-center rounded-full bg-brand-500/20 text-2xl text-brand-300">
-                📥
+                {isConverting ? "⚙" : "📥"}
               </div>
               <p className="text-sm font-medium text-white">
-                Arrastra las fotos aquí o <span className="text-brand-400 underline">haz clic para explorar</span>
+                {isConverting
+                  ? "Convirtiendo a WebP…"
+                  : (
+                    <>
+                      Arrastra las fotos aquí o{" "}
+                      <span className="text-brand-400 underline">haz clic para explorar</span>
+                    </>
+                  )}
               </p>
               <p className="mt-1 text-xs text-white/40">
-                Se suben de a una y se comprimen si pesan mucho (límite Vercel ~4,5 MB por
-                request). JPG, PNG o WebP.
+                Al elegirlas se convierten a <b className="text-white/60">WebP</b> (~550 KB c/u)
+                y se suben de a una. Puedes cargar el lote completo de una vez.
               </p>
             </div>
 
@@ -536,7 +564,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
 
                 <button
                   type="button"
-                  disabled={isUploading}
+                  disabled={isUploading || isConverting || stagedFiles.length === 0}
                   onClick={handleUploadGallery}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3 text-sm font-semibold text-white transition hover:bg-brand-400 disabled:opacity-50 shadow-glow"
                 >
