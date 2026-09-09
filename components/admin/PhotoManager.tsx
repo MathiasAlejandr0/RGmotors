@@ -66,8 +66,6 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [syncStatus, setSyncStatus] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   const [gallery, setGallery] = useState<PhotoItem[]>([]);
   const [spinCount, setSpinCount] = useState<number>(0);
@@ -363,7 +361,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     newGallery[targetIdx] = temp;
     setGallery(newGallery);
 
-    // Usar URLs reales (Blob o local), no reconstruir rutas que rompen el catálogo
+    // Usar URLs reales (Blob), no reconstruir rutas que rompen el catálogo
     const urls = newGallery.map((g) => g.url.split("?")[0]);
     try {
       const res = await fetch("/api/photos", {
@@ -382,29 +380,6 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
       await fetchPhotos(selectedSlug);
     }
   };
-
-  const handleSyncLocal = async () => {
-    setIsSyncing(true);
-    setSyncStatus(null);
-    try {
-      const res = await fetch("/api/photos/sync-local", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        setSyncStatus(data.message);
-        await fetchPhotos(selectedSlug);
-        await refreshVehicleMeta();
-      } else {
-        setSyncStatus("Error: " + (data.error || "No se pudo sincronizar"));
-      }
-    } catch (e: unknown) {
-      setSyncStatus("Error de red: " + (e instanceof Error ? e.message : "desconocido"));
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  // DELETE API: también filtrar por URL completa si viene en body
-  // (ya soporta filename; mejoramos el route por separado si hace falta)
 
   const filteredVehicles = vehiclesData.filter((v) => {
     if (!searchCar) return true;
@@ -469,21 +444,6 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
           <p className="text-[11px] text-white/40">{filteredVehicles.length} en stock</p>
         </div>
       </div>
-
-      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-ink-800/40 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <code className="break-all text-[11px] text-white/45">
-          public\cars\uploads\{selectedSlug || "…"}
-        </code>
-        <button
-          type="button"
-          disabled={isSyncing}
-          onClick={handleSyncLocal}
-          className="rounded-xl border border-white/15 bg-ink-900 px-4 py-2 text-xs font-semibold text-white/80 hover:bg-white/5 disabled:opacity-50"
-        >
-          {isSyncing ? "Sincronizando…" : "Sincronizar carpetas locales"}
-        </button>
-      </div>
-      {syncStatus && <p className="text-xs text-white/60">{syncStatus}</p>}
 
       <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3">
         {(
