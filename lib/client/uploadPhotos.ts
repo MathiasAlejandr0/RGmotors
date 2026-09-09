@@ -1,15 +1,18 @@
 /**
  * Helpers de subida de fotos en el admin (cliente).
- * Al elegir archivos se convierten siempre a WebP (o JPEG de respaldo),
- * redimensionadas y comprimidas para no chocar con el límite ~4.5 MB de Vercel.
+ * Prioriza calidad: solo redimensiona/comprime lo mínimo para no superar
+ * el límite ~4.5 MB de Vercel (subida de a una).
  */
 
 export const VERCEL_SAFE_UPLOAD_BYTES = 3_200_000;
-/** Objetivo por foto tras conversión (lotes seguros). */
-export const TARGET_PHOTO_BYTES = 550_000;
-export const MAX_IMAGE_EDGE = 1600;
-export const WEBP_QUALITY_START = 0.78;
-export const JPEG_QUALITY_START = 0.8;
+/** Techo blando: preferible no bajar de esta calidad salvo necesidad. */
+export const SOFT_TARGET_BYTES = 2_400_000;
+export const MAX_IMAGE_EDGE = 3200;
+export const WEBP_QUALITY_START = 0.92;
+export const JPEG_QUALITY_START = 0.92;
+/** No bajar de esto salvo que el archivo aún exceda el límite de Vercel. */
+export const MIN_QUALITY_FOR_SIZE = 0.82;
+export const MIN_QUALITY_HARD = 0.72;
 
 /** Lee el cuerpo aunque no sea JSON (ej. "Request Entity Too Large"). */
 export async function readApiError(res: Response): Promise<string> {
@@ -67,9 +70,19 @@ function supportsWebpExport(): boolean {
   }
 }
 
+function isAlreadyWebSafe(file: File): boolean {
+  const webSafe =
+    file.type === "image/webp" ||
+    file.type === "image/jpeg" ||
+    /\.(webp|jpe?g)$/i.test(file.name);
+  return webSafe && file.size <= VERCEL_SAFE_UPLOAD_BYTES;
+}
+
 /**
- * Convierte SIEMPRE a WebP (o JPEG si el navegador no exporta WebP),
- * redimensiona a máx. 1600px y comprime hasta ~550 KB.
+ * Prepara la imagen para subir priorizando calidad.
+ * - Si ya es JPEG/WebP y cabe en Vercel, no se reprocesa.
+ * - Si no, exporta WebP (o JPEG) a calidad alta; solo baja calidad/tamaño
+ *   si hace falta para el límite de subida.
  */
 export async function convertImageToWebp(file: File): Promise<File> {
   const isImage =
@@ -77,11 +90,8 @@ export async function convertImageToWebp(file: File): Promise<File> {
     /\.(jpe?g|png|webp|avif|heic)$/i.test(file.name);
   if (!isImage) return file;
 
-  // Ya es WebP chico: no reprocesar
-  if (
-    (file.type === "image/webp" || /\.webp$/i.test(file.name)) &&
-    file.size <= TARGET_PHOTO_BYTES
-  ) {
+  // Ya apta para web y dentro del límite: no re-encode (evita pérdida de calidad)
+  if (isAlreadyWebSafe(file)) {
     return file;
   }
 
@@ -99,6 +109,8 @@ export async function convertImageToWebp(file: File): Promise<File> {
   canvas.height = Math.max(1, height);
   const ctx = canvas.getContext("2d");
   if (!ctx) return file;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   ctx.fillStyle = "#0a0a0a";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -107,28 +119,44 @@ export async function convertImageToWebp(file: File): Promise<File> {
   const mime = useWebp ? "image/webp" : "image/jpeg";
   const ext = useWebp ? "webp" : "jpg";
   let quality = useWebp ? WEBP_QUALITY_START : JPEG_QUALITY_START;
-  let blob = await canvasToBlob(canvas, mime, quality);
+  let working: HTMLCanvasElement = canvas;
+  let blob = await canvasToBlob(working, mime, quality);
 
-  while (blob && blob.size > TARGET_PHOTO_BYTES && quality > 0.4) {
-    quality -= 0.08;
-    blob = await canvasToBlob(canvas, mime, quality);
+  // Solo bajar calidad si supera el techo blando / seguro
+  while (
+    blob &&
+    blob.size > SOFT_TARGET_BYTES &&
+    quality > MIN_QUALITY_FOR_SIZE
+  ) {
+    quality = Math.max(MIN_QUALITY_FOR_SIZE, quality - 0.03);
+    blob = await canvasToBlob(working, mime, quality);
   }
 
-  // Si aún es enorme, reducir más el lienzo
-  if (blob && blob.size > VERCEL_SAFE_UPLOAD_BYTES) {
-    const scale2 = 0.75;
+  // Si aún no cabe en Vercel, bajar un poco más (último recurso)
+  while (blob && blob.size > VERCEL_SAFE_UPLOAD_BYTES && quality > MIN_QUALITY_HARD) {
+    quality = Math.max(MIN_QUALITY_HARD, quality - 0.04);
+    blob = await canvasToBlob(working, mime, quality);
+  }
+
+  // Último recurso: reducir resolución manteniendo calidad alta
+  let scalePass = 0;
+  while (blob && blob.size > VERCEL_SAFE_UPLOAD_BYTES && scalePass < 3) {
+    scalePass++;
+    const scale = 0.85;
     const c2 = document.createElement("canvas");
-    c2.width = Math.max(1, Math.round(canvas.width * scale2));
-    c2.height = Math.max(1, Math.round(canvas.height * scale2));
+    c2.width = Math.max(1, Math.round(working.width * scale));
+    c2.height = Math.max(1, Math.round(working.height * scale));
     const ctx2 = c2.getContext("2d");
-    if (ctx2) {
-      ctx2.drawImage(canvas, 0, 0, c2.width, c2.height);
-      quality = 0.7;
-      blob = await canvasToBlob(c2, mime, quality);
-      while (blob && blob.size > TARGET_PHOTO_BYTES && quality > 0.35) {
-        quality -= 0.08;
-        blob = await canvasToBlob(c2, mime, quality);
-      }
+    if (!ctx2) break;
+    ctx2.imageSmoothingEnabled = true;
+    ctx2.imageSmoothingQuality = "high";
+    ctx2.drawImage(working, 0, 0, c2.width, c2.height);
+    working = c2;
+    quality = Math.max(quality, 0.88);
+    blob = await canvasToBlob(working, mime, quality);
+    while (blob && blob.size > VERCEL_SAFE_UPLOAD_BYTES && quality > MIN_QUALITY_HARD) {
+      quality = Math.max(MIN_QUALITY_HARD, quality - 0.04);
+      blob = await canvasToBlob(working, mime, quality);
     }
   }
 
@@ -171,7 +199,7 @@ export type UploadProgress = {
   currentName: string;
 };
 
-/** Sube fotos de a una (ya deberían venir en WebP liviano). */
+/** Sube fotos de a una (ya deberían venir preparadas). */
 export async function uploadPhotosSequentially(opts: {
   slug: string;
   type: "gallery" | "cover" | "spin";
@@ -190,7 +218,7 @@ export async function uploadPhotosSequentially(opts: {
     const prepared = await convertImageToWebp(original);
 
     if (prepared.size > VERCEL_SAFE_UPLOAD_BYTES) {
-      errors.push(`${original.name}: sigue pesando demasiado tras convertir a WebP.`);
+      errors.push(`${original.name}: sigue pesando demasiado tras preparar la imagen.`);
       continue;
     }
 
@@ -229,7 +257,7 @@ export async function uploadPhotosSequentially(opts: {
 
   const msg =
     uploaded === files.length
-      ? `Se subieron ${uploaded} foto${uploaded === 1 ? "" : "s"} en WebP.`
+      ? `Se subieron ${uploaded} foto${uploaded === 1 ? "" : "s"} en alta calidad.`
       : `Se subieron ${uploaded} de ${files.length}. ${errors.slice(0, 2).join(" · ")}`;
 
   return { count: uploaded, message: msg };

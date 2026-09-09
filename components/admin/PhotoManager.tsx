@@ -110,19 +110,19 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
     setUploadError(null);
     setUploadSuccess(null);
     setIsConverting(true);
-    setUploadProgress(`Optimizando a WebP 0/${valid.length}…`);
+    setUploadProgress(`Preparando fotos 0/${valid.length}…`);
     try {
       const converted = await convertFilesToWebpBatch(valid, (done, total, name) => {
         setUploadProgress(
           done >= total
-            ? `WebP listo ${total}/${total}`
-            : `Optimizando a WebP ${done + 1}/${total}: ${name}`,
+            ? `Listo ${total}/${total}`
+            : `Preparando ${done + 1}/${total}: ${name}`,
         );
       });
       setStagedFiles((prev) => [...prev, ...converted]);
       setUploadProgress(null);
     } catch {
-      setUploadError("No se pudieron optimizar algunas imágenes. Intenta de nuevo.");
+      setUploadError("No se pudieron preparar algunas imágenes. Intenta de nuevo.");
       setUploadProgress(null);
     } finally {
       setIsConverting(false);
@@ -492,7 +492,7 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
               </div>
               <p className="text-sm font-medium text-white">
                 {isConverting
-                  ? "Convirtiendo a WebP…"
+                  ? "Preparando fotos…"
                   : (
                     <>
                       Arrastra las fotos aquí o{" "}
@@ -501,8 +501,8 @@ export default function PhotoManager({ initialSlug }: { initialSlug?: string }) 
                   )}
               </p>
               <p className="mt-1 text-xs text-white/40">
-                Al elegirlas se convierten a <b className="text-white/60">WebP</b> (~550 KB c/u)
-                y se suben de a una. Puedes cargar el lote completo de una vez.
+                JPEG/WebP se suben tal cual si caben; el resto pasa a WebP de alta calidad
+                (hasta ~3200 px) y se sube de a una. Puedes cargar el lote completo de una vez.
               </p>
             </div>
 
