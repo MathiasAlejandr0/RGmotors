@@ -20,7 +20,7 @@ export const COMPANY = {
   /** Sucursal única oficial (showroom / pruebas de manejo) */
   branchName: "Showroom Av. El Tepual",
   hours: "Lun a Jue 9:00–19:00 · Vie 9:00–18:00 · Sáb 10:00–13:00",
-  website: "www.rgmotors.cl",
+  website: "www.rgmotorschile.cl",
   instagram: "https://www.instagram.com/_rgmotors/",
   facebook: "https://www.facebook.com/automotoraga?locale=es_LA",
   facebookLabel: "Facebook oficial RG Motors",

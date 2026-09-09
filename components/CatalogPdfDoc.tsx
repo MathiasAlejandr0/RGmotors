@@ -385,7 +385,7 @@ function VehiclePage({
       </View>
 
       <View style={s.footer}>
-        <Text>RG Motors — Puerto Montt · www.rgmotors.cl</Text>
+        <Text>RG Motors — Puerto Montt · www.rgmotorschile.cl</Text>
         <Text
           render={({ pageNumber, totalPages }) =>
             `Página ${pageNumber} de ${totalPages}`
@@ -439,7 +439,7 @@ export function CatalogPdfDoc({
           </View>
         </View>
         <Text style={s.coverFoot}>
-          RG Motors · Puerto Montt, Chile · www.rgmotors.cl
+          RG Motors · Puerto Montt, Chile · www.rgmotorschile.cl
         </Text>
         <View style={s.coverBottomBar} />
       </Page>

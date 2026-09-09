@@ -22,7 +22,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://rgmotors.cl"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.rgmotorschile.cl",
+  ),
   title: "RG Motors — Vehículos Seleccionados en Puerto Montt",
   description:
     "Compra tu próximo auto o camioneta en Puerto Montt. Fotos reales de patio y simulación de crédito Autofin referencial.",

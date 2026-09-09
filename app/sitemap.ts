@@ -3,7 +3,7 @@ import { getVehicles } from "@/lib/server/vehiclesStore";
 import { vehicles as fallbackVehicles } from "@/lib/vehicles";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rgmotors.cl";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.rgmotorschile.cl";
   const allVehicles = await getVehicles().catch(() => fallbackVehicles);
 
   const staticRoutes: MetadataRoute.Sitemap = [

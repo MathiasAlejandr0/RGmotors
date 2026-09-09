@@ -68,6 +68,11 @@ next-env.d.ts
 /RESPALDO_FOTOS_DRIVE/
 /RESPALDO_FOTOS_DRIVE/**
 
+# Fotos de vehículos: en prod van a Vercel Blob.
+# Mantener en disco local para migración; no versionar uploads nuevos.
+/public/cars/uploads/
+/public/cars/spins/
+
 # Sesiones locales de herramientas (no versionar)
 .omo/
 .env*
