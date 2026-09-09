@@ -40,6 +40,7 @@ describe("isPublicApi — política de acceso", () => {
 
   it("permite cron sin cookie (auth propia del endpoint)", () => {
     expect(isPublicApi("/api/cron/sync", "GET")).toBe(true);
+    expect(isPublicApi("/api/webhooks/inventory-sync", "POST")).toBe(true);
   });
 
   it("protege APIs admin no listadas (ej. sync-sheet)", () => {
